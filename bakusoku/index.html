@@ -4334,7 +4334,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v489';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v490';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6262,7 +6262,8 @@ $('go').onclick=async()=>{if(!JOB.length)return;
         cs.forEach(g=>{g.b=Math.max(g.a+0.2,g.b)});tighten(cs,off,segEnd)}
       else(o.chunks||[{timestamp:[0,null],text:o.text}]).forEach(c=>{const t=(c.text||'').trim();if(!t)return;
         const s0=off+(c.timestamp[0]??0),e0=c.timestamp[1]==null?segEnd:off+c.timestamp[1];cs.push({a:s0,b:Math.max(s0+0.2,Math.min(segEnd,e0)),t,sp:'m',spv:3})});
-      all.push(...cs);done=Math.min(D,done+(a1-a0)/SR);
+      /* v490: 言葉1つが長い場合・言葉の時間に非対応の場合も、生成した字幕は必ず文字数制限で分ける */
+      fix18(cs);all.push(...cs);done=Math.min(D,done+(a1-a0)/SR);
       if(sample&&cs.length&&!cs.every(g=>/^[!！,，、。.\s]+$/.test(g.t))){const ki=nFix++;chain=chain.then(()=>fixSegs(sample,cs)).then(x=>{fixed[ki]=x;doneFix++},e=>{fixed[ki]=cs.map(g=>({...g}));fixErr=e;doneFix++})}
     }
     bi.style.width='100%';
@@ -7114,7 +7115,8 @@ function fix18(list){const out=[];list.forEach(g=>{const ps=String(g.t).split(/\
   /* v186: 言葉の時間があればその切れ目で分ける */
   const ws=g.w&&g.w.length?g.w:null,oc=ws?ws.reduce((n,w)=>n+w.n,0):0;
   const cut=(fr,lo,hi)=>{if(!ws||!oc)return null;let c=0;const cs=[];ws.forEach((w,j)=>{if(j&&w.a>=lo&&w.a<=hi)cs.push({c,a:w.a});c+=w.n});if(!cs.length)return null;const goal=fr*oc;return cs.sort((x,y)=>Math.abs(x.c-goal)-Math.abs(y.c-goal))[0].a};
-  const tot=ps.reduce((n,x)=>n+[...x].length,0);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=[...x].length;const q=k===ps.length-1?g.b:(cut(cc/tot,p+0.15,g.b-0.15)??splitAt(g.a,g.b,cc/tot,p+0.15,g.b-0.15));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
+  /* v490: 短い認識区間でも残りの字幕の時間を確保し、境目の逆転を防ぐ */
+  const tot=ps.reduce((n,x)=>n+[...x].length,0),step=Math.min(0.15,(g.b-g.a)/ps.length);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=[...x].length;const lo=p+step,hi=g.b-step*(ps.length-k-1),q=k===ps.length-1?g.b:Math.max(lo,Math.min(hi,cut(cc/tot,lo,hi)??splitAt(g.a,g.b,cc/tot,lo,hi)));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
   list.splice(0,list.length,...out)}
 /* v273: 自動修正はしばらくの間「、」を消して、その区切りにスペースを入れるだけ(Claudeには送らない)。SIMPLEFIX=falseで元に戻る */
 const SIMPLEFIX=true;
