@@ -742,8 +742,8 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #seFs .fold{display:flex;flex-direction:column;gap:14px}
 #t_sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:60}
 /* v285: 入力欄があるシートは最初から画面の上に出す(キーボードに隠れない。フォーカス中だけ上にすると、ボタンを押した瞬間に下へ動いて押し損ねるため) */
-#t_sheet:has(textarea,input[type=text]){align-items:flex-start}
-#t_sheet:has(textarea,input[type=text])>div{border-radius:0 0 14px 14px;max-height:55%}
+#t_sheet:not(.sub-edit):has(textarea,input[type=text]){align-items:flex-start}
+#t_sheet:not(.sub-edit):has(textarea,input[type=text])>div{border-radius:0 0 14px 14px;max-height:55%}
 #subAdd{align-items:flex-start!important}
 #subAdd>div{border-radius:0 0 14px 14px!important}
 #t_sheet>div{background:var(--panel);width:100%;max-width:640px;max-height:100%;overflow:auto;box-sizing:border-box;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:10px}
@@ -765,6 +765,10 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_sheet .chs button.tg{background:color-mix(in srgb,var(--accent) 35%,var(--bg))}
 #t_sheet .chs button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 #t_sheet textarea{font:inherit;font-size:17px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-height:70px}
+/* v491: 字幕修正だけは表示領域の下端へ。入力・ボタンのフォーカスで位置を切り替えない */
+#t_sheet.sub-edit{align-items:flex-end;bottom:auto}
+#t_sheet.sub-edit>div{max-height:100%;border-radius:14px 14px 0 0;overscroll-behavior:contain}
+#t_sheet.sub-edit textarea{box-sizing:border-box;width:100%;min-height:0;max-height:30vh;line-height:1.4;resize:none;flex:none;overflow-y:auto}
 #t_sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #t_sheet .three{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 #t_sheet .lck{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--fg);gap:2px;padding:0 4px}#t_sheet .lck input{width:26px;height:26px;margin:0}
@@ -4334,7 +4338,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v490';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v491';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6417,8 +6421,9 @@ function playAll(){if(playing()){stopPlay();return}const start=posSet?pos:sel?se
 $('bP').onclick=playSel;$('bA').onclick=playAll;
 /* v481: 文字入力のシートは、キーボードが出ている時はキーボードの上いっぱいまで使う(55%で切れて下の画面が見えていた) */
 {const sh=$('sheet'),vv=window.visualViewport,fit=()=>{const d=sh.firstElementChild;if(!d)return;if(sh.hidden||!vv){d.style.maxHeight='';sh.style.top='';sh.style.height='';return}
-  const kb=vv.height<innerHeight*0.85;sh.style.top=kb?vv.offsetTop+'px':'';sh.style.height=kb?vv.height+'px':'';d.style.maxHeight=kb?'100%':''};
-  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}new MutationObserver(fit).observe(sh,{attributes:true,attributeFilter:['hidden'],childList:true,subtree:true})}
+  /* v491: WebViewの画面縮小・Chromeのキーボード重なりの両方で、見える領域の下端へ固定 */
+  const kb=sh.classList.contains('sub-edit')||vv.height<innerHeight*0.85;sh.style.top=kb?vv.offsetTop+'px':'';sh.style.height=kb?vv.height+'px':'';d.style.maxHeight=kb?'100%':''};
+  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}new MutationObserver(fit).observe(sh,{attributes:true,attributeFilter:['hidden','class'],childList:true,subtree:true})}
 {const i=$('ltI'),put=()=>{$('ltV').textContent=LITE?'音と字幕だけ':'通常'};i.value=LITE?0:1;put();
   i.oninput=()=>{const was=playing()&&!!(pl&&pl.lite)!==(+i.value===0);LITE=+i.value===0;put();try{localStorage.setItem('subLite',LITE?'1':'')}catch(e){}if(was){const t=pos,a=$('bA').classList.contains('on');stopPlay();if(a){posSet=true;setPos(t);playAll()}else showAt(t)}}}
 /* v481: 字幕欄の右上の⬇ = 一番下までスーッと(加速して)動かす */
@@ -6950,11 +6955,13 @@ function press(el,h){let tm=null,lp=false,x0=0,y0=0,dr=false;const S=h.key?(_pk.
   if(h.dbl)el.addEventListener('dblclick',e=>{e.preventDefault();if(S.single){clearTimeout(S.single);S.single=null;S.last=0;h.dbl()}})}
 
 /* 下から出る小窓 */
-function sheet(build){const s=$('sheet'),b=$('shIn'),t0=Date.now();s.style.background='';b.innerHTML='';b.style.maxHeight='';b.style.overflow='';s.hidden=false;const close=()=>{s.hidden=true;b.innerHTML=''};s.onclick=e=>{if(e.target===s&&Date.now()-t0>500)close()};build(b,close)}
+function sheet(build){const s=$('sheet'),b=$('shIn'),t0=Date.now();s.classList.remove('sub-edit');s.style.background='';b.innerHTML='';b.style.maxHeight='';b.style.overflow='';s.hidden=false;const close=()=>{s.hidden=true;s.classList.remove('sub-edit');b.innerHTML=''};s.onclick=e=>{if(e.target===s&&Date.now()-t0>500)close()};build(b,close)}
 function ask(msg,okTxt,fn){sheet((b,close)=>{const p=document.createElement('p');p.style.cssText='color:var(--fg);font-size:15px;white-space:pre-wrap';p.textContent=msg;
   const w=document.createElement('div');w.className='two';const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;
   const y=document.createElement('button');y.textContent=okTxt;y.style.background='var(--ng,#c0262d)';y.style.color='#fff';y.onclick=()=>{close();fn()};w.append(n,y);b.append(p,w)})}
-function editRow(r,list,g,late){sheet((b,close)=>{const ta=document.createElement('textarea');ta.value=brT(g);
+/* v491: 日本語・英語共通。1行から始め、改行・折り返しに応じて伸縮する */
+function subEditField(ta){ta.rows=1;const fit=()=>{ta.style.height='auto';ta.style.height=(ta.scrollHeight+2)+'px'};ta.addEventListener('input',fit);requestAnimationFrame(fit)}
+function editRow(r,list,g,late){sheet((b,close)=>{$('sheet').classList.add('sub-edit');const ta=document.createElement('textarea');ta.value=brT(g);ta.setAttribute('aria-label','字幕');subEditField(ta);
   const w=document.createElement('div');w.className='three';const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;
   /* v272: やめるの場所に「縦⇄横」(押すとすぐ切り替わる)。太は縦/横の見た目を入れ替える */
   const vh=document.createElement('button');vh.className='no';vh.textContent='縦⇄横';vh.onclick=()=>{const k=SPK(g);
@@ -6975,17 +6982,16 @@ function editRow(r,list,g,late){sheet((b,close)=>{const ta=document.createElemen
     saveR(view.m,r);drawResults()};
   const ck=document.createElement('div');ck.style.cssText='display:flex;gap:2px';ck.append(lk,bk2);
   w.append(vh,ck,y);b.append(ta);
-  /* v482: 英語字幕の修正(入力欄から離れたら保存) */if(g.en!=null||list.some(x=>x.en)){const te=document.createElement('textarea');te.className='enTa';te.placeholder='英語字幕';te.value=g.en||'';te.style.minHeight='3em';
+  /* v482: 英語字幕の修正(入力欄から離れたら保存) */if(g.en!=null||list.some(x=>x.en)){const te=document.createElement('textarea');te.className='enTa';te.placeholder='英語字幕';te.value=g.en||'';te.setAttribute('aria-label','英語字幕');subEditField(te);
     te.onchange=()=>{const v=te.value.trim();if(v)g.en=v;else delete g.en;saveR(view.m,r)};b.append(te)}
   b.append(w);
-  /* v235: 長押しの画面から移した(SE・グループ解除・消す) */
-  const se=document.createElement('button');se.className='no';se.textContent='SE: '+(seName(g.se)||'なし');se.onclick=()=>{close();sePick(g)};b.appendChild(se);
+  /* v491: SEは字幕の再生画面から設定できるため、修正窓には置かない(既存SEは保持) */
   {const w2=document.createElement('div');w2.className='two';[['s','空白縦'],['h','空白横']].forEach(([k,l])=>{const x=document.createElement('button');x.className='no';x.textContent=l;x.style.background='#000';x.style.color='#fff';x.onclick=()=>{const v=ta.value.replace(/\r/g,'').replace(/\n+/g,'').trim();try{ta.blur()}catch(_){}close();addBlank(g,k,v)};/* v278: 入力欄の文字をそのまま空白の字幕に */w2.appendChild(x)});b.appendChild(w2)}
   if(g.grp){const u=document.createElement('button');u.className='no';u.textContent='グループ解除(この行から下)';u.onclick=()=>{close();const gm=grpOf(list,g),i=gm.indexOf(g);gm.slice(i).forEach(x=>delete x.grp);sel=g;save();drawResults()};b.appendChild(u)}
   const dl=document.createElement('button');dl.textContent='この字幕を消す';dl.style.background='#c0262d';dl.style.color='#fff';dl.onclick=()=>{close();sel=g;delSub()};
   {const w3=document.createElement('div');w3.className='two';w3.append(n,dl);b.appendChild(w3)}
   /* v283: 前の入力欄からすぐ開いた時(空白を入れた後)は、いったんキーボードを閉じてから入力欄に入る(閉じないと画面がずれずキーボードに隠れる) */
-  if(late){try{document.activeElement&&document.activeElement.blur()}catch(_){}setTimeout(()=>ta.focus(),550)}else setTimeout(()=>ta.focus(),50)})}
+  if(late){try{document.activeElement&&document.activeElement.blur()}catch(_){}setTimeout(()=>ta.focus({preventScroll:true}),550)}else setTimeout(()=>ta.focus({preventScroll:true}),50)})}
 /* v235: 1文字ずつの大きさ・角度・フォント。下の文字ボタンをタップ=選ぶ(色が変わる)。選んだ文字に、再生ウインドウ内で
    2本指=大きさ、左右になぞる=角度、タップ=フォント切替。確定で保存、キャンセルで元に戻す */
 let CE=null;
