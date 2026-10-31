@@ -4338,7 +4338,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v492';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v493';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5918,15 +5918,15 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
      const rs=document.createElement('button');rs.className='no';rs.textContent='最初の設定に戻す';rs.onclick=()=>{sk('enSt','');const n=window.enBox();w.replaceWith(n);window.enRedraw&&enRedraw()};w.appendChild(rs);
      const nt=document.createElement('small');nt.style.color='var(--muted)';nt.textContent='変えるとすぐ保存されます。字幕ページのプレビューと書き出しに使われます';w.appendChild(nt);return w};
    /* 字幕の行(日本語)を、行の数を変えずに英語にする */
-   window.claudeTr=async(lines,prev)=>{const key=gk('apiKey');if(!key)throw new Error('APIキーがありません');
-     const sys='You translate Japanese YouTube video subtitles into English subtitles. The video is a casual spoken talk (travel, motorcycles, DIY, etc.). Subtitle lines are often fragments of one spoken sentence, so read the lines in order and translate with the whole flow in mind, but keep each English line matched to the content of its own Japanese line. Write natural, concise spoken English that is easy to read as a subtitle. Keep proper nouns as they are in romaji (e.g. 太平洋フェリー -> Taiheiyo Ferry). Return only a JSON array of strings with exactly the same number of items as the input, in the same order. No other text.';
-     const body={model:mdl()[0],max_tokens:16000,output_config:{effort:'low'},system:sys,messages:[{role:'user',content:(prev&&prev.length?'Previous lines for context only (do not translate):\n'+JSON.stringify(prev)+'\n\n':'')+'Translate these '+lines.length+' lines:\n'+JSON.stringify(lines)}]};
+   window.claudeTr=async(lines,prev,sourceEnglish)=>{const key=gk('apiKey');if(!key)throw new Error('APIキーがありません');
+     const sys='You translate Japanese YouTube video subtitles into English subtitles. The video is a casual spoken talk (travel, motorcycles, DIY, etc.). Subtitle lines are often fragments of one spoken sentence, so read the lines in order and translate with the whole flow in mind, but keep each English line matched to the content of its own Japanese line. Write natural, concise spoken English that is easy to read as a subtitle. Never repeat the complete sentence on each fragment. Translate only the meaning carried by each individual Japanese line, even when it is a short phrase such as from Kansai or to Hokkaido. Adjacent English fragments should read naturally in sequence without duplicating or adding information. Keep proper nouns as they are in romaji (e.g. 太平洋フェリー -> Taiheiyo Ferry). Return only a JSON array of strings with exactly the same number of items as the input, in the same order. No other text.';
+     const body={model:mdl()[0],max_tokens:16000,output_config:{effort:'low'},system:sys,messages:[{role:'user',content:(prev&&prev.length?'Previous lines for context only (do not translate):\n'+JSON.stringify(prev)+'\n\n':'')+(sourceEnglish?'Original English before splitting, for context only (redistribute its meaning across the new lines):\n'+sourceEnglish+'\n\n':'')+'Translate these '+lines.length+' lines:\n'+JSON.stringify(lines)}]};
      const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2026-10-21','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
      const j=await res.json().catch(()=>null);
      if(!res.ok){const m=j&&j.error&&j.error.message||('HTTP '+res.status);throw new Error(res.status===401?'APIキーが違います':res.status===429?'混んでいます。少し待ってもう一度':/credit|balance/i.test(m)?'残高が足りません(チャージしてください)':m)}
      if(j.stop_reason==='refusal')throw new Error('この内容は翻訳できませんでした');
      const tx=(j.content||[]).filter(c=>c.type==='text').map(c=>c.text).join(''),a=tx.indexOf('['),b=tx.lastIndexOf(']');let arr=null;try{arr=JSON.parse(tx.slice(a,b+1))}catch(e){}
-     if(!Array.isArray(arr))throw new Error('翻訳の結果を読めませんでした');if(arr.length!==lines.length)console.warn('claudeTr: 行の数が違う',arr.length,lines.length);return arr}}
+     if(!Array.isArray(arr))throw new Error('翻訳の結果を読めませんでした');if(arr.length!==lines.length||arr.some(x=>typeof x!=='string'))throw new Error('翻訳の行数または形式が一致しません。もう一度お試しください');return arr}}
   /* v294: ⚙設定(カットの「新規」の横)。テンプレート編集・SEの登録・音声認識の準備・文字起こし/Claude学習をまとめる */
   {const sc=document.createElement('div');sc.id='setSc';sc.hidden=true;
    sc.style.cssText='position:fixed;inset:0;z-index:55;background:var(--bg);color:var(--fg);flex-direction:column;display:none';
@@ -6189,7 +6189,7 @@ $('enB').onclick=()=>{if(working||!cur)return;const L=cur.list.filter(x=>!x.gap&
   const has=L.some(x=>x.en);ask((has?'英語字幕を作り直します。\n':'')+L.length+'行の字幕を英語にします。\n(Claude '+(window.apiModelName?apiModelName():'')+'・少し料金がかかります)','英語字幕',async()=>{
     working=true;$('enB').disabled=true;$('regen').disabled=true;const r=cur.r,m=view.m;
     try{const N=120;for(let i=0;i<L.length;i+=N){st('英語に翻訳中… '+i+' / '+L.length);const part=L.slice(i,i+N),ctx=L.slice(Math.max(0,i-8),i).map(x=>x.t);
-        const out=await window.claudeTr(part.map(x=>x.t),ctx);part.forEach((x,k)=>{const v=String(out[k]||'').trim();if(v)x.en=v})}
+        const out=await window.claudeTr(part.map(x=>x.t),ctx);assignEnglish(part,out)}
       await saveR(m,r);st('英語字幕を入れました ✓ '+L.length+'行');drawResults();showOv()}
     catch(e){st('英語字幕を作れませんでした: '+(e&&e.message||e))}
     working=false;drawResults()})};
@@ -6460,9 +6460,9 @@ function showOv(t){showOv0(t);const o=$('ov');o.style.filter=o._g&&o._g.inv?INVF
   {const W=sc.clientWidth,H=sc.clientHeight,dp=devicePixelRatio||1;if(enc.width!==Math.round(W*dp)||enc.height!==Math.round(H*dp)){enc.width=Math.round(W*dp);enc.height=Math.round(H*dp)}enc.getContext('2d').clearRect(0,0,enc.width,enc.height);enc.style.filter='';enc.style.transformOrigin='';enc.style.rotate=''}
   const ge=enRow(t),g=o._g,big=o.classList.contains('big')&&!!o.textContent;
   /* 太: 日本語の箱の下に描く。回転・反転も同じに */
-  if(ge&&big){try{const W=sc.clientWidth,H=sc.clientHeight,dp=devicePixelRatio||1,x=enc.getContext('2d'),pr=sc.getBoundingClientRect(),rm=/rotate\(([-\d.]+)deg\)/.exec(o.style.transform||''),rot=rm?+rm[1]:0;
+  if(big&&(ge||g&&g.grp&&grpOf(cur.list,g).some(q=>q.en&&q.a<=(t==null?sel.a:t)))){try{const W=sc.clientWidth,H=sc.clientHeight,dp=devicePixelRatio||1,x=enc.getContext('2d'),pr=sc.getBoundingClientRect(),rm=/rotate\(([-\d.]+)deg\)/.exec(o.style.transform||''),rot=rm?+rm[1]:0;
       const tf=o.style.transform;if(rot)o.style.transform=tf.replace(/rotate\([^)]*\)/,'');const r=o.getBoundingClientRect();if(rot)o.style.transform=tf;
-      let ocx=r.left-pr.left+r.width/2,ocy=r.top-pr.top+r.height/2;x.setTransform(dp,0,0,dp,0,0);const L=enLay(x,W,H,ge.en,{cx:ocx,yb:r.bottom-pr.top,xb:r.right-pr.left,cy:ocy,vertical:o.classList.contains('v'),g:ge});
+      let ocx=r.left-pr.left+r.width/2,ocy=r.top-pr.top+r.height/2;x.setTransform(dp,0,0,dp,0,0);const L=enGroupPlans(x,W,H,o,cur.list,t==null?sel.a+.001:t,pr)||enLay(x,W,H,ge.en,{cx:ocx,yb:r.bottom-pr.top,xb:r.right-pr.left,cy:ocy,vertical:o.classList.contains('v'),g:ge});
       /* v486: 下に入らない時は日本語(太)を上げる */if(L.shift){o.style.top=((parseFloat(o.style.top)||0)-L.shift).toFixed(1)+'px';ocy-=L.shift}if(L.shiftX){o.style.left=((parseFloat(o.style.left)||0)-L.shiftX).toFixed(1)+'px';ocx-=L.shiftX}enPaint(x,L);x.setTransform(1,0,0,1,0,0);
       enc.style.transformOrigin=ocx.toFixed(1)+'px '+ocy.toFixed(1)+'px';if(rot)enc.style.rotate=rot+'deg';enc.style.filter=o.style.filter;enc._r=r;enc._pr=pr}catch(e){}}
   /* v263: 字幕ページでも出る動きを見せる(再生中・動かしている時) */
@@ -6496,7 +6496,7 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
   o._g=null;if(!g){o.textContent='';return}const k=SPK(g);o.textContent=txt!=null?txt:brT(g);
   if(k==='b'){const b=BIG[g.bs]||BIG.setsumei_yoko,H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
     /* v196: 行間=2行は広め、3行、4行と狭く。文字が少ないと大きく、はみ出しそうなら小さく。上の左右(固定テロップ)には入らない */
-    {const W=X?X.W:$('pl').clientWidth||H*16/9,lines=all||String(txt!=null?txt:brT(g)).split('\n'),n=lines.length,lh=n<=1?1.15:n===2?1.6:n===3?1.35:1.18;
+    {const W=X?X.W:$('pl').clientWidth||H*16/9,lines=all||String(txt!=null?txt:brT(g)).split('\n'),n=lines.length,lh=allR&&allR.some(q=>q.en)?1.9:n<=1?1.15:n===2?1.6:n===3?1.35:1.18;/* v493: 行ごとの英語を置く余白 */
      const cw=s=>[...s].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0),L=Math.max(1,...lines.map(cw)),pnl=b.mode==='panel',ph=pnl?1.2:.3,pv=pnl?.7:.2,base=b.fs/1080*H;
      const aW=W*.9,aH=H*.74,fs=Math.max(8,b.v?Math.min(base*1.6,aH/(L+ph),aW/(n*lh+pv)):Math.min(base*1.6,aW/(L+ph),aH/(n*lh+pv)));
      const bw=b.v?fs*(n*lh+pv):fs*(L+ph),bh=b.v?fs*(L+ph):fs*(n*lh+pv),cl=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.max(lo,Math.min(hi,v));
@@ -6933,7 +6933,7 @@ function mergeDrag(d,g,r,list){let tgt=null,rng=null;
       if(SPK(g)==='b'){const R2=rng||[g,tgt],id=g.grp||tgt.grp||('g'+Date.now().toString(36)),old=R2.map(x=>x.grp).filter(x=>x&&x!==id),oh=grpOf(list,{grp:id})[0]||null;
         list.forEach(x=>{if(old.includes(x.grp))x.grp=id});R2.forEach(x=>x.grp=id);const gm=grpOf(list,g);/* v229: 先頭が変わったら、前の先頭の枠・見出しなどを新しい先頭へ移す */if(oh&&gm[0]!==oh&&gm.includes(oh)){GHK.forEach(k=>{if(oh[k]!==undefined){gm[0][k]=oh[k];delete oh[k]}})}gm.forEach(x=>{x.sp='b';x.bs=gm[0].bs});
         sel=g;tgt=null;save();drawResults();return}
-      const A=g.a<tgt.a?g:tgt,B=A===g?tgt:g;A.a=Math.min(A.a,B.a);A.b=Math.max(A.b,B.b);A.t=A.t+B.t;
+      const A=g.a<tgt.a?g:tgt,B=A===g?tgt:g;A.a=Math.min(A.a,B.a);A.b=Math.max(A.b,B.b);A.t=A.t+B.t;if(A.en||B.en)A.en=[A.en,B.en].filter(Boolean).join(' ');
       if(B.o)A.o=(A.o||'')+(A.o?' ':'')+B.o;if(B.chk)A.chk=(A.chk?A.chk+' / ':'')+B.chk;
       list.splice(list.indexOf(B),1);sel=A;tgt=null;save();drawResults()}}}
 /* ===== 操作(タップ/ダブル/長タップ) ===== */
@@ -6978,7 +6978,7 @@ function editRow(r,list,g,late){sheet((b,close)=>{$('sheet').classList.add('sub-
         if(v===g.t&&JSON.stringify(br)===JSON.stringify(g.br||[]))return;if(lc.checked&&v!==g.t)learn(g.t,v);if([...v].length!==[...g.t].length)delete g.cs;g.t=v;if(br.length)g.br=br;else delete g.br;saveR(view.m,r);drawResults();return}}
     const v=ta.value.trim();close();if(!v){grpPass(list,g);list.splice(list.indexOf(g),1);sel={a:g.a,b:g.b,gap:true};saveR(view.m,r);drawResults();return}if(v===g.t)return;if(lc.checked)learn(g.t,v);if([...v].length!==[...g.t].length){delete g.cs;delete g.br}g.t=v;
     /* v163: 18文字を超えたら自動で次の行に分ける(時間は文字数で割り振り)。v186: 改行した所でも分ける */
-    if([...v].length>MAXC||/\n/.test(v)){if(!audio){try{await getAudio()}catch(_){}}const one=[g];fix18(one);one.forEach(x=>{delete x.cs;delete x.br});list.splice(list.indexOf(g),1,...one);sel=one[0]}
+    if([...v].length>MAXC||/\n/.test(v)){if(!audio){try{await getAudio()}catch(_){}}const source=g.en,one=[g];fix18(one);await refineEnglish(one,source);one.forEach(x=>{delete x.cs;delete x.br});list.splice(list.indexOf(g),1,...one);sel=one[0]}
     saveR(view.m,r);drawResults()};
   const ck=document.createElement('div');ck.style.cssText='display:flex;gap:2px';ck.append(lk,bk2);
   w.append(vh,ck,y);b.append(ta);
@@ -7085,6 +7085,19 @@ function openLearn(){sheet((b,close)=>{b.style.maxHeight='80vh';b.style.overflow
 
 /* ===== Claudeで仕上げ ===== */
 let MAXC=18;
+/* v493: 英文は単語・句読点・句の切れ目で配分。短い日本語にも全文を複製しない */
+function splitEnglish(text,parts){const words=String(text||'').trim().split(/\s+/).filter(Boolean),N=parts.length,out=[];if(!N)return out;
+  const weights=parts.map(t=>Math.max(1,[...String(t)].length)),total=weights.reduce((a,b)=>a+b,0);let at=0,used=0;
+  for(let k=0;k<N-1;k++){used+=weights[k];const remain=N-k-1,lo=at+(words.length-at>remain?1:0),hi=Math.max(lo,words.length-Math.min(remain,words.length-at)),goal=words.length*used/total;let cut=lo,best=Infinity;
+    for(let j=lo;j<=hi;j++){const prev=words[j-1]||'',next=words[j]||'';let score=Math.abs(j-goal);if(/[.!?;:]$/.test(prev))score-=2;else if(/,$/.test(prev))score-=1.2;if(/^(and|but|or|because|while|from|to|for|with|in|on|at)$/i.test(next))score-=.6;if(/^(a|an|the|my|your|our|their|to|from|of|with|in|on|at|and|or)$/i.test(prev))score+=2;if(j===at&&words.length-at>remain)score+=10;if(score<best){best=score;cut=j}}
+    out.push(words.slice(at,cut).join(' '));at=cut}out.push(words.slice(at).join(' '));return out}
+function assignEnglish(rows,texts){const values=rows.map((g,i)=>String(texts[i]||'').trim());for(let i=0;i<rows.length;){let j=i+1;while(j<rows.length&&values[j]===values[i])j++;
+    if(j-i>1&&values[i].split(/\s+/).length>=5&&new Set(rows.slice(i,j).map(g=>g.t)).size>1){const parts=splitEnglish(values[i],rows.slice(i,j).map(g=>g.t));parts.forEach((t,k)=>values[i+k]=t)}i=j}
+  rows.forEach((g,i)=>{if(values[i])g.en=values[i];else delete g.en})}
+/* 分割保存時はAPI設定があれば前後を踏まえて訳し直す。通信不可でも単語を壊さず保存できる */
+async function refineEnglish(rows,source){if(!source||rows.length<2||!window.claudeTr||!window.apiKey||!window.apiKey())return;
+  try{st('英語字幕の分割を調整中…');const result=await window.claudeTr(rows.map(g=>g.t),[],source);if(!Array.isArray(result)||result.length!==rows.length||result.some(t=>typeof t!=='string'))throw new Error('翻訳の形式');assignEnglish(rows,result);st('英語字幕も分割しました')}
+  catch(e){st('英語は単語の切れ目で分割しました（翻訳の調整はできませんでした）')}}
 function split18(t){const c=[...t];if(c.length<=MAXC)return [t];
   const mid=c.length/2;let best=-1,bs=1e9;
   for(let i=1;i<c.length;i++){const L=i,R2=c.length-i;if(L>MAXC||R2>MAXC)continue;const pre=c.slice(0,i).join(''),nx=c[i];
@@ -7119,10 +7132,10 @@ function splitAt(A,B,frac,lo,hi){const t0=Math.max(lo,Math.min(hi,voicedAt(A,B,f
   const c=pausesIn(A,B).filter(t=>t>=lo&&t<=hi&&Math.abs(t-t0)<=0.8).sort((x,y)=>Math.abs(x-t0)-Math.abs(y-t0));return c.length?c[0]:snapQ(t0,lo,hi)}
 function fix18(list){const out=[];list.forEach(g=>{const ps=String(g.t).split(/\n+/).map(s=>s.trim()).filter(Boolean).flatMap(split18);if(ps.length<2){if(ps[0])g.t=ps[0];out.push(g);return}
   /* v186: 言葉の時間があればその切れ目で分ける */
-  const ws=g.w&&g.w.length?g.w:null,oc=ws?ws.reduce((n,w)=>n+w.n,0):0;
+  const ens=g.en?splitEnglish(g.en,ps):null,ws=g.w&&g.w.length?g.w:null,oc=ws?ws.reduce((n,w)=>n+w.n,0):0;
   const cut=(fr,lo,hi)=>{if(!ws||!oc)return null;let c=0;const cs=[];ws.forEach((w,j)=>{if(j&&w.a>=lo&&w.a<=hi)cs.push({c,a:w.a});c+=w.n});if(!cs.length)return null;const goal=fr*oc;return cs.sort((x,y)=>Math.abs(x.c-goal)-Math.abs(y.c-goal))[0].a};
   /* v490: 短い認識区間でも残りの字幕の時間を確保し、境目の逆転を防ぐ */
-  const tot=ps.reduce((n,x)=>n+[...x].length,0),step=Math.min(0.15,(g.b-g.a)/ps.length);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=[...x].length;const lo=p+step,hi=g.b-step*(ps.length-k-1),q=k===ps.length-1?g.b:Math.max(lo,Math.min(hi,cut(cc/tot,lo,hi)??splitAt(g.a,g.b,cc/tot,lo,hi)));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
+  const tot=ps.reduce((n,x)=>n+[...x].length,0),step=Math.min(0.15,(g.b-g.a)/ps.length);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=[...x].length;const lo=p+step,hi=g.b-step*(ps.length-k-1),q=k===ps.length-1?g.b:Math.max(lo,Math.min(hi,cut(cc/tot,lo,hi)??splitAt(g.a,g.b,cc/tot,lo,hi)));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(ens){if(ens[k])pc.en=ens[k];else delete pc.en}if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
   list.splice(0,list.length,...out)}
 /* v273: 自動修正はしばらくの間「、」を消して、その区切りにスペースを入れるだけ(Claudeには送らない)。SIMPLEFIX=falseで元に戻る */
 const SIMPLEFIX=true;
@@ -7263,12 +7276,22 @@ function enLay(x,W,H,txt,o){o=o||{};const S=window.enSt(),g=o.g||{};let fs=Math.
   const ws=String(txt).split(/\s+/),ls=[];let l='';ws.forEach(w=>{const n=l?l+' '+w:w;if(l&&x.measureText(n).width>mw){ls.push(l);l=w}else l=n});if(l)ls.push(l);const tw=Math.max(...ls.map(s=>x.measureText(s).width));x.restore();
   /* v492: 縦書き日本語の右側へ、英文全体を時計回り90度。長い単語も画面内に収める */
   if(o.vertical&&o.xb!=null&&o.cy!=null){const scale=Math.min(1,H*.92/Math.max(1,tw),W*.92/Math.max(1,ls.length*fs*1.2));fs*=scale;const lh=fs*1.2,h=ls.length*lh,th=tw*scale,dy=(S.dy+(g.edy||0))/100*H;let X=o.xb+fs*.15+h/2,y=Math.max(th/2+H*.02,Math.min(H*.98-th/2,o.cy+dy));const shiftX=Math.max(0,X+h/2-W*.98);X-=shiftX;return {fs,ls,lh,h,X,y,vertical:true,shift:0,shiftX,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
-  const lh=fs*1.2,h=ls.length*lh,dy=(S.dy+(g.edy||0))/100*H,sub=S.pos==='sub'&&o.yb!=null;let y=S.pos==='top'?H*.05+dy:!sub?H*.93-h+dy:o.yb+fs*.15+dy,shift=0;
+  const lh=fs*1.2,h=ls.length*lh,dy=(S.dy+(g.edy||0))/100*H,sub=(S.pos==='sub'||o.line)&&o.yb!=null;let y=!o.line&&S.pos==='top'?H*.05+dy:!sub?H*.93-h+dy:o.yb+fs*.15+dy,shift=0;
   if(sub&&y+h>H*.97){shift=y+h-H*.97;y-=shift}y=Math.max(H*.02,Math.min(y,H*.98-h));
   const X=Math.max(tw/2+W*.01,Math.min(W-tw/2-W*.01,sub&&o.cx!=null?o.cx:W/2));return {fs,ls,lh,X,y,shift,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
-function enPaint(x,L){x.save();x.font=window.enFont(L.fs);x.textAlign='center';x.textBaseline='top';x.lineJoin='round';x.lineWidth=L.fs*L.ol;x.strokeStyle='rgba(0,0,0,.9)';x.fillStyle=L.col;
+function enPaint(x,L){if(L.plans){L.plans.forEach(p=>enPaint(x,p));return}x.save();x.font=window.enFont(L.fs);x.textAlign='center';x.textBaseline='top';x.lineJoin='round';x.lineWidth=L.fs*L.ol;x.strokeStyle='rgba(0,0,0,.9)';x.fillStyle=L.col;
   if(L.vertical){x.translate(L.X,L.y);x.rotate(Math.PI/2);x.translate(0,-L.h/2)}
   L.ls.forEach((s,i)=>{const X=L.vertical?0:L.X,Y=(L.vertical?0:L.y)+i*L.lh;if(L.ol>0)x.strokeText(s,X,Y);x.fillText(s,X,Y)});x.restore()}
+/* v493: 太字グループはDOMの各行の実寸から対応する英語を配置。将来の行は表示しない */
+function enGroupPlans(x,W,H,o,list,t,hr){const head=o._g;if(!head||!head.grp||!o.classList.contains('big'))return null;const members=grpOf(list,head),end=members[members.length-1];if(!end||t<members[0].a||t>=end.b)return null;
+  const tf=o.style.transform;o.style.transform=tf.replace(/rotate\([^)]*\)/,'');let boxes=[];
+  try{const walker=document.createTreeWalker(o,NodeFilter.SHOW_TEXT),nodes=[];let node,n=0;while(node=walker.nextNode()){nodes.push({node,a:n,b:n+node.length});n+=node.length}const text=o.textContent;let from=0;
+    members.forEach(g=>{const start=text.indexOf(g.t,from);if(start<0){boxes.push(null);return}const end=start+g.t.length,A=nodes.find(v=>v.b>start),B=nodes.find(v=>v.b>=end&&v.a<end);from=end;if(!A||!B){boxes.push(null);return}const r=document.createRange();r.setStart(A.node,start-A.a);r.setEnd(B.node,end-B.a);const b=r.getBoundingClientRect();boxes.push({x:b.left-hr.left,y:b.top-hr.top,w:b.width,h:b.height});r.detach()})
+  }finally{o.style.transform=tf}
+  const rows=members.map(g=>({...g}));assignEnglish(rows,members.map(g=>g.en||''));const vertical=o.classList.contains('v'),plans=[];
+  rows.forEach((g,i)=>{const b=boxes[i];if(!b||!g.en||g.a>t)return;const gap=H*.012,neighbors=boxes.filter(q=>q&&q!==b),next=vertical?neighbors.filter(q=>q.x>=b.x+b.w-1).sort((a,z)=>a.x-z.x)[0]:neighbors.filter(q=>q.y>=b.y+b.h-1).sort((a,z)=>a.y-z.y)[0],band=next?Math.max(4,(vertical?next.x-b.x-b.w:next.y-b.y-b.h)-gap):null;
+    const O={g,cx:b.x+b.w/2,yb:b.y+b.h,xb:b.x+b.w,cy:b.y+b.h/2,vertical,line:true};let L=enLay(x,W,H,g.en,O);if(band){const size=L.ls.length*L.lh;if(size>band)L=enLay(x,W,H,g.en,{...O,g:{...g,ens:(g.ens||1)*band/size}})}plans.push(L)});
+  if(!plans.length)return null;const shift=Math.max(0,...plans.map(p=>p.shift||0)),shiftX=Math.max(0,...plans.map(p=>p.shiftX||0));plans.forEach(p=>{if(p.vertical)p.X-=shiftX-(p.shiftX||0);else p.y-=shift-(p.shift||0)});return {plans,shift,shiftX}}
 function enDraw(x,W,H,txt,o){const L=enLay(x,W,H,txt,o);enPaint(x,L);return L}
 /* キャンバスの中身を上へずらす(英語が下に入らない時に日本語を上げる)。sh はキャンバスの画素 */
 function cvUp(cv,sh,sx=0){if(!(sh>0.5||sx>0.5))return;let t=cvUp._c;if(!t)t=cvUp._c=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);const x=cv.getContext('2d');x.save();x.setTransform(1,0,0,1,0,0);x.filter='none';x.clearRect(0,0,cv.width,cv.height);x.drawImage(t,-sx,-sh);x.restore()}
@@ -7288,9 +7311,9 @@ function tlRender(W,H,t){const h=tlHost(W,H),o=h.firstChild;o.removeAttribute('s
     e.op=+getComputedStyle(o).opacity;e.inv=!!o._g.inv;
     const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);tlPaint(x,o,hr)}
   /* v485: 英語字幕は日本語と同じキャンバスに描く(移動・回転・反転・動きが一緒になる) */
-  {const ge=TL.list.find(x=>x.en&&t>=x.a&&t<x.b);if(ge){const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);let O;/* v486 */
+  {const ge=TL.list.find(x=>x.en&&t>=x.a&&t<x.b)||(o._g&&o._g.grp&&grpOf(TL.list,o._g).find(x=>x.en&&x.a<=t));if(ge){const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);let O;/* v486 */
     const bg=o._g&&o.classList.contains('big')&&o.textContent;if(bg){const hr=h.getBoundingClientRect(),r=o.getBoundingClientRect();O={cx:r.left-hr.left+r.width/2,yb:r.bottom-hr.top,xb:r.right-hr.left,cy:r.top-hr.top+r.height/2,vertical:o.classList.contains('v'),g:ge}}else O=enFromBB(tlBB(cv),ge,TL.list);
-    const L=enLay(x,W,H,ge.en,O);if(L.shift||L.shiftX){cvUp(cv,L.shift||0,L.shiftX||0);if(bg){e.cy-=L.shift||0;e.cx-=L.shiftX||0}}if(!bg&&(o._g||ge).inv)x.filter=INVF;enPaint(x,L);x.filter='none'}}
+    const L=(bg&&enGroupPlans(x,W,H,o,TL.list,t,h.getBoundingClientRect()))||enLay(x,W,H,ge.en,O);if(L.shift||L.shiftX){cvUp(cv,L.shift||0,L.shiftX||0);if(bg){e.cy-=L.shift||0;e.cx-=L.shiftX||0}}if(!bg&&(o._g||ge).inv)x.filter=INVF;enPaint(x,L);x.filter='none'}}
   if(!window._tlKeep)o.textContent='';return e}
 function tlDrawE(g,e,cl){g.save();if(e.rot){g.translate(e.cx,e.cy);g.rotate(e.rot*Math.PI/180);g.translate(-e.cx,-e.cy)}
   if(cl){g.beginPath();g.rect(cl[0],cl[1],cl[2],cl[3]);g.clip()}
