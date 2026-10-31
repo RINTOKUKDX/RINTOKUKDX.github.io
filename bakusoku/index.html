@@ -4367,7 +4367,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v501';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v502';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -9730,4 +9730,35 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     b.onclick=function(){b.textContent='更新しています…';location.reload()};document.body.appendChild(b)}).catch(function(){})}
   setTimeout(chk,3000);setInterval(chk,5*60*1000);document.addEventListener('visibilitychange',function(){if(!document.hidden)chk()})})();
 </script>
+<style>
+/* v502: カットページを基準に他ページの色・枠・ボタンを統一。再生領域のサイズと配置は変更しない */
+#s2>section,#s3 #ecCtl,#s4 .links a,#setSc section{
+  background:var(--panel);border-color:var(--line);border-radius:10px;
+}
+#s2>section{box-shadow:0 1px 0 rgba(255,255,255,.025)}
+#s2>section>h2,#s2 .tlhead h2,#s3 h2,#s4 .tsec>h2,#setSc h2{
+  color:var(--muted);letter-spacing:.08em;font-weight:600;
+}
+#s2 button:not(.primary):not([aria-pressed=true]):not([aria-current=page]),
+#s3 button:not(.primary):not([aria-pressed=true]):not([aria-current=page]),
+#s4 button:not(.primary):not([aria-pressed=true]):not([aria-current=page]),
+#setSc button:not(.primary):not([aria-pressed=true]){
+  border-color:var(--btnl);color:var(--fg);
+}
+#s2 button[aria-pressed=true],#s3 button[aria-pressed=true],
+#s4 button[aria-pressed=true],#s2 .pgnav button[aria-current=page],
+#s3 .pgnav button[aria-current=page],#s4 .pgnav button[aria-current=page]{
+  border-color:var(--accent);
+}
+#s3 #ecCtl{border:1px solid var(--line);padding:10px}
+#s4 .links a{background:var(--panel)}
+#s4 .seg button:not([aria-pressed=true]){background:var(--btn);border-color:var(--btnl);border-radius:8px}
+#s4 .row:not(.sel):not(.kuh):not(.grp){background:var(--panel)}
+#s4 .row{border-bottom-color:var(--line)}
+#s4 .tbig,#s4 .pick span{border-radius:8px}
+#setSc input:not([type=checkbox]):not([type=radio]),#setSc select,
+#s3 input:not([type=checkbox]):not([type=radio]),#s3 select{
+  border-color:var(--line);color:var(--fg);
+}
+</style>
 </body></html>
