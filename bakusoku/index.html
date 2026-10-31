@@ -4338,7 +4338,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v493';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v494';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7274,8 +7274,8 @@ function tlImg(u){let m=TL.imgs[u];if(!m){m=TL.imgs[u]=new Image();m.src=u}retur
    下に入りきらない時は shift(日本語を上げる量)を返す。enLay で位置を決めて enPaint で描く */
 function enLay(x,W,H,txt,o){o=o||{};const S=window.enSt(),g=o.g||{};let fs=Math.max(8,H*S.sz/100*(g.ens||1));const mw=(o.vertical?H:W)*.92;x.save();x.font=window.enFont(fs);
   const ws=String(txt).split(/\s+/),ls=[];let l='';ws.forEach(w=>{const n=l?l+' '+w:w;if(l&&x.measureText(n).width>mw){ls.push(l);l=w}else l=n});if(l)ls.push(l);const tw=Math.max(...ls.map(s=>x.measureText(s).width));x.restore();
-  /* v492: 縦書き日本語の右側へ、英文全体を時計回り90度。長い単語も画面内に収める */
-  if(o.vertical&&o.xb!=null&&o.cy!=null){const scale=Math.min(1,H*.92/Math.max(1,tw),W*.92/Math.max(1,ls.length*fs*1.2));fs*=scale;const lh=fs*1.2,h=ls.length*lh,th=tw*scale,dy=(S.dy+(g.edy||0))/100*H;let X=o.xb+fs*.15+h/2,y=Math.max(th/2+H*.02,Math.min(H*.98-th/2,o.cy+dy));const shiftX=Math.max(0,X+h/2-W*.98);X-=shiftX;return {fs,ls,lh,h,X,y,vertical:true,shift:0,shiftX,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
+  /* v492: 縦書き日本語の右側へ、英文全体を時計回り90度。大きさは設定値を維持 */
+  if(o.vertical&&o.xb!=null&&o.cy!=null){/* v494: 自動縮小しない。設定サイズと手動倍率だけを使用 */const lh=fs*1.2,h=ls.length*lh,th=tw,dy=(S.dy+(g.edy||0))/100*H;let X=o.xb+fs*.15+h/2,y=th>H*.96?o.cy+dy:Math.max(th/2+H*.02,Math.min(H*.98-th/2,o.cy+dy));const shiftX=Math.max(0,X+h/2-W*.98);X-=shiftX;return {fs,ls,lh,h,X,y,vertical:true,shift:0,shiftX,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
   const lh=fs*1.2,h=ls.length*lh,dy=(S.dy+(g.edy||0))/100*H,sub=(S.pos==='sub'||o.line)&&o.yb!=null;let y=!o.line&&S.pos==='top'?H*.05+dy:!sub?H*.93-h+dy:o.yb+fs*.15+dy,shift=0;
   if(sub&&y+h>H*.97){shift=y+h-H*.97;y-=shift}y=Math.max(H*.02,Math.min(y,H*.98-h));
   const X=Math.max(tw/2+W*.01,Math.min(W-tw/2-W*.01,sub&&o.cx!=null?o.cx:W/2));return {fs,ls,lh,X,y,shift,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
@@ -7289,8 +7289,8 @@ function enGroupPlans(x,W,H,o,list,t,hr){const head=o._g;if(!head||!head.grp||!o
     members.forEach(g=>{const start=text.indexOf(g.t,from);if(start<0){boxes.push(null);return}const end=start+g.t.length,A=nodes.find(v=>v.b>start),B=nodes.find(v=>v.b>=end&&v.a<end);from=end;if(!A||!B){boxes.push(null);return}const r=document.createRange();r.setStart(A.node,start-A.a);r.setEnd(B.node,end-B.a);const b=r.getBoundingClientRect();boxes.push({x:b.left-hr.left,y:b.top-hr.top,w:b.width,h:b.height});r.detach()})
   }finally{o.style.transform=tf}
   const rows=members.map(g=>({...g}));assignEnglish(rows,members.map(g=>g.en||''));const vertical=o.classList.contains('v'),plans=[];
-  rows.forEach((g,i)=>{const b=boxes[i];if(!b||!g.en||g.a>t)return;const gap=H*.012,neighbors=boxes.filter(q=>q&&q!==b),next=vertical?neighbors.filter(q=>q.x>=b.x+b.w-1).sort((a,z)=>a.x-z.x)[0]:neighbors.filter(q=>q.y>=b.y+b.h-1).sort((a,z)=>a.y-z.y)[0],band=next?Math.max(4,(vertical?next.x-b.x-b.w:next.y-b.y-b.h)-gap):null;
-    const O={g,cx:b.x+b.w/2,yb:b.y+b.h,xb:b.x+b.w,cy:b.y+b.h/2,vertical,line:true};let L=enLay(x,W,H,g.en,O);if(band){const size=L.ls.length*L.lh;if(size>band)L=enLay(x,W,H,g.en,{...O,g:{...g,ens:(g.ens||1)*band/size}})}plans.push(L)});
+  rows.forEach((g,i)=>{const b=boxes[i];if(!b||!g.en||g.a>t)return;/* v494: 行間が狭くても英語のサイズは変えない */
+    const O={g,cx:b.x+b.w/2,yb:b.y+b.h,xb:b.x+b.w,cy:b.y+b.h/2,vertical,line:true};plans.push(enLay(x,W,H,g.en,O))});
   if(!plans.length)return null;const shift=Math.max(0,...plans.map(p=>p.shift||0)),shiftX=Math.max(0,...plans.map(p=>p.shiftX||0));plans.forEach(p=>{if(p.vertical)p.X-=shiftX-(p.shiftX||0);else p.y-=shift-(p.shift||0)});return {plans,shift,shiftX}}
 function enDraw(x,W,H,txt,o){const L=enLay(x,W,H,txt,o);enPaint(x,L);return L}
 /* キャンバスの中身を上へずらす(英語が下に入らない時に日本語を上げる)。sh はキャンバスの画素 */
