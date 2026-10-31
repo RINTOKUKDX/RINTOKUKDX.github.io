@@ -478,7 +478,17 @@ body.editing .pgnav{display:none!important}
 #cv .blk.wvb{border-color:rgba(255,255,255,.12)}
 #cv .blk.l9{background:color-mix(in srgb,#9a6cf0 30%,var(--bg));border-color:#9a6cf0;color:var(--fg)}#cv .blk.sbx{opacity:.9;font-weight:700;z-index:0}
 #cv .blk.thin{border-width:0;padding:0}#cv .blk.thin::before{display:none}
-#cutH{cursor:pointer;user-select:none}#cutH::before{content:'▼ ';font-size:.8em}#s1 section.b.fold #cutH::before{content:'▶ '}#s1 section.b.fold>*:not(#cutH){display:none!important}
+/* v495: 排他的なカット表示。爆速でもプレビュー・波形とその再生は残す */
+#cutModes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+#cutModes button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
+#s1 section.b.fast>*:not(#cutModes):not(.stage):not(#cwf):not(#cctl):not(#cRow1):not(#insRow):not(#cutCn):not(#cutMsg){display:none!important}
+#s1 section.b.fast #cRow1>*:not(#delCur),#s1 section.b.fast #insRow>*:not(#nxt),#s1 section.b.fast #cctl>*:not(#cbP):not(#cbA){display:none!important}
+#s1 section.b.fast #cRow1,#s1 section.b.fast #insRow{grid-template-columns:1fr}
+#s1 section.b.fast #cctl{grid-template-columns:1fr 1fr}
+#segs .sourceSeg{grid-template-columns:1fr auto auto auto}
+#segs .sourceSeg .nm{grid-column:1/-1;font-family:inherit}
+#segs .sourceSeg .nm small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#restoreClip{width:100%;margin-top:8px}
 </style>
 <main id="s1">
   <div class="topbar2"><h1>爆速YouTuber</h1><button id="newp" class="sm">新規</button></div>
@@ -499,7 +509,7 @@ body.editing .pgnav{display:none!important}
   </section>
 
   <section class="b">
-    <h2>カット</h2>
+    <div id="cutModes" role="group" aria-label="カット表示"><button id="cutFast" aria-pressed="true">爆速カット</button><button id="cutDetail" aria-pressed="false">詳細カット</button></div>
     <div class="stage"><video id="pv" playsinline preload="metadata"></video></div>
     <canvas id="cwf" aria-label="音声波形"></canvas>
     <canvas id="cmt" aria-label="残す範囲だけのタイムライン"></canvas>
@@ -538,6 +548,7 @@ body.editing .pgnav{display:none!important}
   <section class="c">
     <details id="segD"><summary><h2 style="display:inline;margin:0">残す範囲</h2><span id="segN" style="font-size:12px;color:var(--muted);margin-left:8px"></span></summary>
     <div id="segs"></div></details>
+    <button id="restoreClip" disabled>元に戻す</button>
     <div class="time"><span>合計</span><span id="tTotal">0:00.0</span></div>
     <button id="toS2" class="primary" disabled hidden style="width:100%;margin-top:8px">タイムライン</button>
   </section>
@@ -1408,17 +1419,27 @@ function clearPlayer(){
 }
 
 /* v348: 動画をカット画面から外す(その動画の残す範囲も消す) */
-/* v461: 動画を消しても「戻す」で戻せるように、消した動画は delStack に取っておく(URL・ファイルはすぐには消さない) */
+/* v495: 削除した元動画だけを保持。他の動画への後続編集を巻き戻さない。再起動で消える(永続保存しない) */
 const delStack=[];
-function dropClips(list){if(reOn&&list.includes(reOn))reOut(reOn);const old=clips.indexOf(cur);
-  delStack.push({clips:clips.slice(),segs:segs.map(q=>({...q,fx:fxC(q.fx)})),draft:list.filter(c=>draft.has(c)).map(c=>[c,draft.get(c)]),cur});if(delStack.length>10)delStack.shift();
-  list.forEach(c=>{clips.splice(clips.indexOf(c),1);draft.delete(c)});
-  segs=segs.filter(q=>!list.includes(q.clip));sortSegs();resetOut();hist=[];
-  if(!clips.length)clearPlayer();
-  else if(!clips.includes(cur))select(clips[Math.min(Math.max(0,old),clips.length-1)]);
+const copyCut=q=>({...q,fx:fxC(q.fx)});
+function dropClips(list){list=list.filter(c=>clips.includes(c));if(!list.length)return;if(reOn)reOut(reOn);const old=clips.indexOf(cur),groups=new Map();
+  list.forEach(c=>{const key=bkey(c.key);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(c)});
+  groups.forEach(cs=>{const entries=cs.map(c=>({c,index:clips.indexOf(c),draft:draft.has(c)?draft.get(c).map(copyCut):null,edit:reEd.has(c)?reEd.get(c).r.map(copyCut):null,
+    segs:segs.map((q,i)=>q.clip===c?{s:copyCut(q),index:i,before:segs.slice(0,i).reverse().find(q=>!list.includes(q.clip)),after:segs.slice(i+1).find(q=>!list.includes(q.clip))}:null).filter(Boolean)}));delStack.push({name:'動画'+num(cs[0])+' '+cs[0].name,entries})});
+  list.forEach(c=>{clips.splice(clips.indexOf(c),1);draft.delete(c);reEd.delete(c)});segs=segs.filter(q=>!list.includes(q.clip));sortSegs();resetOut();hist=[];
+  if(!clips.length)clearPlayer();else if(!clips.includes(cur))select(clips[Math.min(Math.max(0,old),clips.length-1)]);else if(!$('s1').hidden)reIn(cur);
   renderChips();renderSegs()}
-$('delCur').onclick=()=>{if(!cur)return;const c=cur;
-  /* v461: 消す時に確かめる(v394の確認なしはやめた)。消しても端からスワイプで戻せる */cdlg('「'+c.name+'」を削除しますか?\n(端からスワイプで戻せます)',[['削除する',()=>dropClips([c]),'warn'],['やめる']])};
+function restoreDeleted(record){if(!record||!delStack.includes(record))return;const entries=record.entries.filter(e=>!clips.includes(e.c));if(!entries.length){renderSegs();return}if(reOn)reOut(reOn);const same=(a,b)=>a&&b&&(a===b||a.clip===b.clip&&a.start===b.start&&a.end===b.end&&a.bk===b.bk);
+  entries.slice().sort((a,b)=>a.index-b.index).forEach(e=>{const c=e.c;if(clips.includes(c))return;
+    if(clips.some(q=>q.key===c.key)){const base=bkey(c.key);let n=2;while(clips.some(q=>q.key===base+'#'+n))n++;c.key=base+'#'+n}
+    clips.splice(Math.min(e.index,clips.length),0,c);if(e.draft)draft.set(c,e.draft.map(copyCut));
+  });
+  const ranges=entries.flatMap(e=>e.segs).sort((a,b)=>a.index-b.index);ranges.forEach(e=>{const a=segs.findIndex(q=>same(q,e.after)),b=segs.findLastIndex(q=>same(q,e.before));let at=a>=0?a:b>=0?b+1:Math.min(e.index,segs.length);while(at<segs.length&&ranges.some(r=>same(segs[at],r.s)))at++;segs.splice(at,0,copyCut(e.s))});
+  entries.forEach(e=>{if(e.edit)reEd.set(e.c,{r:e.edit.map(copyCut),tgt:null})});delStack.splice(delStack.indexOf(record),1);sortSegs();resetOut();hist=[];
+  select(entries[0].c);renderSegs();renderChips();renderCut();cutMsg('削除した動画とカット情報を戻しました')}
+function restoreClipMenu(){cdlg('元に戻す動画を選んでください（再起動すると復元用の情報は消えます）',delStack.filter(r=>r.entries.some(e=>!clips.includes(e.c))).slice().reverse().map(r=>[r.name,()=>restoreDeleted(r)]).concat([['閉じる']]))}
+$('restoreClip').onclick=restoreClipMenu;
+$('delCur').onclick=()=>{if(!cur)return;const c=cur;cdlg('「'+c.name+'」を削除しますか?\n元に戻すボタンで復元できます（再起動まで）',[['削除する',()=>dropClips([c]),'warn'],['やめる']])};
 $('delCur2').onclick=()=>$('delCur').onclick();
 /* v395: カットの再生画面を2本指でピンチ=ズーム・回転・移動。今の位置の残す範囲だけ(中間点があればその間だけに分ける)。s.fx.v の zm/rt/px/py */
 {const st=pv.parentElement,P=new Map();let G=null;
@@ -1585,7 +1606,7 @@ function addRange(a,b){
 }
 $('undo').onclick=()=>{
   if(inT!=null){inT=null;renderCut();return}
-  if(!hist.length&&delStack.length){const d=delStack.pop();clips.splice(0,clips.length,...d.clips);segs=d.segs;d.draft.forEach(([c,v])=>draft.set(c,v));sortSegs();resetOut();renderSegs();renderChips();select(clips.includes(d.cur)?d.cur:clips[0]);cutMsg('消した動画を戻しました');return}
+  if(!hist.length&&delStack.length){restoreDeleted(delStack[delStack.length-1]);return}
   const h=hist.pop();if(!h)return;
   /* v231: 戻すのはその動画の範囲だけ(タイムラインで入れた空白などは消さない) */
   if(h.clip){const c=h.clip,old=h.segs.filter(q=>q.clip===c).sort((x,y)=>x.start-y.start).map(q=>({...q}));
@@ -1632,9 +1653,9 @@ function silOpen(){if(!cur)return;let P=$('silP');if(P){window.silApStop&&silApS
   {const x=document.createElement('button');x.textContent='閉じる';x.onclick=close;bt.appendChild(x)}
   /* 波形が見えるように、再生バーのすぐ下に出す */$('tlTrack').closest('.tl').after(P);try{P.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}calc();silOpen.calc=calc}
 $('silB').onclick=silOpen;
-/* v465: カット枠はアコーディオン。見出し「カット」をタップで開く/閉じる(覚えておく) */{const sec=document.querySelector('#s1 section.b'),h=sec.querySelector('h2');h.id='cutH';h.setAttribute('role','button');h.tabIndex=0;
-  const set=c=>{sec.classList.toggle('fold',c);h.setAttribute('aria-expanded',String(!c));try{localStorage.setItem('cutFold',c?'1':'')}catch(e){}if(!c)setTimeout(()=>{window.cwfDraw&&cwfDraw()},50)};
-  let c0=false;try{c0=localStorage.getItem('cutFold')==='1'}catch(e){}set(c0);h.onclick=()=>set(!sec.classList.contains('fold'))}
+/* v495: 閉じる操作を廃止し、爆速/詳細の表示を切り替える */
+function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector('#s1 section.b');sec.classList.remove('fold');sec.classList.toggle('fast',fast);$('cutFast').setAttribute('aria-pressed',String(fast));$('cutDetail').setAttribute('aria-pressed',String(!fast));$('nxt').textContent=fast?'挿入':'TLに挿入';try{localStorage.setItem('cutView',fast?'fast':'detail')}catch(e){}setTimeout(()=>{window.cwfDraw&&cwfDraw()},50)}
+{let mode='fast';try{mode=localStorage.getItem('cutView')||mode}catch(e){}setCutView(mode);$('cutFast').onclick=()=>setCutView('fast');$('cutDetail').onclick=()=>setCutView('detail')}
 /* v462: 軽量化バー(音を優先〜映像を優先)はカット画面にいつも出す(▶▶の再生に効く) */{const r=document.createElement('div');r.className='r lt';r.innerHTML='<span>軽量化</span><input type="range" min="0" max="3" step="1" aria-label="軽量化"><span class="v"></span>';
   /* v471: 左=軽量化 → 右=通常。バーの位置と silPr(0音だけ/1音優先/2なし/3映像だけ)の対応 PM(行き帰り同じ) */const PM=[0,1,3,2];
   const i=r.querySelector('input'),v=r.querySelector('.v'),nm=['音だけ','音優先','通常','映像だけ'],put=()=>{v.textContent=nm[SIL.pr];window.silPr=SIL.pr};i.value=PM[SIL.pr];put();
@@ -1705,30 +1726,16 @@ let gapC=null;
 }
 
 /* 残す範囲の一覧 */
-function renderSegs(){
-  const box=$('segs');box.innerHTML='';if(corners.length)cAssign();renderCutCn();
-  /* v352: 下書きの動画(まだ「次へ」を押していない)は一覧と合計に入れない */
-  const SG=segs.filter(s=>!(s.clip&&s.clip.pend));
-  SG.forEach(s=>{
-    const d=document.createElement('div');d.className='seg'+(corners.length?' wc':'');
-    const im=document.createElement('img');im.className='th';im.alt='';
-    if(s.clip)thumb(s.clip,s.start).then(u=>{if(u)im.src=u});
-    const nm=document.createElement('div');nm.className='nm';
-    nm.innerHTML=!s.clip?'<b>空白</b><small>'+(s.end-s.start).toFixed(1)+'秒</small>':'<b>動画'+num(s.clip)+'</b><small>'+fmt(s.start)+' → '+fmt(s.end)+'('+(s.end-s.start).toFixed(1)+'秒)</small>';
-    const v=document.createElement('button');v.textContent='見る';
-    v.onclick=()=>{if(!s.clip)return;const go=()=>{pv.currentTime=s.start;pv.play().catch(()=>{});
-      const stop=()=>{if(pv.currentTime>=s.end){pv.pause();pv.removeEventListener('timeupdate',stop)}};pv.addEventListener('timeupdate',stop)};
-      if(cur!==s.clip){select(s.clip);pv.addEventListener('loadedmetadata',go,{once:true})}else go()};
-    const x=document.createElement('button');x.textContent='削除';
-    x.onclick=()=>{hist.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur,clip:s.clip||undefined});if(hist.length>30)hist.shift();segs=segs.filter(q=>q!==s);renderSegs();renderTL();resetOut();$('undo').disabled=!cur&&!hist.length};
-    if(corners.length){const ci=Math.max(0,cIdx(s.cn)),cb=document.createElement('button');cb.className='cnTag';cb.textContent=corners[ci].name;cb.style.background=ccol(ci);
-      cb.onclick=()=>cdlg('どこに入れますか?',corners.map((c,k)=>[c.name,()=>{s.cn=c.id;cutCn=c.id;resetOut();renderSegs()}]).concat([['閉じる']]));d.append(im,nm,cb,v,x)}
-    else d.append(im,nm,v,x);box.appendChild(d);
-  });
-  $('tTotal').textContent=fmt(SG.reduce((a,q)=>a+q.end-q.start,0)+tailPad);{const n=$('segN');if(n)n.textContent=SG.length?'（'+SG.length+'個）':''}
-  $('toS2').disabled=!SG.length;
-  renderChips();
-}
+/* v495: 元動画ごとに1行。時間はタイムラインに残る範囲の合計 */
+function renderSegs(){const box=$('segs');box.innerHTML='';if(corners.length)cAssign();renderCutCn();const SG=tlSegs().filter(s=>!(s.clip&&s.clip.pend)),groups=new Map();
+  SG.forEach(s=>{if(!s.clip)return;const key=bkey(s.clip.key);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(s)});
+  groups.forEach(L=>{const c=L[0].clip,source=bkey(c.key),d=document.createElement('div');d.className='seg sourceSeg';d.dataset.source=source;
+    const nm=document.createElement('div');nm.className='nm';const title=document.createElement('b');title.textContent='動画'+num(c)+'  '+fmtS(L.reduce((a,s)=>a+s.end-s.start,0))+'  '+L.length+'分割';const name=document.createElement('small');name.textContent=c.name;nm.append(title,name);d.append(nm);
+    const cb=document.createElement('button');cb.className='cnTag';const ids=[...new Set(L.map(s=>s.cn))],ci=cIdx(ids[0]);cb.textContent=ids.length>1?'複数ブロック':ci>=0?corners[ci].name:'ブロック';cb.disabled=!corners.length;
+    cb.onclick=()=>cdlg('この元動画の挿入先を選んでください',corners.map(k=>[k.name,()=>{const set=s=>{if(s.clip&&bkey(s.clip.key)===source)s.cn=k.id};segs.forEach(set);if(reBak)reBak.forEach(set);clips.filter(x=>bkey(x.key)===source).forEach(x=>{const a=draft.get(x);if(a)a.forEach(q=>q.cn=k.id);const e=reEd.get(x);if(e)e.r.forEach(q=>q.cn=k.id)});cutCn=k.id;sortSegs();resetOut();renderSegs()}]).concat([['閉じる']]));
+    const v=document.createElement('button');v.textContent='見る';v.onclick=()=>{select(c);const go=()=>{try{pv.currentTime=L[0].start+.001}catch(e){}$('cbA').click()};if(pv.readyState>=1)go();else pv.addEventListener('loadedmetadata',go,{once:true})};
+    const x=document.createElement('button');x.textContent='削除';x.onclick=()=>{const list=clips.filter(q=>bkey(q.key)===source);cdlg('「'+c.name+'」の動画とカット情報を削除しますか?\n元に戻すボタンで復元できます（再起動まで）',[['削除する',()=>dropClips(list),'warn'],['やめる']])};d.append(cb,v,x);box.appendChild(d)});
+  $('tTotal').textContent=fmt(SG.reduce((a,q)=>a+q.end-q.start,0)+tailPad);$('segN').textContent=groups.size?'（'+groups.size+'本）':'';$('toS2').disabled=!SG.length;const deleted=delStack.filter(r=>r.entries.some(e=>!clips.includes(e.c))).length;$('restoreClip').disabled=!deleted;$('restoreClip').textContent='元に戻す'+(deleted?'（'+deleted+'件）':'');renderChips()}
 function resetOut(){outBlob=null;$('result').hidden=true;$('save').hidden=true;$('prog').style.width='0'}
 
 /* ================= テロップ・字幕の描画(プレビューと書き出しで共通) ================= */
@@ -4338,7 +4345,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v494';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v495';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4502,7 +4509,7 @@ $('newp').onclick=async()=>{
   newArm=false;b.textContent='新規';
   pausePreview();closeEd();pv.pause();
   const ck0=clips.map(c=>c.key);
-  clips.forEach(c=>URL.revokeObjectURL(c.url));clips.length=0;draft.clear();
+  clips.forEach(c=>URL.revokeObjectURL(c.url));clips.length=0;draft.clear();delStack.length=0;
   window.fineReset&&fineReset();segs=[];segMan=false;items=[];tailPad=0;tltDone=false;hist=[];ihist=[];iredo=[];ustack=[];segU=[];selItem=null;actLane=null;tpl=null;workMade=false;noCH=false;itemId=1;gt=0;svClip=null;corners=[];cview=null;cKey='';
   clearPlayer();renderSegs();$('s2').hidden=true;$('s1').hidden=false;
   try{await idbClear('files');await idbClear('state')}catch(e){}
@@ -4959,7 +4966,7 @@ async function tLoad(m){
   {const miss=[];for(const c of st.clips){if(!(await tGet('b|'+m.id+'|'+c.key)))miss.push(c.key)}
    if(st.clips.length&&miss.length)throw Object.assign(new Error('lost'),{lost:true})}
   pausePreview();pv.pause();
-  clips.forEach(c=>URL.revokeObjectURL(c.url));clips.length=0;const by={};
+  clips.forEach(c=>URL.revokeObjectURL(c.url));clips.length=0;delStack.length=0;const by={};
   for(const c of st.clips){const blob=await tGet('b|'+m.id+'|'+c.key);if(!blob)continue;
     const o={id:nextId++,key:c.key,name:c.name,file:blob,url:URL.createObjectURL(blob),d:c.d,w:c.w,h:c.h,meta:c.meta||{},au:c.au,ord:c.ord,ov:c.ov};
     clips.push(o);by[c.key]=o;idbPut('files',c.key,{blob}).catch(()=>{})}
