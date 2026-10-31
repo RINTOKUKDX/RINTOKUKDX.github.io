@@ -101,7 +101,7 @@ button:disabled{opacity:.4}
 .cutrow button{min-height:60px;font-size:17px}
 #cut.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .autorow{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;margin-top:8px}
-/* v461: 1段目 動画を削除/範囲を削除/次へ、2段目 コーナー、3段目 無音削除/自動送 */#cRow1{grid-template-columns:1fr 1fr 1fr 1fr}/* v472 *//* v479 */#insRow{grid-template-columns:1fr 1fr 1fr;margin-top:6px}.gpk{position:absolute;top:0;bottom:0;width:28px;z-index:6;cursor:pointer;background:linear-gradient(to right,transparent 11px,#fffc 11px,#fffc 17px,transparent 17px)}.gpk.on{background:linear-gradient(to right,transparent 8px,#ff9800 8px,#ff9800 20px,transparent 20px)}#rngCut[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}#fixB[aria-pressed=true]{background:#2f8f5b;border-color:#2f8f5b;color:#fff;font-weight:700}#cRow2{grid-template-columns:1fr 1fr}#rngDel[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}
+/* v461: 1段目 動画を削除/範囲を削除/次へ、2段目 コーナー、3段目 無音削除/自動送 */#cRow1{grid-template-columns:1fr 1fr 1fr}/* v472 *//* v479 */#insRow{grid-template-columns:1fr 1fr;margin-top:6px}.gpk{position:absolute;top:0;bottom:0;width:28px;z-index:6;cursor:pointer;background:linear-gradient(to right,transparent 11px,#fffc 11px,#fffc 17px,transparent 17px)}.gpk.on{background:linear-gradient(to right,transparent 8px,#ff9800 8px,#ff9800 20px,transparent 20px)}#rngCut[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}#fixB[aria-pressed=true]{background:#2f8f5b;border-color:#2f8f5b;color:#fff;font-weight:700}#cRow2{grid-template-columns:1fr 1fr}#rngDel[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}
 #delCur2{padding:0 14px;color:var(--warn);border-color:var(--warn)}/* v438: 動画の枠の削除 */
 #delCur{padding:0 14px;color:var(--warn);border-color:var(--warn)}
 .sm{min-height:48px;font-size:14px}
@@ -481,9 +481,10 @@ body.editing .pgnav{display:none!important}
 /* v495: 排他的なカット表示。爆速でもプレビュー・波形とその再生は残す */
 #cutModes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 #cutModes button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
-#s1 section.b.fast>*:not(#cutModes):not(.stage):not(#cwf):not(#cctl):not(#cRow1):not(#insRow):not(#cutCn):not(#cutMsg){display:none!important}
-#s1 section.b.fast #cRow1>*:not(#delCur),#s1 section.b.fast #insRow>*:not(#nxt),#s1 section.b.fast #cctl>*:not(#cbP):not(#cbA){display:none!important}
-#s1 section.b.fast #cRow1,#s1 section.b.fast #insRow{grid-template-columns:1fr}
+#s1 section.b.fast>*:not(#cutModes):not(.stage):not(#cwf):not(#cctl):not(#cRow1):not(#insRow):not(#cutCn):not(#cutDeleteRow):not(#cutMsg){display:none!important}
+#s1 section.b.fast #cRow1,#s1 section.b.fast #insRow>*:not(#skipClip):not(#nxt),#s1 section.b.fast #cctl>*:not(#cbP):not(#cbA){display:none!important}
+#s1 section.b.fast #insRow{grid-template-columns:1fr 1fr}
+#cutDeleteRow button{width:100%}
 #s1 section.b.fast #cctl{grid-template-columns:1fr 1fr}
 #segs .sourceSeg{grid-template-columns:1fr auto auto auto}
 #segs .sourceSeg .nm{grid-column:1/-1;font-family:inherit}
@@ -518,13 +519,13 @@ body.editing .pgnav{display:none!important}
     <div class="tl"><div class="tl-track" id="tlTrack"></div>
       <input id="seek" type="range" min="0" max="1" step="0.05" value="0" disabled aria-label="再生位置"></div>
     <div class="autorow" id="cRow1">
-      <button id="delCur" class="sm" disabled>動画を削除</button>
       <button id="rngDel" class="sm cmode" aria-pressed="false">削除</button>
       <button id="rngCut" class="sm cmode" aria-pressed="true">範囲を削除</button>
       <button id="fixB" class="sm cmode" aria-pressed="false">修正</button>
     </div>
-    <div class="autorow" id="insRow"><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>再挿入</button></div>
+    <div class="autorow" id="insRow"><button id="skipClip" class="sm" disabled>次へ</button><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>再挿入</button></div>
     <div id="cutCn"></div>
+    <div id="cutDeleteRow"><button id="delCur" class="sm" disabled>動画を削除</button></div>
     <div class="autorow" id="cRow2">
       <button id="silB" class="sm">無音削除</button>
       <button id="auto" class="sm" aria-pressed="true">自動送 ON</button>
@@ -1359,7 +1360,7 @@ function setFname(){
   if(!cur)return;
   f.innerHTML='<b></b><span></span>';f.querySelector('b').textContent=num(cur);f.querySelector('span').textContent=cur.name;
 }
-const ctl=['seek','b1s','b1f','play','f1f','f1s','cut','nxt','delCur'];
+const ctl=['seek','b1s','b1f','play','f1f','f1s','cut','nxt','skipClip','delCur'];
 /* v352: 取り込んだ動画は「下書き」(c.pend)。下書きの範囲は draft に置き、カット画面で開いている間だけ segs に入れて編集する。
    「次へ」で確定(タイムラインに入る)。タイムラインを開く時・別の動画を開く時は segs から draft に戻す */
 const draft=new Map();
@@ -1385,7 +1386,7 @@ function reTarget(){const c=cur;if(!c)return null;const S=tlSegs();
   if(!c.pend){const e=reEd.get(c);if(e&&e.tgt&&e.tgt.every(q=>S.includes(q)))return e.tgt}
   const k=S.findIndex(q=>q.clip&&!q.clip.pend&&(c.pend?bkey(q.clip.key)===bkey(c.key):q.clip===c));return k<0?null:runOf(S,k)}
 const sameTL=c=>tlSegs().some(q=>q.clip&&!q.clip.pend&&bkey(q.clip.key)===bkey(c.key));
-function insUpd(){const c=cur;$('nxt').disabled=!c;$('gapIns').disabled=!c||!tlSegs().some(q=>!(q.clip&&q.clip.pend));$('reIns').disabled=!c||!reTarget()}
+function insUpd(){const c=cur;$('skipClip').disabled=!c;$('nxt').disabled=!c;$('gapIns').disabled=!c||!tlSegs().some(q=>!(q.clip&&q.clip.pend));$('reIns').disabled=!c||!reTarget()}
 /* 同じ元動画のもう1本(v477と同じ key#n)。カット画面の一覧の後ろに足す */
 function mkInst(c){const b=bkey(c.key);let n=2;while(clips.some(x=>x.key===b+'#'+n))n++;
   const w={id:nextId++,key:b+'#'+n,name:c.name,file:c.file,url:c.url,d:c.d,w:c.w,h:c.h,meta:c.meta,au:c.au};
@@ -1671,6 +1672,8 @@ $('auto').onclick=e=>{auto=!auto;e.currentTarget.setAttribute('aria-pressed',aut
   e.currentTarget.textContent='自動送 '+(auto?'ON':'OFF')};
 /* 次へ:今の動画の範囲は決定済み。途中の開始位置は捨てて次の動画へ(範囲がなければそのまま飛ばす) */
 /* v479: 同じ元動画がもうタイムラインにある時は聞く */
+/* v496: 次へは表示だけを切り替える。挿入・削除はせず下書きも保持 */
+$('skipClip').onclick=()=>{const c=cur;if(!c)return;const next=clips.slice(clips.indexOf(c)+1).find(q=>!q.ov);if(next)select(next);else{stashPend(c);reOut(c);hist=[];clearPlayer();renderChips();cutMsg('動画は以上です。')}renderSegs();window.cwfDraw&&cwfDraw()};
 $('nxt').onclick=()=>{if(!cur)return;const c=cur;
   if(!curRg(c).length){cutMsg('残す範囲がありません');return}
   if(sameTL(c)){cdlg('同じ元動画が有りますが最後尾に追加しますか？',[['追加する',()=>nxtGo(c)],['やめる']]);return}
@@ -4345,7 +4348,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v495';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v496';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
