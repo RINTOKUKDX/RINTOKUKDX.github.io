@@ -4609,11 +4609,6 @@ function ptDraw(since,until,cv,clean,chT){
   chT=chT||0;
   const c=cv||$('ec'),g=c.getContext('2d'),W=c.width,H=c.height;
   g.fillStyle='#000';g.fillRect(0,0,W,H);
-  if(ptTab==='sub'&&ptOpenG.special&&window.tsBlankPanelOn){
-    g.fillStyle=window.tsBlankBg||'#000000';g.fillRect(0,0,W,H);
-    g.save();g.fillStyle=window.tsBlankFg||'#ffffff';g.textAlign='center';g.textBaseline='middle';
-    g.font='bold '+Math.round(H*.07)+'px sans-serif';g.fillText('サンプルテキスト',W/2,H/2,W*.9);g.restore();return;
-  }
   let ok=false;
   if(window.tsStudioEditing&&window.tsEditorFrame){try{g.drawImage(window.tsEditorFrame,0,0,W,H);ok=true}catch(e){}}
   try{if(!ok){const vw=sv.videoWidth,vh=sv.videoHeight;if(vw&&vh&&sv.readyState>=2){const k=Math.min(W/vw,H/vh);g.drawImage(sv,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);ok=true}}}catch(e){}
@@ -4872,16 +4867,16 @@ function ptSpecial(box){
       const check=document.createElement('input');check.type='checkbox';check.checked=!!window.tsBlankPanelOn;
       head.append(check,document.createTextNode('空白入りのクリップを追加'));section.appendChild(head);
       const detail=document.createElement('div');detail.style.cssText='display:flex;flex-direction:column;gap:12px;margin-top:12px';detail.hidden=!check.checked;
-      check.onchange=()=>{window.tsBlankPanelOn=check.checked;detail.hidden=!check.checked;ptDraw()};
+      check.onchange=()=>{window.tsBlankPanelOn=check.checked;detail.hidden=!check.checked};
       const durLabel=document.createElement('label');durLabel.textContent='クリップの時間 ';const dur=document.createElement('input');dur.type='number';dur.min='0.2';dur.max='60';dur.step='0.1';dur.value='2';dur.style.cssText='width:85px;margin-left:8px';durLabel.append(dur,document.createTextNode(' 秒'));detail.appendChild(durLabel);
-      const colorLabel=document.createElement('label');colorLabel.textContent='空白の色 ';const color=document.createElement('input');color.type='color';color.value=window.tsBlankBg||'#000000';color.style.marginLeft='8px';colorLabel.appendChild(color);detail.appendChild(colorLabel);
-      const textLabel=document.createElement('label');textLabel.textContent='表示する文字';const tx=document.createElement('textarea');tx.rows=2;tx.value=window.tsBlankText||'サンプルテキスト';tx.placeholder='空白クリップに表示する文字';tx.style.width='100%';textLabel.appendChild(tx);detail.appendChild(textLabel);
-      const fgLabel=document.createElement('label');fgLabel.textContent='文字色 ';const fg=document.createElement('input');fg.type='color';fg.value=window.tsBlankFg||'#ffffff';fg.oninput=()=>{window.tsBlankFg=fg.value;ptDraw()};fgLabel.appendChild(fg);detail.appendChild(fgLabel);
-      const refresh=()=>{window.tsBlankBg=color.value;window.tsBlankText=tx.value;window.tsBlankDuration=dur.value;ptDraw()};
-      color.oninput=refresh;tx.oninput=refresh;dur.oninput=refresh;
-      section.appendChild(detail);body.appendChild(section)}
+      const colorLabel=document.createElement('label');colorLabel.textContent='空白の色 ';const color=document.createElement('input');color.type='color';color.value='#000000';color.style.marginLeft='8px';colorLabel.appendChild(color);detail.appendChild(colorLabel);
+      const textLabel=document.createElement('label');textLabel.textContent='表示する文字';const tx=document.createElement('textarea');tx.rows=2;tx.placeholder='空白クリップに表示する文字';tx.style.width='100%';textLabel.appendChild(tx);detail.appendChild(textLabel);
+      const add=document.createElement('button');add.type='button';add.className='primary';add.textContent='現在位置にクリップを追加';
+      const msg=document.createElement('div');msg.setAttribute('role','status');
+      add.onclick=()=>{const err=window.tsAddBlankClip?window.tsAddBlankClip(tx.value,color.value,dur.value):'クリップ追加機能を使用できません';msg.textContent=err||'空白クリップを追加しました'};
+      detail.append(add,msg);section.appendChild(detail);body.appendChild(section)}
   };
-  const paint=()=>{const o=!!ptOpenG.special;h.innerHTML='';const a=document.createElement('span');a.textContent='特殊機能';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill();ptDraw()};
+  const paint=()=>{const o=!!ptOpenG.special;h.innerHTML='';const a=document.createElement('span');a.textContent='特殊機能';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
   h.onclick=()=>{const o=!ptOpenG.special;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.special=o;ptPaints.forEach(f=>f())};
   ptPaints.push(paint);w.append(h,body);box.appendChild(w);paint();
 }
