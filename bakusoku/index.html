@@ -9827,7 +9827,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     source.hidden=true;studio.hidden=false;lastKind='';$('tsPane').hidden=true;
     studio.querySelectorAll('.tsSpot').forEach(b=>b.setAttribute('aria-pressed','false'));
     $('tsStatus').textContent='どのテキストを編集しますか？';window.scrollTo(0,0);
-    if(typeof window.cdlg==='function')window.cdlg('どのテキストを編集しますか？',[['選択する']]);
+    if(typeof cdlg==='function')cdlg('どのテキストを編集しますか？',[['選択する']]);
   }
   gear.addEventListener('click',e=>{e.stopPropagation();open()});
   gear.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
