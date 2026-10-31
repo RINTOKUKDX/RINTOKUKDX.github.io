@@ -633,8 +633,8 @@ body.editing .pgnav{display:none!important}
 
 <main id="s3" hidden>
   <div class="topbar"><button id="s3back">← 戻る</button><h1>テキストテンプレート編集</h1></div>
-  <div class="tpls" id="s3tpl"><button data-tab="ch" aria-pressed="false">CH</button><button data-tab="point" aria-pressed="true">ポイント</button><button data-tab="sub" aria-pressed="false">字幕</button><button data-tab="big" aria-pressed="false">太字</button><button data-tab="en" aria-pressed="false">英語</button>
-    <div class="edst" id="subSt" hidden style="grid-template-columns:repeat(3,1fr)"><button data-u="sub">ナレーション</button><button data-u="subm">きんきん</button><button data-u="subf">マリ</button><button data-u="subs">空白縦</button><button data-u="subh">空白横</button></div>
+  <div class="tpls" id="s3tpl"><button data-tab="ch" aria-pressed="false">CH</button><button data-tab="point" aria-pressed="true">ポイント</button><button data-tab="sub" aria-pressed="false">字幕</button><button data-tab="en" aria-pressed="false">英語</button>
+    <div class="edst" id="subSt" hidden style="grid-template-columns:repeat(3,1fr)"><button data-u="sub">ナレーション</button><button data-u="subm">きんきん</button><button data-u="subf">マリ</button></div>
     <div class="edst" id="bigSt" hidden><button data-s="setsumei_tate">説明 縦</button><button data-s="setsumei_yoko">説明 横</button><button data-s="dai_tate">大縦</button><button data-s="dai_yoko">大横</button><button data-s="pop_tate">ラノベポップ縦</button><button data-s="pop_yoko">ラノベポップ横</button></div></div>
   <div id="ecw"><div class="pcw"><canvas id="ec" width="960" height="540"></canvas></div>
     <div class="ecbar"><select id="ptDes" aria-label="デザイン"></select><span class="ecbtns"><button id="ptPlay">▶ 動きを見る</button><button id="ptFull" aria-label="全画面で見る">⛶ 全画面</button></span></div></div>
@@ -1618,14 +1618,14 @@ function putClip(c,m){const out=[],done=new Set();
   segs=out}
 /* v339: 今の動画の a〜b を残す範囲から消す(前後は残る。端の0.05秒以下は一緒に消す) */
 function cutOut(a,b){
-  hist.push({segs:segs.map(s=>({clip:s.clip,start:s.start,end:s.end,cn:s.cn,bk:s.bk,bo:s.bo,sp:s.sp,fx:fxC(s.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
+  hist.push({segs:segs.map(s=>({clip:s.clip,start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,fx:fxC(s.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
   const m=[];segs.filter(q=>q.clip===cur).sort((x,y)=>x.start-y.start).forEach(q=>{
     if(q.end<=a+1e-3||q.start>=b-1e-3){m.push({...q});return}
     if(q.start<a-0.05)m.push({...q,end:a});if(q.end>b+0.05)m.push({...q,start:b})});
   putClip(cur,m);sortSegs();inT=null;resetOut();renderSegs();renderCut();
   if(!m.length)cutMsg('この動画は全部消しました（↺で戻せます）')}
 function addRange(a,b){
-  hist.push({segs:segs.map(s=>({clip:s.clip,start:s.start,end:s.end,cn:s.cn,bk:s.bk,bo:s.bo,sp:s.sp,fx:fxC(s.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
+  hist.push({segs:segs.map(s=>({clip:s.clip,start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,fx:fxC(s.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
   mergeIn(a,b,0.05);
   const here=cur;inT=null;resetOut();renderSegs();
   const nx=clips.slice(clips.indexOf(here)+1).find(c=>!c.ov);
@@ -1674,7 +1674,7 @@ function silOpen(){if(!cur)return;let P=$('silP');if(P){window.silApStop&&silApS
     window.silLv=SIL.lv;silMarks.clear();silMarks.set(c,iv);renderTL();window.cwfDraw&&cwfDraw();
     info.textContent='波形の薄い所が切る所です。▶▶で切った後の状態を再生できます（'+iv.length+'か所・残す範囲から '+cut.toFixed(1)+'秒 減ります）'};
   mk('今の動画を切る',()=>{if(busy)return;const iv=silMarks.get(cur);if(!iv||!iv.length){flashSel('切る所がありません');return}
-    hist.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
+    hist.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bg:q.bg,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
     const g=silApply(cur,iv);sortSegs();resetOut();renderSegs();close();cutMsg('無音を '+g.toFixed(1)+'秒 切りました（端からスワイプで戻せます）')},'primary');
   const close=()=>{window.silApStop&&silApStop();P.remove();silMarks.clear();renderTL();renderChips();renderCut();window.cwfDraw&&cwfDraw()};
   {const x=document.createElement('button');x.textContent='閉じる';x.onclick=close;bt.appendChild(x)}
@@ -1805,7 +1805,7 @@ function telopWork(g,W,H,u,txt,tag){
 
 /* 映画風ポイント(細いライン+小さい英字) — 設定はテンプレート編集ページで変更 */
 const PT_DEF={x:.06,y:.72,size:64,lsize:24,line:2,ext:60,align:'left',font:'serif',label:'POINT',color:'#ffffff',anim:'line',dur:1,animOut:'line',durOut:1,stW:0,stColor:'#000000',shOp:60,shBlur:10,shDist:2,frame:'none',fColor:'#000000',fOp:50,fPad:24,scale:1,chStyle:'telop',chPos:'tl',chSize:1,chOp:100,chBlink:'1',chBlinkEvery:6,chGlow:'1',chGlowEvery:12,chGlowColor:'#ffcf6b',chX:null,chY:null,chAnim:'fade',chDur:.6,chAnimOut:'fade',chDurOut:1,chShOp:45,chShBlur:12,chShDist:3,chBand:'#111111',chPlate:'#ece2c8',chInk:'#ffffff',chAccent:'#8e2b17',chT1:'JUNKRAFT',chT2:'きんきんの我楽苦多部屋',chT3:"KINKIN'S",gkKx:0,gkKy:0,gkKs:1,gkKr:0,gkNx:0,gkNy:0,gkNs:1,gkNr:0,gkMx:0,gkMy:0,gkMs:1,gkMr:0,gkBx:0,gkBy:0,gkBs:1,gkBr:0};
-const ST_BASE={font:'gothic',size:60,color:'#ffffff',stW:0,stColor:'#000000',st2W:0,st2Color:'#ff4f9a',shOp:0,shBlur:8,shDist:2,frame:'none',fColor:'#000000',fOp:60,fPad:20,accent:'#ff8a2a',x:.5,y:.5,rot:0,anim:'none',dur:.4,animOut:'none',durOut:.4};
+const ST_BASE={font:'gothic',size:60,color:'#ffffff',shColor:'#000000',stW:0,stColor:'#000000',st2W:0,st2Color:'#ff4f9a',shOp:0,shBlur:8,shDist:2,frame:'none',fColor:'#000000',fOp:60,fPad:20,accent:'#ff8a2a',x:.5,y:.5,rot:0,anim:'none',dur:.4,animOut:'none',durOut:.4};
 const SUB_DEF=Object.assign({},ST_BASE,{size:60,stW:6,y:.88});
 const BIG_DEF={
   setsumei_tate:Object.assign({},ST_BASE,{size:64,x:.86,y:.5,frame:'panel',fColor:'#0e162c',fOp:90,fPad:26}),
@@ -1872,7 +1872,7 @@ function telopPoint(g,W,H,u,txt,s,since,until){
     g.restore();
   }
   const sw=Math.max(0,(s.stW||0)*k),sc=s.stColor||'#000000';
-  const shOn=()=>{g.shadowColor='rgba(0,0,0,'+clamp01((s.shOp??60)/100)+')';g.shadowBlur=(s.shBlur??10)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.shDist??2)*k};
+  const shOn=()=>{g.shadowColor=hexA(s.shColor||'#000000',clamp01((s.shOp??60)/100));g.shadowBlur=(s.shBlur??10)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.shDist??2)*k};
   const shOff=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0};
   const lineGrad=c=>{const gr=g.createLinearGradient(x0,0,x0+L,0);
     if(al==='left'){gr.addColorStop(0,hexA(c,1));gr.addColorStop(.65,hexA(c,1));gr.addColorStop(1,hexA(c,0))}
@@ -1992,7 +1992,7 @@ function chDraw(g,W,H,u,txt,t,s,since,until){
   if(a<=0)return;
   g.save();g.globalAlpha*=a;g.textBaseline='alphabetic';g.textAlign='left';
   const mx=x+w/2,my=y+h/2;g.translate(mx+dx,my);g.scale(sc,sc);g.translate(-mx,-my);
-  const shOn=()=>{g.shadowColor='rgba(0,0,0,'+clamp01((s.chShOp??45)/100)+')';g.shadowBlur=(s.chShBlur??12)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.chShDist??3)*k};
+  const shOn=()=>{g.shadowColor=hexA(s.chShColor||'#000000',clamp01((s.chShOp??45)/100));g.shadowBlur=(s.chShBlur??12)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.chShDist??3)*k};
   const shOff=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0};
   const t1=chTx(s,'chT1','JUNKRAFT'),t2=chTx(s,'chT2','きんきんの我楽苦多部屋');
   if(isGK(st)){chGarakuta(g,x,y,k,t,shOn,shOff,st,s);g.restore();return}
@@ -2142,7 +2142,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     g.restore();
     if(fr==='panel'){g.fillStyle=s.accent||'#ff8a2a';g.fillRect(x+16*k,y+h-10*k,w-32*k,5*k)}}
   /* v486: 字幕を大きくした時(自動の拡大・指で拡大)はストロークも同じ割合で太く */const skw=s.sz0?Math.max(1,fs/(s.sz0*k)):1;const sw=(s.stW||0)*k*skw,s2=(s.st2W||0)*k*skw;
-  const shOn=()=>{if((s.shOp||0)>0){g.shadowColor='rgba(0,0,0,'+clamp01(s.shOp/100)+')';g.shadowBlur=(s.shBlur??8)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.shDist??2)*k}};
+  const shOn=()=>{if((s.shOp||0)>0){g.shadowColor=hexA(s.shColor||'#000000',clamp01(s.shOp/100));g.shadowBlur=(s.shBlur??8)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.shDist??2)*k}};
   const shOff=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0};
   shOn();
   if(s2>0){g.lineWidth=s2*2;g.strokeStyle=s.st2Color||'#ff4f9a';draw((t,x,y)=>g.strokeText(t,x+fs*.06,y+fs*.09));shOff()}
@@ -2156,10 +2156,13 @@ function drawFrame(g,W,H,vid,t){
   try{const vw=vid.videoWidth,vh=vid.videoHeight;
     if(vw&&vh&&t<segSum()-0.001&&isVidAt(t)){const sv=segV(segs[locate(t).i]),tc=tltCol();/* v395: ズーム・回転だけの時は、テンプレートの色も使う */vDraw(g,W,H,vid,vw,vh,sv&&tc&&Object.keys(sv).every(k=>VTF.includes(k))?{...tc,...sv}:sv||tc)}}catch(e){}
   /* v412: 上の動画レーン(8)。下の動画の上に重ねる */try{ovDraw(g,W,H,t)}catch(e){}
+  let blankBg=null,blankAt=0;for(const q of segs){const d=q.end-q.start;if(t<blankAt+d){if(q.bg)blankBg=q.bg;break}blankAt+=d}
+  if(blankBg){g.fillStyle=/^#[0-9a-f]{6}$/i.test(blankBg)?blankBg:'#000000';g.fillRect(0,0,W,H)}
   const u=Math.min(H,W*9/16);
   /* v276: 空白(字幕ページの空白縦/横)の間は、ロゴや他のテロップを出さない */
   const inBk=(()=>{let a=0;for(const q of segs){const d=q.end-q.start;if(t<a+d)return !!q.bk;a+=d}return false})();
-  if(!inBk)for(let lane=1;lane<=4;lane++)for(const it of items){
+  for(let lane=1;lane<=4;lane++)for(const it of items){
+    if(inBk||(blankBg&&lane!==3))continue;
     if(it.lane!==lane||t<it.start||t>=it.end)continue;
     if(lane===1){const R=chRun(t);if(R===false)continue;const CS=chFor(PT,chSt(it.chStyle?it:PT));if(!R){chDraw(g,W,H,u,it.text,t-it.start,CS,aIn(it)?t-it.start:99,aOut(it)?it.end-t:99);continue}
       const a=Math.max(it.start,R.a),b=Math.min(it.end,R.b);chDraw(g,W,H,u,it.text,t-a,CS,(aIn(it)||R.a>it.start+1e-3)?t-a:99,(aOut(it)||R.b<it.end-1e-3)?b-t:99)}
@@ -2891,7 +2894,7 @@ function segBounds(s){
     if(q.start>=s.end-1e-6)hi=Math.min(hi,q.start)});
   return{lo,hi};
 }
-function segHist(){segU.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur});ustack.push('seg');if(segU.length>30)segU.shift();updHist()}
+function segHist(){segU.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bg:q.bg,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur});ustack.push('seg');if(segU.length>30)segU.shift();updHist()}
 /* v437: 枠線より細いブロックは枠線を消す(幅を時間どおりに保つ) */const bW=(el,w)=>{el.style.width=w+'px';el.classList.toggle('thin',w<6)};
 function layoutVideo(){let x=0;segs.forEach((q,k)=>{const d=q.end-q.start,b=videoBlks[k];if(b){b.style.left=(x*pps)+'px';bW(b,d*pps)}x+=d})}
 function isVidAt(t){const{i}=locate(t);return !!(segs[i]&&segs[i].clip)}
@@ -2928,10 +2931,24 @@ function insertGap(sec,cnF,force){
   items.push(...extra.filter(r=>r.lane===5));
   cornerRebase();resetOut();renderLanes();renderSegs();seekGlobal(t);
 }
+window.tsAddBlankClip=(text,bg,sec)=>{
+  if(!String(text||'').trim())return '文字を入力してください';
+  if(!/^#[0-9a-f]{6}$/i.test(bg))return '背景色が不正です';
+  sec=Number(sec);if(!Number.isFinite(sec)||sec<.2||sec>60)return '表示時間は0.2～60秒にしてください';
+  if(roAll())return '先にコーナーを選択してください';
+  const t=gt,gcn=insertGap(sec);
+  let a=0,found=false;for(const q of segs){if(!q.clip&&!q.bk&&Math.abs(a-t)<.01&&Math.abs(q.end-q.start-sec)<.01){q.bg=bg;found=true;break}a+=q.end-q.start}
+  if(!found)return '空白クリップを作成できませんでした';
+  const it={id:itemId++,lane:3,start:t,end:t+sec,text:String(text),cn:gcn};
+  items.push(it);selItem=it;actLane=3;
+  renderLanes();renderSegs();seekGlobal(t);
+  try{saveState&&saveState()}catch(e){}
+  return '';
+};
 function insertTextGap(sec){
   const t=gt;if(roAll()){flashSel('先に上のコーナーを選んでください');return}
   const gcn=insertGap(sec);
-  const it={id:itemId++,lane:4,start:t,end:t+sec,text:'',sample:false,style:'dai_yoko',tag:'',cn:gcn};
+  const it={id:itemId++,lane:3,start:t,end:t+sec,text:'',sample:false,cn:gcn};
   items.push(it);selItem=it;actLane=4;
   renderLanes();openEd(it);
 }
@@ -3539,7 +3556,7 @@ $('iu').onclick=()=>tlUndo();
 function tlUndo(){
   const k=ustack.pop();
   if(k==='seg'){const h=segU.pop();
-    if(h){if(h.items)items=h.items;segs=h.segs.filter(q=>!q.clip||clips.includes(q.clip)).map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bo:q.bo,sp:q.sp,fx:fxC(q.fx)}));
+    if(h){if(h.items)items=h.items;segs=h.segs.filter(q=>!q.clip||clips.includes(q.clip)).map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bg:q.bg,bo:q.bo,sp:q.sp,fx:fxC(q.fx)}));
       if(h.items||h.rb)cornerRebase();resetOut();renderLanes();renderSegs();seekGlobal(Math.min(gt,Math.max(0,total()-0.001)))}}
   else if(k==='item'){if(ihist.length){iredo.push(cloneItems());items=ihist.pop();afterHist()}}
   updHist();
@@ -4394,7 +4411,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v513';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v515';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4455,7 +4472,7 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 let restored=false,lastSig='',newArm=false;
 function snapshot(){
   return{clips:clips.map(c=>({key:c.key,name:c.name,d:c.d,w:c.w,h:c.h,meta:c.meta,ord:c.ord,ov:c.ov})),
-    segs:tlSegs().filter(s=>!(s.clip&&s.clip.pend)).map(s=>({k:s.clip?s.clip.key:'gap',start:s.start,end:s.end,cn:s.cn,bk:s.bk,bo:s.bo,sp:s.sp,fx:s.fx})),
+    segs:tlSegs().filter(s=>!(s.clip&&s.clip.pend)).map(s=>({k:s.clip?s.clip.key:'gap',start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,fx:s.fx})),
     pend:Object.fromEntries(clips.filter(c=>c.pend).map(c=>[c.key,(draft.get(c)||segs.filter(q=>q.clip===c)).map(q=>({start:q.start,end:q.end,cn:q.cn}))])),corners,cview,cPreset,cKey,
     items,itemId,tpl,workMade,noCH,segMan,pps,thr,auto,tailPad,tltDone,cur:cur&&cur.key,gt,screen:$('s2').hidden&&$('s3').hidden?'s1':'s2'};
 }
@@ -4535,7 +4552,7 @@ async function restore(){
       clips.push(o);by[c.key]=o;
     }
     if(!clips.length)return;
-    segs=(st.segs||[]).filter(s=>s.k==='gap'||by[s.k]).map(s=>({clip:s.k==='gap'?null:by[s.k],start:s.start,end:s.end,cn:s.cn,bk:s.bk,bo:s.bo,sp:s.sp,fx:s.fx}));auMig();
+    segs=(st.segs||[]).filter(s=>s.k==='gap'||by[s.k]).map(s=>({clip:s.k==='gap'?null:by[s.k],start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,fx:s.fx}));auMig();
     for(const[k,rs]of Object.entries(st.pend||{})){const c=by[k];if(!c)continue;c.pend=true;segs=segs.filter(q=>q.clip!==c);draft.set(c,rs)}
     window.fineReset&&fineReset();  corners=st.corners||[];cview=st.cview||null;cPreset=st.cPreset||'doc';cKey=st.cKey||'';
     items=st.items||[];itemId=st.itemId||1;tailPad=st.tailPad||0;tpl=st.tpl||null;if(tpl==='travel')tpl=cPreset==='tv'?'tv':'doc';else if(tpl==='point'||tpl==='talk')tpl='diy';workMade=!!st.workMade;noCH=!!st.noCH;segMan=!!st.segMan;
@@ -4634,6 +4651,7 @@ const PT_GROUPS=[
     {k:'stW',t:'rng',l:'太さ',min:0,max:20,st:.5,f:v=>v==0?'なし':v},
     {k:'stColor',t:'seg',l:'色',sw:1,o:[['#000000','黒'],['#ffffff','白'],['#1b2a4a','紺'],['#6b4420','茶']]},
     {t:'sub',l:'シャドウ'},
+    {k:'shColor',t:'color',l:'シャドウの色'},
     {k:'shOp',t:'rng',l:'濃さ',min:0,max:100,st:1,f:v=>v+'%'},
     {k:'shBlur',t:'rng',l:'ぼかし',min:0,max:60,st:1,f:v=>v},
     {k:'shDist',t:'rng',l:'距離',min:0,max:30,st:.5,f:v=>v},
@@ -4723,7 +4741,7 @@ function edSet(k,v){if(k.startsWith('S.')){const o=stObj();if(o)o[k.slice(2)]=v;
 const ST_GROUPS=tab=>[
   {id:tab+'Text',tab,t:'テキスト',rows:[
     {k:'_sample',t:'txt',l:'試し文字',ph:'プレビューだけに使う文字'},
-    ...(tab==='sub'?[{k:'S.text',t:'txt',l:'空白の文字',bl:1,ph:'空白に出す文字'},{k:'S.vert',t:'seg',l:'向き',o:[['0','横'],['1','縦']]}]:[]),
+    ...(tab==='sub'?[{k:'S.vert',t:'seg',l:'向き',o:[['0','横'],['1','縦']]}]:[]),
     {k:'S.font',t:'seg',l:'フォント',o:[['gothic','ゴシック'],['serif','明朝'],['shippori','しっぽり'],['lanove','ラノベPOP'],['yusei','マジック手書き'],['klee','教科書体'],['utage','しょかきうたげ'],['horror','ホラー'],['tsukkomi','ツッコミ']]},
     {k:'S.color',t:'seg',l:'文字色',sw:1,o:[['#ffffff','白'],['#ffe14a','黄'],['#f3ead7','象牙'],['#cfe3f5','水色']]},
     {t:'sub',l:'ストローク(フチ)'},
@@ -4733,6 +4751,7 @@ const ST_GROUPS=tab=>[
     {k:'S.st2W',t:'rng',l:'太さ',min:0,max:40,st:.5,f:v=>v==0?'なし':v},
     {k:'S.st2Color',t:'seg',l:'色',sw:1,o:[['#ff4f9a','ピンク'],['#000000','黒'],['#ffffff','白'],['#2c5fd8','青']]},
     {t:'sub',l:'シャドウ'},
+    {k:'S.shColor',t:'color',l:'シャドウの色'},
     {k:'S.shOp',t:'rng',l:'濃さ',min:0,max:100,st:1,f:v=>v+'%'},
     {k:'S.shBlur',t:'rng',l:'ぼかし',min:0,max:60,st:1,f:v=>v},
     {k:'S.shDist',t:'rng',l:'距離',min:0,max:30,st:.5,f:v=>v},
@@ -4755,11 +4774,17 @@ const ST_GROUPS=tab=>[
     {k:'S.durOut',t:'rng',l:'消える時間',min:.1,max:3,st:.1,f:v=>(+v).toFixed(1)+'秒'}
   ]}];
 PT_GROUPS.push(...ST_GROUPS('sub'),...ST_GROUPS('big'));
+// 特殊機能はチェック時だけ詳細設定を開く。既存の値は変更しない。
+PT_GROUPS.push({id:'subSpecial',tab:'sub',t:'特殊機能',rows:[
+  {k:'_specialFrame',t:'toggle',l:'背景枠を設定',target:'subText',field:'S.frame'},
+  {k:'_specialAnim',t:'toggle',l:'アニメーションを設定',target:'subAnim',field:'S.anim'}
+]});
+
 function ptTabApply(){
   document.querySelectorAll('#s3tpl button[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===ptTab)));
   $('subSt').hidden=ptTab!=='sub';document.querySelectorAll('#ecCtl [data-bl]').forEach(x=>x.hidden=!/^sub[sh]$/.test(subSel));$('subSt').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.u===subSel)));
   document.querySelectorAll('#ecCtl .grp').forEach(w=>{w.hidden=w.dataset.tab!==ptTab||(!!w.dataset.gk&&!(ED&&isGK(chSt(ED))))});
-  {const sel=$('ptDes'),op=ptTab==='ch'?[['bandana','バンダナ'],['plate','看板'],['garakuta','我楽苦多 黒'],['gk3d','我楽苦多 白立体']]:ptTab==='big'?Object.keys(STN).map(k=>[k,STN[k]]):ptTab==='sub'?[[subSel,{sub:'ナレーション',subm:'きんきん',subf:'マリ',subs:'空白縦',subh:'空白横'}[subSel]]]:[['point','ポイント']];
+  {const sel=$('ptDes'),op=ptTab==='ch'?[['bandana','バンダナ'],['plate','看板'],['garakuta','我楽苦多 黒'],['gk3d','我楽苦多 白立体']]:ptTab==='big'?Object.keys(STN).map(k=>[k,STN[k]]):ptTab==='sub'?[[subSel,{sub:'ナレーション',subm:'きんきん',subf:'マリ'}[subSel]||'字幕']]:[['point','ポイント']];
     const cur=ptTab==='ch'?(ED?chSt(ED):'bandana'):ptTab==='big'?bigSel:op[0][0];
     sel.innerHTML='';op.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});sel.value=cur;sel.disabled=op.length<2}
   $('bigSt').hidden=ptTab!=='big';$('bigSt').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.s===bigSel)));
@@ -4776,7 +4801,9 @@ function ptRow(r){
   if(r.t==='sub'){row.className='csub';row.textContent=r.l;return row}if(r.bl)row.dataset.bl='1';
   row.className='crow'+(r.t==='txt'?' txt':r.t==='seg'?' sg':' rg');
   const lb=document.createElement('span');lb.textContent=r.l;row.appendChild(lb);
-  if(r.t==='txt'){const i=document.createElement('input');i.type='text';i.placeholder=r.ph;i.maxLength=r.k==='label'?20:40;i.dataset.k=r.k;
+  if(r.t==='toggle'){const i=document.createElement('input');i.type='checkbox';i.setAttribute('aria-label',r.l);const target=()=>r.field==='S.frame'?(edGet(r.field)||'none')!=='none':(edGet(r.field)||'none')!=='none';i.checked=target();i.onchange=()=>{if(r.field==='S.frame')edSet(r.field,i.checked?'round':'none');else edSet(r.field,i.checked?'fade':'none');ptDirty();ptSync();ptDraw()};row.appendChild(i)}
+  else if(r.t==='color'){const i=document.createElement('input');i.type='color';i.dataset.k=r.k;i.value='#000000';i.setAttribute('aria-label',r.l);i.oninput=()=>{edSet(r.k,i.value);ptDirty();ptDraw()};row.appendChild(i)}
+  else if(r.t==='txt'){const i=document.createElement('input');i.type='text';i.placeholder=r.ph;i.maxLength=r.k==='label'?20:40;i.dataset.k=r.k;
     i.oninput=()=>{if(r.k==='_sample'){ptSample=i.value}else{edSet(r.k,i.value);ptDirty()}
       fontFor(ptText()+(ED.chT2||'')+(ED.chT1||'')+(ED.chT3||'')).then(()=>ptDraw())};row.appendChild(i)}
   else if(r.t==='seg'){const sg=document.createElement('div');sg.className='segb';sg.style.gridTemplateColumns='repeat('+Math.min(4,r.o.length)+',1fr)';
@@ -4834,6 +4861,8 @@ function ptVal(k){if((k==='chX'||k==='chY')&&ED[k]==null){const q=ptCenterNow();
 function ptSync(){
   $('ecCtl').querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k,r=PT_ROWS.find(x=>x.k===k);
     if(el.tagName==='BUTTON')el.setAttribute('aria-pressed',String(edGet(k)===el.dataset.v));
+    else if(el.type==='checkbox'){const r=PT_ROWS.find(z=>z.k===k);el.checked=!!r&&(edGet(r.field)||'none')!=='none'}
+    else if(el.type==='color'){el.value=/^#[0-9a-f]{6}$/i.test(edGet(k)||'')?edGet(k):'#000000'}
     else if(el.type==='range'){const v=ptVal(k);el.value=v;el.closest('.crow').querySelector('output').textContent=r.f(v)}
     else if(k==='_sample')el.value=ptSample;
     else el.value=edGet(k)||''});
@@ -5023,7 +5052,7 @@ async function tLoad(m){
     const o={id:nextId++,key:c.key,name:c.name,file:blob,url:URL.createObjectURL(blob),d:c.d,w:c.w,h:c.h,meta:c.meta||{},au:c.au,ord:c.ord,ov:c.ov};
     clips.push(o);by[c.key]=o;idbPut('files',c.key,{blob}).catch(()=>{})}
   for(const k of new Set((st.items||[]).filter(o=>o.akey).map(o=>o.akey))){try{const r=await idbGet('files',k);if(!r||!r.blob){const b=await tGet('b|'+m.id+'|'+k);if(b){await idbPut('files',k,{blob:b});delete narBuf[k]}}}catch(e){}}
-  segs=(st.segs||[]).filter(s=>s.k==='gap'||by[s.k]).map(s=>({clip:s.k==='gap'?null:by[s.k],start:s.start,end:s.end,cn:s.cn,bk:s.bk,bo:s.bo,sp:s.sp,fx:s.fx}));auMig();
+  segs=(st.segs||[]).filter(s=>s.k==='gap'||by[s.k]).map(s=>({clip:s.k==='gap'?null:by[s.k],start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,fx:s.fx}));auMig();
   corners=st.corners||[];cview=st.cview||null;cPreset=st.cPreset||'doc';cKey=st.cKey||'';
   items=JSON.parse(JSON.stringify(st.items||[]));itemId=st.itemId||1;tailPad=st.tailPad||0;tpl=st.tpl||tpl;workMade=!!st.workMade;noCH=!!st.noCH;segMan=!!st.segMan;tltDone=true;
   pps=st.pps||28;if(st.thr){thr=st.thr;$('thr').value=String(thr)}
@@ -5415,7 +5444,7 @@ function segDlg(s){
 /* 字幕・太字レーンの何もないところ: 長タップ(ブルッ)→新規ブロック */
 function bindLaneLP(ln,i){
   ln.addEventListener('pointerdown',e=>{
-    if(e.target!==ln||multiMode||roLane(i))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
+    if(i===4||e.target!==ln||multiMode||roLane(i))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
     const t=Math.max(0,(e.clientX-$('cv').getBoundingClientRect().left)/pps);
     const tm=setTimeout(()=>{fired=true;buzz();ln.style.background='rgba(201,70,13,.15)'},450);
     const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8)fin(false)};
@@ -5462,7 +5491,7 @@ function subEnter(v,p){
 {
   const row=document.createElement('div');row.className='subRow';tx.before(row);row.appendChild(tx);
   const cb=document.createElement('button');cb.id='subClose';cb.textContent='閉じる';cb.hidden=true;row.appendChild(cb);
-  const bb=document.createElement('button');bb.id='subBold';bb.textContent='太字にする';bb.hidden=true;row.appendChild(bb);
+  const bb=document.createElement('button');bb.id='subBold';bb.textContent='太字にする';bb.hidden=true;bb.style.display='none';row.appendChild(bb);
   bb.addEventListener('mousedown',e=>e.preventDefault());
   bb.onclick=()=>{const a=subActive();if(!a)return;pushHist();
     a.bold=!a.bold;if(a.bold&&!a.bstyle)a.bstyle='setsumei_yoko';
@@ -5486,7 +5515,7 @@ function subEnter(v,p){
   const mine=()=>cur?segs.filter(s=>s.clip===cur):[];
   const okSel=()=>{if(wsel&&(wsel.clip!==cur||!segs.includes(wsel)))wsel=null;return wsel};
   const pickAt=t=>mine().find(s=>t>=s.start-0.01&&t<=s.end+0.01)||null;
-  const pushH=()=>{hist.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift()};
+  const pushH=()=>{hist.push({segs:segs.map(q=>({clip:q.clip,start:q.start,end:q.end,cn:q.cn,bk:q.bk,bg:q.bg,bo:q.bo,sp:q.sp,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift()};
   function loadPk(){if(!cur){pk=null;pkClip=null;return}if(pkClip===cur)return;pkClip=cur;pk=null;const c=cur;
     clipPeaks(c).then(p=>{if(c===cur&&pkClip===c){pk=p;draw()}})}
   const edgePad=()=>Math.max(0.15,(cur.d||1)*0.04);
@@ -7047,7 +7076,7 @@ function editRow(r,list,g,late){sheet((b,close)=>{$('sheet').classList.add('sub-
     te.onchange=()=>{const v=te.value.trim();if(v)g.en=v;else delete g.en;saveR(view.m,r)};b.append(te)}
   b.append(w);
   /* v491: SEは字幕の再生画面から設定できるため、修正窓には置かない(既存SEは保持) */
-  {const w2=document.createElement('div');w2.className='two';[['s','空白縦'],['h','空白横']].forEach(([k,l])=>{const x=document.createElement('button');x.className='no';x.textContent=l;x.style.background='#000';x.style.color='#fff';x.onclick=()=>{const v=ta.value.replace(/\r/g,'').replace(/\n+/g,'').trim();try{ta.blur()}catch(_){}close();addBlank(g,k,v)};/* v278: 入力欄の文字をそのまま空白の字幕に */w2.appendChild(x)});b.appendChild(w2)}
+  /* v515: 空白縦・横の新規追加ボタンを廃止。既存クリップの再生互換は保持。 */
   if(g.grp){const u=document.createElement('button');u.className='no';u.textContent='グループ解除(この行から下)';u.onclick=()=>{close();const gm=grpOf(list,g),i=gm.indexOf(g);gm.slice(i).forEach(x=>delete x.grp);sel=g;save();drawResults()};b.appendChild(u)}
   const dl=document.createElement('button');dl.textContent='この字幕を消す';dl.style.background='#c0262d';dl.style.color='#fff';dl.onclick=()=>{close();sel=g;delSub()};
   {const w3=document.createElement('div');w3.className='two';w3.append(n,dl);b.appendChild(w3)}
@@ -9900,7 +9929,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     $('tsStatus').textContent=names[lastKind]+'を選択中';
     const area=$('tsChoices');area.replaceChildren();
     // v504: 登録済みデザインの一覧をこの画面内で選択。保存データは触らない。
-    const types=lastKind==='logo'?[['bandana','バンダナ'],['plate','看板'],['garakuta','我楽苦多 黒'],['gk3d','我楽苦多 白立体']]:lastKind==='heading'?[['point','ポイント']]:[['sub','ナレーション'],['subm','きんきん'],['subf','マリ'],['subs','空白縦'],['subh','空白横']];
+    const types=lastKind==='logo'?[['bandana','バンダナ'],['plate','看板'],['garakuta','我楽苦多 黒'],['gk3d','我楽苦多 白立体']]:lastKind==='heading'?[['point','ポイント']]:[['sub','ナレーション'],['subm','きんきん'],['subf','マリ']];
     // 削除は登録一覧からの除外。標準デザインや既存プロジェクトの設定データは破壊しない。
     const removedKey='tsDeletedTemplates';
     const readRemoved=()=>{try{const a=JSON.parse(localStorage.getItem(removedKey)||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'):[]}catch(e){return []}};
@@ -9956,6 +9985,16 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
       };
       card.append(msg,cancel,yes);dialog.appendChild(card);document.body.appendChild(dialog);
     };
+    if(lastKind==='subtitle'){
+      const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:8px;margin-top:12px';
+      const title=document.createElement('strong');title.textContent='文字入り空白クリップを追加';box.appendChild(title);
+      const tx=document.createElement('textarea');tx.placeholder='表示する文字';tx.rows=2;tx.setAttribute('aria-label','空白クリップの文字');box.appendChild(tx);
+      const colorLabel=document.createElement('label');colorLabel.textContent='背景色';const color=document.createElement('input');color.type='color';color.value='#000000';colorLabel.appendChild(color);box.appendChild(colorLabel);
+      const durLabel=document.createElement('label');durLabel.textContent='表示時間（秒）';const dur=document.createElement('input');dur.type='number';dur.min='0.2';dur.max='60';dur.step='0.1';dur.value='2';durLabel.appendChild(dur);box.appendChild(durLabel);
+      const add=document.createElement('button');add.textContent='現在位置に空白クリップを追加';add.className='primary';box.appendChild(add);
+      add.onclick=()=>{const err=window.tsAddBlankClip?window.tsAddBlankClip(tx.value,color.value,dur.value):'追加機能を使用できません';$('tsStatus').textContent=err||'空白クリップを追加しました'};
+      area.appendChild(box);
+    }
     $('tsNote').textContent='削除は登録一覧からの除外です。既存の動画・テンプレート設定は残ります。';
   });
 })();
