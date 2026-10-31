@@ -4411,7 +4411,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v516';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v517';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4775,10 +4775,6 @@ const ST_GROUPS=tab=>[
   ]}];
 PT_GROUPS.push(...ST_GROUPS('sub'),...ST_GROUPS('big'));
 // 特殊機能はチェック時だけ詳細設定を開く。既存の値は変更しない。
-PT_GROUPS.push({id:'subSpecial',tab:'sub',t:'特殊機能',rows:[
-  {k:'_specialFrame',t:'toggle',l:'背景枠を設定',target:'subText',field:'S.frame'},
-  {k:'_specialAnim',t:'toggle',l:'アニメーションを設定',target:'subAnim',field:'S.anim'}
-]});
 
 function ptTabApply(){
   document.querySelectorAll('#s3tpl button[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===ptTab)));
@@ -4801,8 +4797,7 @@ function ptRow(r){
   if(r.t==='sub'){row.className='csub';row.textContent=r.l;return row}if(r.bl)row.dataset.bl='1';
   row.className='crow'+(r.t==='txt'?' txt':r.t==='seg'?' sg':' rg');
   const lb=document.createElement('span');lb.textContent=r.l;row.appendChild(lb);
-  if(r.t==='toggle'){const i=document.createElement('input');i.type='checkbox';i.setAttribute('aria-label',r.l);const target=()=>r.field==='S.frame'?(edGet(r.field)||'none')!=='none':(edGet(r.field)||'none')!=='none';i.checked=target();i.onchange=()=>{if(r.field==='S.frame')edSet(r.field,i.checked?'round':'none');else edSet(r.field,i.checked?'fade':'none');ptDirty();ptSync();ptDraw()};row.appendChild(i)}
-  else if(r.t==='color'){const i=document.createElement('input');i.type='color';i.dataset.k=r.k;i.value='#000000';i.setAttribute('aria-label',r.l);i.oninput=()=>{edSet(r.k,i.value);ptDirty();ptDraw()};row.appendChild(i)}
+  if(r.t==='color'){const i=document.createElement('input');i.type='color';i.dataset.k=r.k;i.value='#000000';i.setAttribute('aria-label',r.l);i.oninput=()=>{edSet(r.k,i.value);ptDirty();ptDraw()};row.appendChild(i)}
   else if(r.t==='txt'){const i=document.createElement('input');i.type='text';i.placeholder=r.ph;i.maxLength=r.k==='label'?20:40;i.dataset.k=r.k;
     i.oninput=()=>{if(r.k==='_sample'){ptSample=i.value}else{edSet(r.k,i.value);ptDirty()}
       fontFor(ptText()+(ED.chT2||'')+(ED.chT1||'')+(ED.chT3||'')).then(()=>ptDraw())};row.appendChild(i)}
@@ -4835,6 +4830,7 @@ function ptBuild(){
     gp.rows.forEach(r=>body.appendChild(ptRow(r)));
     w.append(h,body);box.appendChild(w);paint()});
   ptSubNar(box);
+  ptSpecial(box);
   ptTabApply();
 }
 /* v471: 字幕・ナレーションの設定(動画の種類ごと。保存先はタイムラインテンプレート TLT.ty[種類].sub/.nar)。字幕タブの一番下 */
@@ -4854,6 +4850,17 @@ function ptSubNar(box){ptOpenG.subNar=ptOpenG.subNar||false;
       const nb=(tx,d)=>{const b=document.createElement('button');b.type='button';b.className='nb';b.textContent=tx;b.setAttribute('aria-label',l+(d<0?'を減らす':'を増やす'));b.onclick=()=>set(+i.value+d*st);return b};
       i.oninput=()=>{out.textContent=f(+i.value)};i.onchange=()=>set(+i.value);r.append(lb,nb('−',-1),i,nb('＋',1));body.appendChild(r)};
     rng('1行の最大文字数',t.sub,'maxc',8,30,1,v=>v+'文字');rng('ナレーションの速さ',t.nar,'sp',0.10,0.30,0.01,v=>v.toFixed(2)+'秒/字');rng('ナレーション中のBGM',t.nar,'duck',0,90,5,v=>v?v+'%下げる':'下げない')
+
+  };
+  const paint=()=>{const o=!!ptOpenG.subNar;h.innerHTML='';const a=document.createElement('span');a.textContent='字幕・ナレーション(動画の種類ごと)';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
+  h.onclick=()=>{const o=!ptOpenG.subNar;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.subNar=o;ptPaints.forEach(f=>f())};ptPaints.push(paint);
+  w.append(h,body);box.appendChild(w);paint()}
+// 字幕・ナレーションの次に独立した「特殊機能」タブを表示する。
+function ptSpecial(box){
+  const w=document.createElement('div');w.className='grp';w.dataset.tab='sub';w.id='ptSpecial';
+  const h=document.createElement('button');h.type='button';h.className='gh';
+  const body=document.createElement('div');body.className='gb';
+  const fill=()=>{body.innerHTML='';
     // 字幕・ナレーションの直下に表示。チェック時のみ詳細を開く。
     {const section=document.createElement('div');section.style.cssText='padding:12px 0;border-top:1px solid #41444d;margin-top:12px';
       const head=document.createElement('label');head.style.cssText='display:flex;align-items:center;gap:10px;font-weight:600';
@@ -4869,14 +4876,14 @@ function ptSubNar(box){ptOpenG.subNar=ptOpenG.subNar||false;
       add.onclick=()=>{const err=window.tsAddBlankClip?window.tsAddBlankClip(tx.value,color.value,dur.value):'クリップ追加機能を使用できません';msg.textContent=err||'空白クリップを追加しました'};
       detail.append(add,msg);section.appendChild(detail);body.appendChild(section)}
   };
-  const paint=()=>{const o=!!ptOpenG.subNar;h.innerHTML='';const a=document.createElement('span');a.textContent='字幕・ナレーション(動画の種類ごと)';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
-  h.onclick=()=>{const o=!ptOpenG.subNar;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.subNar=o;ptPaints.forEach(f=>f())};ptPaints.push(paint);
-  w.append(h,body);box.appendChild(w);paint()}
+  const paint=()=>{const o=!!ptOpenG.special;h.innerHTML='';const a=document.createElement('span');a.textContent='特殊機能';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
+  h.onclick=()=>{const o=!ptOpenG.special;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.special=o;ptPaints.forEach(f=>f())};
+  ptPaints.push(paint);w.append(h,body);box.appendChild(w);paint();
+}
 function ptVal(k){if((k==='chX'||k==='chY')&&ED[k]==null){const q=ptCenterNow();return k==='chX'?q[0]:q[1]}return +edGet(k)||0}
 function ptSync(){
   $('ecCtl').querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k,r=PT_ROWS.find(x=>x.k===k);
     if(el.tagName==='BUTTON')el.setAttribute('aria-pressed',String(edGet(k)===el.dataset.v));
-    else if(el.type==='checkbox'){const r=PT_ROWS.find(z=>z.k===k);el.checked=!!r&&(edGet(r.field)||'none')!=='none'}
     else if(el.type==='color'){el.value=/^#[0-9a-f]{6}$/i.test(edGet(k)||'')?edGet(k):'#000000'}
     else if(el.type==='range'){const v=ptVal(k);el.value=v;el.closest('.crow').querySelector('output').textContent=r.f(v)}
     else if(k==='_sample')el.value=ptSample;
