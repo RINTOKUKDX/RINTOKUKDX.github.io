@@ -486,9 +486,12 @@ body.editing .pgnav{display:none!important}
 #s1 section.b.fast #insRow{grid-template-columns:1fr 1fr}
 #cutDeleteRow button{width:100%}
 #s1 section.b.fast #cctl{grid-template-columns:1fr 1fr}
-#segs .sourceSeg{grid-template-columns:1fr auto auto auto}
-#segs .sourceSeg .nm{grid-column:1/-1;font-family:inherit}
-#segs .sourceSeg .nm small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* v498: サムネ・動画番号・挿入先・削除を横1列へ */
+#segs .sourceSeg{grid-template-columns:56px minmax(44px,1fr) minmax(60px,1.5fr) auto;gap:6px}
+#segs .sourceSeg .nm{font-family:inherit;white-space:nowrap}
+#segs .sourceSeg .cnTag{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#segs .sourceSeg .sourceThumb{min-width:0;width:56px;height:40px;padding:0;overflow:hidden;background:var(--bgb);border:1px solid var(--line)}
+#segs .sourceThumb img{display:block;width:100%;height:100%;object-fit:cover}
 #restoreClip{width:100%;margin-top:8px}
 /* v497: カットページの役割ごとに背景・枠を分ける。ボタンの選択色は維持 */
 #s1{gap:18px}
@@ -1741,11 +1744,10 @@ let gapC=null;
 function renderSegs(){const box=$('segs');box.innerHTML='';if(corners.length)cAssign();renderCutCn();const SG=tlSegs().filter(s=>!(s.clip&&s.clip.pend)),groups=new Map();
   SG.forEach(s=>{if(!s.clip)return;const key=bkey(s.clip.key);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(s)});
   groups.forEach(L=>{const c=L[0].clip,source=bkey(c.key),d=document.createElement('div');d.className='seg sourceSeg';d.dataset.source=source;
-    const nm=document.createElement('div');nm.className='nm';const title=document.createElement('b');title.textContent='動画'+num(c)+'  '+fmtS(L.reduce((a,s)=>a+s.end-s.start,0))+'  '+L.length+'分割';const name=document.createElement('small');name.textContent=c.name;nm.append(title,name);d.append(nm);
+    const thumbBtn=document.createElement('button');thumbBtn.className='sourceThumb';thumbBtn.setAttribute('aria-label','動画'+num(c)+'のカット後を再生');thumbBtn.title=c.name;const image=document.createElement('img');image.alt='';thumbBtn.append(image);thumb(c,L[0].start).then(u=>{if(u&&image.isConnected)image.src=u});thumbBtn.onclick=()=>{select(c);window.cutPreviewSource&&window.cutPreviewSource(L)};const nm=document.createElement('b');nm.className='nm';nm.textContent='動画'+num(c);nm.title=c.name;d.append(thumbBtn,nm);
     const cb=document.createElement('button');cb.className='cnTag';const ids=[...new Set(L.map(s=>s.cn))],ci=cIdx(ids[0]);cb.textContent=ids.length>1?'複数ブロック':ci>=0?corners[ci].name:'ブロック';cb.disabled=!corners.length;
     cb.onclick=()=>cdlg('この元動画の挿入先を選んでください',corners.map(k=>[k.name,()=>{const set=s=>{if(s.clip&&bkey(s.clip.key)===source)s.cn=k.id};segs.forEach(set);if(reBak)reBak.forEach(set);clips.filter(x=>bkey(x.key)===source).forEach(x=>{const a=draft.get(x);if(a)a.forEach(q=>q.cn=k.id);const e=reEd.get(x);if(e)e.r.forEach(q=>q.cn=k.id)});cutCn=k.id;sortSegs();resetOut();renderSegs()}]).concat([['閉じる']]));
-    const v=document.createElement('button');v.textContent='見る';v.onclick=()=>{select(c);const go=()=>{try{pv.currentTime=L[0].start+.001}catch(e){}$('cbA').click()};if(pv.readyState>=1)go();else pv.addEventListener('loadedmetadata',go,{once:true})};
-    const x=document.createElement('button');x.textContent='削除';x.onclick=()=>{const list=clips.filter(q=>bkey(q.key)===source);cdlg('「'+c.name+'」の動画とカット情報を削除しますか?\n元に戻すボタンで復元できます（再起動まで）',[['削除する',()=>dropClips(list),'warn'],['やめる']])};d.append(cb,v,x);box.appendChild(d)});
+    const x=document.createElement('button');x.textContent='削除';x.onclick=()=>{const list=clips.filter(q=>bkey(q.key)===source);cdlg('「'+c.name+'」の動画とカット情報を削除しますか?\n元に戻すボタンで復元できます（再起動まで）',[['削除する',()=>dropClips(list),'warn'],['やめる']])};d.append(cb,x);box.appendChild(d)});
   $('tTotal').textContent=fmt(SG.reduce((a,q)=>a+q.end-q.start,0)+tailPad);$('segN').textContent=groups.size?'（'+groups.size+'本）':'';$('toS2').disabled=!SG.length;const deleted=delStack.filter(r=>r.entries.some(e=>!clips.includes(e.c))).length;$('restoreClip').disabled=!deleted;$('restoreClip').textContent='元に戻す'+(deleted?'（'+deleted+'件）':'');renderChips()}
 function resetOut(){outBlob=null;$('result').hidden=true;$('save').hidden=true;$('prog').style.width='0'}
 
@@ -4356,7 +4358,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v497';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v498';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5578,12 +5580,14 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
       if(when<ctx.currentTime+0.05)when=ctx.currentTime+0.05;n.start(when);me.nodes.push(n);me.map.push({w:when,d:buf.duration,a:x});when+=buf.duration}
     me.done=true;me.end=when}
   document.querySelector('#s1 section.b').addEventListener('pointerdown',e=>{if(ap&&!e.target.closest('#cbA,#silP'))apStop()},true);
-  function startChain(){let rs=mine().slice().sort((a,b)=>a.start-b.start);
+  function startChain(source){let rs=source?source.slice():mine().slice().sort((a,b)=>a.start-b.start);
     /* v453: 無音削除のパネルを開いている時は、切った後の状態で再生 */{const sm=window.silMarks&&silMarks.get(cur);if(sm&&sm.length){const o=[];rs.forEach(q=>{let a=q.start;sm.forEach(([x,y])=>{if(y<=a||x>=q.end)return;if(x-a>0.1)o.push({...q,start:a,end:x});a=Math.max(a,y)});if(q.end-a>0.1)o.push({...q,start:a,end:q.end})});rs=o}if(window.silPr<2){if(!rs.length){cutMsg('残す範囲がありません');return}apStart(rs,2-window.silPr);return}}if(!rs.length){cutMsg('残す範囲がありません');return}
     const t=pv.currentTime;let i=rs.findIndex(q=>t>=q.start&&t<q.end-0.05),st=t;if(i<0){i=rs.findIndex(q=>q.start>=t);if(i<0)i=0;st=rs[i].start}
     pv.pause();pEnd=null;const A=cvs[0];chain={rs,i,act:0,pre:false};prep(A,st);snd(A,true);if(rs[i+1])prep(cvs[1],rs[i+1].start-leadOf(chain,i+1));
     const go=()=>{if(!chain)return;A.style.zIndex=1;cvs[1].style.zIndex=0;cvs.forEach(v=>v.style.opacity=1);A.play().catch(()=>{});requestAnimationFrame(chainTick)};
     phT=st;if(A.readyState>=2&&!A.seeking)go();else A.addEventListener('seeked',go,{once:true})}
+  /* v498: 元動画一覧のサムネから、その元動画に残る範囲だけを続けて再生する */
+  window.cutPreviewSource=ranges=>{if(!cur)return;const c=cur,rs=[];ranges.slice().sort((a,b)=>a.start-b.start).forEach(q=>{const last=rs[rs.length-1];if(last&&q.start<=last.end+.001)last.end=Math.max(last.end,q.end);else rs.push({...q})});if(!rs.length)return;apStop();stopChain();pv.pause();const go=()=>{if(cur!==c)return;try{pv.currentTime=rs[0].start+.001}catch(e){}startChain(rs)};if(pv.readyState>=1)go();else pv.addEventListener('loadedmetadata',go,{once:true})};
   document.querySelector('#s1 section.b').addEventListener('pointerdown',e=>{if(chain&&!e.target.closest('#cbA,.stage'))stopChain()},true);
   /* ▶‖の終わり: pEndで止めて、pRet(範囲の先頭)に戻す */
   let pRet=null;
