@@ -4394,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v507';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v508';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4593,8 +4593,9 @@ function ptDraw(since,until,cv,clean,chT){
   const c=cv||$('ec'),g=c.getContext('2d'),W=c.width,H=c.height;
   g.fillStyle='#000';g.fillRect(0,0,W,H);
   let ok=false;
-  try{const vw=sv.videoWidth,vh=sv.videoHeight;if(vw&&vh&&sv.readyState>=2){const k=Math.min(W/vw,H/vh);g.drawImage(sv,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);ok=true}}catch(e){}
-  if(ptTab==='sub'&&/^sub[sh]$/.test(subSel)){g.fillStyle='#000';g.fillRect(0,0,W,H);ok=true}
+  if(window.tsStudioEditing&&window.tsEditorFrame){try{g.drawImage(window.tsEditorFrame,0,0,W,H);ok=true}catch(e){}}
+  try{if(!ok){const vw=sv.videoWidth,vh=sv.videoHeight;if(vw&&vh&&sv.readyState>=2){const k=Math.min(W/vw,H/vh);g.drawImage(sv,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);ok=true}}}catch(e){}
+  if(!window.tsStudioEditing&&ptTab==='sub'&&/^sub[sh]$/.test(subSel)){g.fillStyle='#000';g.fillRect(0,0,W,H);ok=true}
   if(!ok){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#33425c');gr.addColorStop(.62,'#b9805a');gr.addColorStop(1,'#231f1c');g.fillStyle=gr;g.fillRect(0,0,W,H)}
   /* v484: 英語字幕タブ = 日本語字幕(見本)と、その下に英語字幕を設定どおりに描く */
   if(ptTab==='en'){const fs=H*.07,jy=H*.72;g.save();g.font=PFONT(fs,'gothic');g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=fs*.22;g.strokeStyle='#000';g.fillStyle='#fff';
@@ -4841,6 +4842,7 @@ function ptDirty(){edDirty=true;$('ptSave').textContent='保存';$('ptMsg').text
 function chSwitch(st){if(!ED||st===ED.chStyle)return;ED.chs=ED.chs||{};ED.chs[ED.chStyle]=chPick(ED);Object.assign(ED,ED.chs[st]||{});ED.chStyle=st;ptDirty();ptTabApply()}
 $('ptDes').addEventListener('change',e=>{const v=e.target.value;ptAnimTok++;ptSample='';
   if(ptTab==='ch')chSwitch(v);else if(ptTab==='big'){bigSel=v;ptTabApply();fontFor(ptText()).then(()=>ptDraw())}});
+window.tsStudioPaint=()=>ptDraw();
 window.ptOpen=()=>ptOpen();function ptOpen(){
   pausePreview();closeEd();$('pvSec').classList.remove('full');
   ED=ptClone(PT);edDirty=false;ptBackArm=false;ptSample='';if(selItem&&selItem.lane===4&&BIG[selItem.style])bigSel=selItem.style;
@@ -4853,7 +4855,7 @@ window.ptOpen=()=>ptOpen();function ptOpen(){
   ptSync();fontFor(ptText()).then(()=>ptDraw());ptDraw();
 }
 let ptFrom='s2';
-function ptClose(){ptAnimTok++;$('s3').hidden=true;if(window.tsStudioReturn){window.tsStudioReturn=false;$('s4').hidden=true;$('tplStudio').hidden=false;window.tsStudioRefresh&&window.tsStudioRefresh();scrollTo(0,0);return}if(ptFrom==='s4'||ptFrom==='s1'){$(ptFrom).hidden=false;scrollTo(0,0);/* v487: 戻った時に今の設定で描き直す */try{window.enRedraw&&enRedraw()}catch(e){}return}$('s2').hidden=false;renderTimeline();scrollTo(0,0)}
+function ptClose(){ptAnimTok++;$('s3').hidden=true;if(window.tsStudioReturn){window.tsStudioReturn=false;window.tsStudioExit&&window.tsStudioExit();scrollTo(0,0);return}if(ptFrom==='s4'||ptFrom==='s1'){$(ptFrom).hidden=false;scrollTo(0,0);/* v487: 戻った時に今の設定で描き直す */try{window.enRedraw&&enRedraw()}catch(e){}return}$('s2').hidden=false;renderTimeline();scrollTo(0,0)}
 ptBuild();
 $('s3tpl').addEventListener('click',e=>{const su=e.target.closest('#subSt button');if(su){ptTab='sub';subSel=su.dataset.u;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw());return}const sb=e.target.closest('#bigSt button');if(sb){bigSel=sb.dataset.s;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw());return}const b=e.target.closest('button[data-tab]');if(!b)return;ptTab=b.dataset.tab;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw())});
 $('tplEdBtn').onclick=ptOpen;
@@ -9791,6 +9793,9 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
 
 <style>
 /* v504: 設定ページ内の登録済みデザイン選択 */
+#tplStudio.tsEditing > :not(#s3){display:none!important}
+#tplStudio.tsEditing #s3{display:flex!important;flex-direction:column;gap:12px;width:100%}
+#tplStudio.tsEditing #s3[hidden]{display:none!important}
 #tplStudio .tsChoices select{width:100%;min-height:48px;padding:8px;border:1px solid var(--btnl);border-radius:8px;background:var(--panel);color:var(--fg);font-size:16px}
 #tplStudio .tsChoices label{font-size:14px;color:var(--muted)}
 /* v503: 字幕テンプレート設定の独立試作。元の再生画面の寸法は変更しない */
@@ -9843,6 +9848,8 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     const frame=$('t_pl'),vids=[$('t_pv'),$('t_pv2')];
     const v=vids.find(el=>el&&el.videoWidth&&el.videoHeight&&getComputedStyle(el).visibility!=='hidden')||vids.find(el=>el&&el.videoWidth);
     if(v){try{const k=Math.min(w/v.videoWidth,h/v.videoHeight),vw=v.videoWidth*k,vh=v.videoHeight*k;x.drawImage(v,(w-vw)/2,(h-vh)/2,vw,vh)}catch(e){}}
+    // v508: 編集キャンバスにはテロップを重ねる前の静止画を渡す。
+    const raw=document.createElement('canvas');raw.width=w;raw.height=h;raw.getContext('2d').drawImage(preview,0,0);window.tsEditorFrame=raw;
     // 動画の静止画に現在の字幕・ロゴ等の描画を重ねる。元のcanvasは変更しない。
     if(frame){for(const id of ['t_sc','t_enc']){const el=$(id);if(el&&el.width&&el.height){try{x.drawImage(el,0,0,w,h)}catch(e){}}}
       const ov=$('t_ov');if(ov&&ov.textContent.trim()){x.textAlign='center';x.font='bold 30px sans-serif';x.fillStyle='#fff';x.shadowColor='#000';x.shadowBlur=7;x.fillText(ov.textContent.trim().slice(0,32),w/2,h*.83,w*.82);x.shadowBlur=0}
@@ -9863,15 +9870,23 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
   gear.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
   $('tsBack').onclick=close;
   const names={logo:'チャンネルロゴ',heading:'見出し1',subtitle:'字幕'};
+  const editPage=$('s3'),originalParent=editPage.parentNode,originalNext=editPage.nextSibling;
+  window.tsStudioExit=()=>{
+    window.tsStudioEditing=false;studio.classList.remove('tsEditing');
+    originalParent.insertBefore(editPage,originalNext);studio.hidden=false;source.hidden=true;
+    window.tsStudioRefresh&&window.tsStudioRefresh();
+  };
   function editor(kind,design){
-    // v507: 既存編集機能へ選択したデザインを渡し、戻り先は字幕設定ページにする。
+    // v508: 既存編集UIを設定ページ内へ移し、未保存の編集は既存の確認処理に任せる。
     close();
     if(typeof window.ptOpen!=='function'){$('tsStatus').textContent='既存の編集画面を開けません';return}
     window.ptOpen();window.tsStudioReturn=true;
+    studio.appendChild(editPage);studio.hidden=false;studio.classList.add('tsEditing');window.tsStudioEditing=true;
     const tabs=$('s3tpl');const key=kind==='logo'?'ch':kind==='heading'?'point':'sub';
     const b=tabs&&tabs.querySelector('button[data-tab="'+key+'"]');if(b)b.click();
     if(kind==='logo'){const sel=$('ptDes');if(sel&&[...sel.options].some(o=>o.value===design)){sel.value=design;sel.dispatchEvent(new Event('change',{bubbles:true}))}}
     if(kind==='subtitle'){const btn=$('subSt')?.querySelector('button[data-u="'+design+'"]');if(btn)btn.click()}
+    window.tsStudioPaint&&window.tsStudioPaint();scrollTo(0,0);
   }
   window.tsStudioRefresh=()=>{if(lastKind){const btn=studio.querySelector('.tsSpot[data-kind="'+lastKind+'"]');if(btn)btn.click()}};
   studio.querySelectorAll('.tsSpot').forEach(b=>b.onclick=()=>{
