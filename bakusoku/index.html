@@ -4394,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v512';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v513';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -9934,13 +9934,27 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     const del=document.createElement('button');del.textContent='選んだデザインを削除';del.disabled=!visible.length;area.appendChild(del);
     del.onclick=()=>{
       const key=sel.value,chosen=visible.find(([v])=>v===key);if(!chosen)return;
-      cdlg('「'+chosen[1]+'」を登録一覧から削除しますか？\\nほかのデザインやプロジェクトは削除されません。',[
-        ['キャンセル'],['削除する',()=>{
-          const current=new Set(readRemoved());current.add(lastKind+':'+key);
-          try{localStorage.setItem(removedKey,JSON.stringify([...current]))}catch(e){$('tsStatus').textContent='保存できず、削除を中止しました';return}
-          const spot=studio.querySelector('.tsSpot[data-kind="'+lastKind+'"]');if(spot)spot.click();
-          $('tsStatus').textContent='「'+chosen[1]+'」を登録一覧から削除しました';
-        },'warn']]);
+      // Android WebViewでも動く専用確認ダイアログ。確認前は一切変更しない。
+      const dialog=document.createElement('div');dialog.className='cdlg';
+      const card=document.createElement('div');const msg=document.createElement('p');
+      msg.textContent='警告：\u300c'+chosen[1]+'\u300dを削除します。\\nこの端末の登録一覧から消えます。既存プロジェクトは削除されません。';
+      const cancel=document.createElement('button');cancel.textContent='キャンセル';
+      const yes=document.createElement('button');yes.textContent='削除する';yes.className='warn';
+      const dismiss=()=>dialog.remove();cancel.onclick=dismiss;
+      dialog.onclick=e=>{if(e.target===dialog)dismiss()};
+      yes.onclick=()=>{
+        const current=new Set(readRemoved());current.add(lastKind+':'+key);
+        try{localStorage.setItem(removedKey,JSON.stringify([...current]));
+          if(!readRemoved().includes(lastKind+':'+key))throw Error('save failed');
+        }catch(e){dismiss();$('tsStatus').textContent='削除情報を保存できませんでした';return}
+        dismiss();
+        const option=[...sel.options].find(o=>o.value===key);if(option)option.remove();
+        const ix=visible.findIndex(([v])=>v===key);if(ix>=0)visible.splice(ix,1);
+        existing.disabled=del.disabled=!visible.length;
+        update();
+        $('tsStatus').textContent='「'+chosen[1]+'」を削除しました';
+      };
+      card.append(msg,cancel,yes);dialog.appendChild(card);document.body.appendChild(dialog);
     };
     $('tsNote').textContent='削除は登録一覧からの除外です。既存の動画・テンプレート設定は残ります。';
   });
