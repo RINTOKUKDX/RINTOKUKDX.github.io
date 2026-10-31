@@ -4338,7 +4338,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v491';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v492';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6462,8 +6462,8 @@ function showOv(t){showOv0(t);const o=$('ov');o.style.filter=o._g&&o._g.inv?INVF
   /* 太: 日本語の箱の下に描く。回転・反転も同じに */
   if(ge&&big){try{const W=sc.clientWidth,H=sc.clientHeight,dp=devicePixelRatio||1,x=enc.getContext('2d'),pr=sc.getBoundingClientRect(),rm=/rotate\(([-\d.]+)deg\)/.exec(o.style.transform||''),rot=rm?+rm[1]:0;
       const tf=o.style.transform;if(rot)o.style.transform=tf.replace(/rotate\([^)]*\)/,'');const r=o.getBoundingClientRect();if(rot)o.style.transform=tf;
-      let ocx=r.left-pr.left+r.width/2,ocy=r.top-pr.top+r.height/2;x.setTransform(dp,0,0,dp,0,0);const L=enLay(x,W,H,ge.en,{cx:ocx,yb:r.bottom-pr.top,g:ge});
-      /* v486: 下に入らない時は日本語(太)を上げる */if(L.shift){o.style.top=((parseFloat(o.style.top)||0)-L.shift).toFixed(1)+'px';ocy-=L.shift}enPaint(x,L);x.setTransform(1,0,0,1,0,0);
+      let ocx=r.left-pr.left+r.width/2,ocy=r.top-pr.top+r.height/2;x.setTransform(dp,0,0,dp,0,0);const L=enLay(x,W,H,ge.en,{cx:ocx,yb:r.bottom-pr.top,xb:r.right-pr.left,cy:ocy,vertical:o.classList.contains('v'),g:ge});
+      /* v486: 下に入らない時は日本語(太)を上げる */if(L.shift){o.style.top=((parseFloat(o.style.top)||0)-L.shift).toFixed(1)+'px';ocy-=L.shift}if(L.shiftX){o.style.left=((parseFloat(o.style.left)||0)-L.shiftX).toFixed(1)+'px';ocx-=L.shiftX}enPaint(x,L);x.setTransform(1,0,0,1,0,0);
       enc.style.transformOrigin=ocx.toFixed(1)+'px '+ocy.toFixed(1)+'px';if(rot)enc.style.rotate=rot+'deg';enc.style.filter=o.style.filter;enc._r=r;enc._pr=pr}catch(e){}}
   /* v263: 字幕ページでも出る動きを見せる(再生中・動かしている時) */
   const an=t!=null&&g&&tlAnimOf(g);let P=null;if(an){const {n,D}=anDur(g,an),p=(t-g.a)/D;if(p>=0&&p<1)P=anPar(an,p,n)}
@@ -6471,7 +6471,7 @@ function showOv(t){showOv0(t);const o=$('ov');o.style.filter=o._g&&o._g.inv?INVF
     /* v267: き・奥はキャンバスに描くので、チャンネルロゴ・右上テロップ(fixPaint)は動かさず、字幕だけを描き直して動かす。v485: 英語も一緒に描く */
     const fp=window.fixPaint;window.fixPaint=null;try{showOv0(t)}finally{window.fixPaint=fp}
     const Wd=sc.width,Hd=sc.height;if(!Wd||!Hd)return;const dp=Wd/(sc.clientWidth||1);
-    if(ge){const bk0='e|'+g.a+'|'+Wd+'x'+Hd+'|'+g.t;if(o._ebK!==bk0){o._ebK=bk0;o._eb=tlBB(sc)}const b=o._eb,O=enFromBB(b&&{x:b.x/dp,y:b.y/dp,w:b.w/dp,h:b.h/dp},ge),x=sc.getContext('2d');const L=enLay(x,sc.clientWidth,sc.clientHeight,ge.en,O);if(L.shift)cvUp(sc,L.shift*dp);x.save();x.setTransform(dp,0,0,dp,0,0);if(g.inv)x.filter=INVF;enPaint(x,L);x.restore()}
+    if(ge){const bk0='e|'+g.a+'|'+Wd+'x'+Hd+'|'+g.t+'|'+JSON.stringify([g.vt,g.bs,g.ox,g.oy,g.osc,g.br,enVertical(g,cur&&cur.list)]);if(o._ebK!==bk0){o._ebK=bk0;o._eb=tlBB(sc)}const b=o._eb,O=enFromBB(b&&{x:b.x/dp,y:b.y/dp,w:b.w/dp,h:b.h/dp},ge,cur&&cur.list),x=sc.getContext('2d');const L=enLay(x,sc.clientWidth,sc.clientHeight,ge.en,O);if(L.shift||L.shiftX)cvUp(sc,(L.shift||0)*dp,(L.shiftX||0)*dp);x.save();x.setTransform(dp,0,0,dp,0,0);if(g.inv)x.filter=INVF;enPaint(x,L);x.restore()}
     let off=showOv._c;if(!off)off=showOv._c=document.createElement('canvas');off.width=Wd;off.height=Hd;const ox=off.getContext('2d');ox.drawImage(sc,0,0);
     const bk=g.a+'|'+Wd+'x'+Hd+'|'+g.t+'|'+(ge?ge.en:'');if(o._bbK!==bk){o._bbK=bk;o._bb=tlBB(off)}const b=o._bb;
     const x=sc.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,Wd,Hd);
@@ -7259,18 +7259,23 @@ function tlImg(u){let m=TL.imgs[u];if(!m){m=TL.imgs[u]=new Image();m.src=u}retur
 /* v482: 英語字幕を描く(日本語の字幕のすぐ下。はみ出す時は画面の下に合わせる)。プレビューと書き出しで同じ */
 /* v486: 英語字幕。大きさは画面に対して決まった大きさ(日本語に合わせて大きくしない)×行の倍率 ens。位置は日本語の下(o={cx,yb,g})。
    下に入りきらない時は shift(日本語を上げる量)を返す。enLay で位置を決めて enPaint で描く */
-function enLay(x,W,H,txt,o){o=o||{};const S=window.enSt(),g=o.g||{},fs=Math.max(8,H*S.sz/100*(g.ens||1)),mw=W*.92;x.save();x.font=window.enFont(fs);
+function enLay(x,W,H,txt,o){o=o||{};const S=window.enSt(),g=o.g||{};let fs=Math.max(8,H*S.sz/100*(g.ens||1));const mw=(o.vertical?H:W)*.92;x.save();x.font=window.enFont(fs);
   const ws=String(txt).split(/\s+/),ls=[];let l='';ws.forEach(w=>{const n=l?l+' '+w:w;if(l&&x.measureText(n).width>mw){ls.push(l);l=w}else l=n});if(l)ls.push(l);const tw=Math.max(...ls.map(s=>x.measureText(s).width));x.restore();
+  /* v492: 縦書き日本語の右側へ、英文全体を時計回り90度。長い単語も画面内に収める */
+  if(o.vertical&&o.xb!=null&&o.cy!=null){const scale=Math.min(1,H*.92/Math.max(1,tw),W*.92/Math.max(1,ls.length*fs*1.2));fs*=scale;const lh=fs*1.2,h=ls.length*lh,th=tw*scale,dy=(S.dy+(g.edy||0))/100*H;let X=o.xb+fs*.15+h/2,y=Math.max(th/2+H*.02,Math.min(H*.98-th/2,o.cy+dy));const shiftX=Math.max(0,X+h/2-W*.98);X-=shiftX;return {fs,ls,lh,h,X,y,vertical:true,shift:0,shiftX,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
   const lh=fs*1.2,h=ls.length*lh,dy=(S.dy+(g.edy||0))/100*H,sub=S.pos==='sub'&&o.yb!=null;let y=S.pos==='top'?H*.05+dy:!sub?H*.93-h+dy:o.yb+fs*.15+dy,shift=0;
   if(sub&&y+h>H*.97){shift=y+h-H*.97;y-=shift}y=Math.max(H*.02,Math.min(y,H*.98-h));
   const X=Math.max(tw/2+W*.01,Math.min(W-tw/2-W*.01,sub&&o.cx!=null?o.cx:W/2));return {fs,ls,lh,X,y,shift,ol:g.eol!=null?g.eol:S.ol,col:S.col}}
 function enPaint(x,L){x.save();x.font=window.enFont(L.fs);x.textAlign='center';x.textBaseline='top';x.lineJoin='round';x.lineWidth=L.fs*L.ol;x.strokeStyle='rgba(0,0,0,.9)';x.fillStyle=L.col;
-  L.ls.forEach((s,i)=>{if(L.ol>0)x.strokeText(s,L.X,L.y+i*L.lh);x.fillText(s,L.X,L.y+i*L.lh)});x.restore()}
+  if(L.vertical){x.translate(L.X,L.y);x.rotate(Math.PI/2);x.translate(0,-L.h/2)}
+  L.ls.forEach((s,i)=>{const X=L.vertical?0:L.X,Y=(L.vertical?0:L.y)+i*L.lh;if(L.ol>0)x.strokeText(s,X,Y);x.fillText(s,X,Y)});x.restore()}
 function enDraw(x,W,H,txt,o){const L=enLay(x,W,H,txt,o);enPaint(x,L);return L}
 /* キャンバスの中身を上へずらす(英語が下に入らない時に日本語を上げる)。sh はキャンバスの画素 */
-function cvUp(cv,sh){if(!(sh>0.5))return;let t=cvUp._c;if(!t)t=cvUp._c=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);const x=cv.getContext('2d');x.save();x.setTransform(1,0,0,1,0,0);x.filter='none';x.clearRect(0,0,cv.width,cv.height);x.drawImage(t,0,-sh);x.restore()}
+function cvUp(cv,sh,sx=0){if(!(sh>0.5||sx>0.5))return;let t=cvUp._c;if(!t)t=cvUp._c=document.createElement('canvas');t.width=cv.width;t.height=cv.height;t.getContext('2d').drawImage(cv,0,0);const x=cv.getContext('2d');x.save();x.setTransform(1,0,0,1,0,0);x.filter='none';x.clearRect(0,0,cv.width,cv.height);x.drawImage(t,-sx,-sh);x.restore()}
 /* 日本語字幕の箱(キャンバスに描いた所)から、英語を置く位置と文字の大きさを決める */
-function enFromBB(b,g){if(!b)return {g};return {cx:b.x+b.w/2,yb:b.y+b.h,g}}
+/* v492: 保存済みの向き・短い字幕の自動縦書き・空白縦にも追従。文字データは変更しない */
+function enVertical(g,list){const k=SPK(g),T=window.PT_get&&(window.PT_get('sub'+(g.bl||k))||window.PT_get('sub'));if(g.bl)return T?T.vert==='1':g.bl==='s';if(k==='b')return !!(BIG[g.bs]||BIG.setsumei_yoko).v;return !!(T&&T.vert==='1')||!g.grp&&!!subFit(g,k,null,list).vt}
+function enFromBB(b,g,list){if(!b)return {g};return {cx:b.x+b.w/2,yb:b.y+b.h,xb:b.x+b.w,cy:b.y+b.h/2,vertical:enVertical(g,list),g}}
 window.enDraw=enDraw;window.enRedraw=()=>{try{window.ptDrawEn&&ptDrawEn()}catch(e){}try{TL.cache.clear()}catch(e){}try{window._tlRedraw&&window._tlRedraw()}catch(e){}try{if(!document.getElementById('s4').hidden)showOv(playing()?pos:null)}catch(e){}};
 /* 1つの状態を W×H のキャンバスに描く */
 function tlRender(W,H,t){const h=tlHost(W,H),o=h.firstChild;o.removeAttribute('style');o.className='';o.textContent='';o._g=null;
@@ -7284,8 +7289,8 @@ function tlRender(W,H,t){const h=tlHost(W,H),o=h.firstChild;o.removeAttribute('s
     const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);tlPaint(x,o,hr)}
   /* v485: 英語字幕は日本語と同じキャンバスに描く(移動・回転・反転・動きが一緒になる) */
   {const ge=TL.list.find(x=>x.en&&t>=x.a&&t<x.b);if(ge){const x=cv.getContext('2d');x.setTransform(1,0,0,1,0,0);let O;/* v486 */
-    const bg=o._g&&o.classList.contains('big')&&o.textContent;if(bg){const hr=h.getBoundingClientRect(),r=o.getBoundingClientRect();O={cx:r.left-hr.left+r.width/2,yb:r.bottom-hr.top,g:ge}}else O=enFromBB(tlBB(cv),ge);
-    const L=enLay(x,W,H,ge.en,O);if(L.shift){cvUp(cv,L.shift);if(bg)e.cy-=L.shift}if(!bg&&(o._g||ge).inv)x.filter=INVF;enPaint(x,L);x.filter='none'}}
+    const bg=o._g&&o.classList.contains('big')&&o.textContent;if(bg){const hr=h.getBoundingClientRect(),r=o.getBoundingClientRect();O={cx:r.left-hr.left+r.width/2,yb:r.bottom-hr.top,xb:r.right-hr.left,cy:r.top-hr.top+r.height/2,vertical:o.classList.contains('v'),g:ge}}else O=enFromBB(tlBB(cv),ge,TL.list);
+    const L=enLay(x,W,H,ge.en,O);if(L.shift||L.shiftX){cvUp(cv,L.shift||0,L.shiftX||0);if(bg){e.cy-=L.shift||0;e.cx-=L.shiftX||0}}if(!bg&&(o._g||ge).inv)x.filter=INVF;enPaint(x,L);x.filter='none'}}
   if(!window._tlKeep)o.textContent='';return e}
 function tlDrawE(g,e,cl){g.save();if(e.rot){g.translate(e.cx,e.cy);g.rotate(e.rot*Math.PI/180);g.translate(-e.cx,-e.cy)}
   if(cl){g.beginPath();g.rect(cl[0],cl[1],cl[2],cl[3]);g.clip()}
