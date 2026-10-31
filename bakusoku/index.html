@@ -2931,6 +2931,20 @@ function insertGap(sec,cnF,force){
   items.push(...extra.filter(r=>r.lane===5));
   cornerRebase();resetOut();renderLanes();renderSegs();seekGlobal(t);
 }
+window.tsAddBlankClip=(text,bg,sec)=>{
+  if(!String(text||'').trim())return '文字を入力してください';
+  if(!/^#[0-9a-f]{6}$/i.test(bg))return '背景色が不正です';
+  sec=Number(sec);if(!Number.isFinite(sec)||sec<.2||sec>60)return '表示時間は0.2～60秒にしてください';
+  if(roAll())return '先にコーナーを選択してください';
+  const t=gt,gcn=insertGap(sec);
+  let a=0,found=false;for(const q of segs){if(!q.clip&&!q.bk&&Math.abs(a-t)<.01&&Math.abs(q.end-q.start-sec)<.01){q.bg=bg;found=true;break}a+=q.end-q.start}
+  if(!found)return '空白クリップを作成できませんでした';
+  const it={id:itemId++,lane:3,start:t,end:t+sec,text:String(text),cn:gcn};
+  items.push(it);selItem=it;actLane=3;
+  renderLanes();renderSegs();seekGlobal(t);
+  try{saveState&&saveState()}catch(e){}
+  return '';
+};
 function insertTextGap(sec){
   const t=gt;if(roAll()){flashSel('先に上のコーナーを選んでください');return}
   const gcn=insertGap(sec);
@@ -4397,7 +4411,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v518';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v519';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
