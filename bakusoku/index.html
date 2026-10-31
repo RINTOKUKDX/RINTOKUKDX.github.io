@@ -493,12 +493,14 @@ body.editing .pgnav{display:none!important}
 #segs .sourceSeg .sourceThumb{min-width:0;width:56px;height:40px;padding:0;overflow:hidden;background:var(--bgb);border:1px solid var(--line)}
 #segs .sourceThumb img{display:block;width:100%;height:100%;object-fit:cover}
 #restoreClip{width:100%;margin-top:8px}
-/* v497: カットページの役割ごとに背景・枠を分ける。ボタンの選択色は維持 */
+/* v499: 全区画を控えめな色のカードで囲む。カットも同じ余白・角丸に統一 */
 #s1{gap:18px}
-#s1>.topbar2,#s1>.pgnav{background:color-mix(in srgb,var(--c1) 28%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 65%,var(--fg));border-radius:12px;padding:12px;box-sizing:border-box}
-#s1>section.a{background:color-mix(in srgb,var(--c1) 18%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 65%,var(--fg));border-top-width:4px;border-radius:12px}
-#s1>section.b{background:var(--bgb);border:2px solid color-mix(in srgb,var(--fg) 42%,var(--line));border-top:4px solid var(--accent);border-bottom-width:4px}
-#s1>section.c{background:color-mix(in srgb,var(--c3) 28%,var(--sec));border:2px solid color-mix(in srgb,var(--c3) 65%,var(--fg));border-top-width:4px;border-radius:12px}
+#s1>.topbar2,#s1>.pgnav{background:color-mix(in srgb,var(--c1) 8%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 20%,var(--btnl));border-radius:12px;padding:12px;box-sizing:border-box}
+#s1>section.a{background:color-mix(in srgb,var(--c1) 6%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 20%,var(--btnl));border-radius:12px}
+#s1>section.b{background:color-mix(in srgb,var(--c2) 6%,var(--sec));border:2px solid color-mix(in srgb,var(--c2) 20%,var(--btnl));border-radius:12px;margin-inline:0;padding:12px}
+#s1>section.b>*:not(.stage):not(#cwf):not(#cmt){margin-left:0;margin-right:0}
+#s1>section.b .stage{border-radius:8px}
+#s1>section.c{background:color-mix(in srgb,var(--c3) 8%,var(--sec));border:2px solid color-mix(in srgb,var(--c3) 20%,var(--btnl));border-radius:12px}
 #s1>section.a>h2,#s1 #segD>summary{color:var(--fg)}
 #s1>.pgnav{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
 </style>
@@ -4358,7 +4360,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v498';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v499';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
