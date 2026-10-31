@@ -4411,7 +4411,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v519';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v517';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4830,6 +4830,7 @@ function ptBuild(){
     gp.rows.forEach(r=>body.appendChild(ptRow(r)));
     w.append(h,body);box.appendChild(w);paint()});
   ptSubNar(box);
+  ptSpecial(box);
   ptTabApply();
 }
 /* v471: 字幕・ナレーションの設定(動画の種類ごと。保存先はタイムラインテンプレート TLT.ty[種類].sub/.nar)。字幕タブの一番下 */
@@ -4855,6 +4856,30 @@ function ptSubNar(box){ptOpenG.subNar=ptOpenG.subNar||false;
   h.onclick=()=>{const o=!ptOpenG.subNar;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.subNar=o;ptPaints.forEach(f=>f())};ptPaints.push(paint);
   w.append(h,body);box.appendChild(w);paint()}
 // 字幕・ナレーションの次に独立した「特殊機能」タブを表示する。
+function ptSpecial(box){
+  const w=document.createElement('div');w.className='grp';w.dataset.tab='sub';w.id='ptSpecial';
+  const h=document.createElement('button');h.type='button';h.className='gh';
+  const body=document.createElement('div');body.className='gb';
+  const fill=()=>{body.innerHTML='';
+    // 字幕・ナレーションの直下に表示。チェック時のみ詳細を開く。
+    {const section=document.createElement('div');section.style.cssText='padding:12px 0;border-top:1px solid #41444d;margin-top:12px';
+      const head=document.createElement('label');head.style.cssText='display:flex;align-items:center;gap:10px;font-weight:600';
+      const check=document.createElement('input');check.type='checkbox';check.checked=!!window.tsBlankPanelOn;
+      head.append(check,document.createTextNode('空白入りのクリップを追加'));section.appendChild(head);
+      const detail=document.createElement('div');detail.style.cssText='display:flex;flex-direction:column;gap:12px;margin-top:12px';detail.hidden=!check.checked;
+      check.onchange=()=>{window.tsBlankPanelOn=check.checked;detail.hidden=!check.checked};
+      const durLabel=document.createElement('label');durLabel.textContent='クリップの時間 ';const dur=document.createElement('input');dur.type='number';dur.min='0.2';dur.max='60';dur.step='0.1';dur.value='2';dur.style.cssText='width:85px;margin-left:8px';durLabel.append(dur,document.createTextNode(' 秒'));detail.appendChild(durLabel);
+      const colorLabel=document.createElement('label');colorLabel.textContent='空白の色 ';const color=document.createElement('input');color.type='color';color.value='#000000';color.style.marginLeft='8px';colorLabel.appendChild(color);detail.appendChild(colorLabel);
+      const textLabel=document.createElement('label');textLabel.textContent='表示する文字';const tx=document.createElement('textarea');tx.rows=2;tx.placeholder='空白クリップに表示する文字';tx.style.width='100%';textLabel.appendChild(tx);detail.appendChild(textLabel);
+      const add=document.createElement('button');add.type='button';add.className='primary';add.textContent='現在位置にクリップを追加';
+      const msg=document.createElement('div');msg.setAttribute('role','status');
+      add.onclick=()=>{const err=window.tsAddBlankClip?window.tsAddBlankClip(tx.value,color.value,dur.value):'クリップ追加機能を使用できません';msg.textContent=err||'空白クリップを追加しました'};
+      detail.append(add,msg);section.appendChild(detail);body.appendChild(section)}
+  };
+  const paint=()=>{const o=!!ptOpenG.special;h.innerHTML='';const a=document.createElement('span');a.textContent='特殊機能';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
+  h.onclick=()=>{const o=!ptOpenG.special;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.special=o;ptPaints.forEach(f=>f())};
+  ptPaints.push(paint);w.append(h,body);box.appendChild(w);paint();
+}
 function ptVal(k){if((k==='chX'||k==='chY')&&ED[k]==null){const q=ptCenterNow();return k==='chX'?q[0]:q[1]}return +edGet(k)||0}
 function ptSync(){
   $('ecCtl').querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k,r=PT_ROWS.find(x=>x.k===k);
