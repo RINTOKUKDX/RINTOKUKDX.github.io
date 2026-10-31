@@ -4394,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v509';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v510';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -9879,9 +9879,11 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
   };
   function editor(kind,design){
     // v508: 既存編集UIを設定ページ内へ移し、未保存の編集は既存の確認処理に任せる。
-    close();
+    // 編集画面を開けない場合は設定画面を維持し、操作不能な状態にしない。
     if(typeof window.ptOpen!=='function'){$('tsStatus').textContent='既存の編集画面を開けません';return}
-    window.ptOpen();window.tsStudioReturn=true;
+    close();
+    try{window.ptOpen()}catch(e){studio.hidden=false;source.hidden=true;$('tsStatus').textContent='編集画面を開けませんでした';return}
+    window.tsStudioReturn=true;
     studio.appendChild(editPage);studio.hidden=false;studio.classList.add('tsEditing');window.tsStudioEditing=true;
     const tabs=$('s3tpl');const key=kind==='logo'?'ch':kind==='heading'?'point':'sub';
     const b=tabs&&tabs.querySelector('button[data-tab="'+key+'"]');if(b)b.click();
