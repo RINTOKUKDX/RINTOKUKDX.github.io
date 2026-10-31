@@ -4394,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v506';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v507';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4853,7 +4853,7 @@ window.ptOpen=()=>ptOpen();function ptOpen(){
   ptSync();fontFor(ptText()).then(()=>ptDraw());ptDraw();
 }
 let ptFrom='s2';
-function ptClose(){ptAnimTok++;$('s3').hidden=true;if(ptFrom==='s4'||ptFrom==='s1'){$(ptFrom).hidden=false;scrollTo(0,0);/* v487: 戻った時に今の設定で描き直す */try{window.enRedraw&&enRedraw()}catch(e){}return}$('s2').hidden=false;renderTimeline();scrollTo(0,0)}
+function ptClose(){ptAnimTok++;$('s3').hidden=true;if(window.tsStudioReturn){window.tsStudioReturn=false;$('s4').hidden=true;$('tplStudio').hidden=false;window.tsStudioRefresh&&window.tsStudioRefresh();scrollTo(0,0);return}if(ptFrom==='s4'||ptFrom==='s1'){$(ptFrom).hidden=false;scrollTo(0,0);/* v487: 戻った時に今の設定で描き直す */try{window.enRedraw&&enRedraw()}catch(e){}return}$('s2').hidden=false;renderTimeline();scrollTo(0,0)}
 ptBuild();
 $('s3tpl').addEventListener('click',e=>{const su=e.target.closest('#subSt button');if(su){ptTab='sub';subSel=su.dataset.u;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw());return}const sb=e.target.closest('#bigSt button');if(sb){bigSel=sb.dataset.s;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw());return}const b=e.target.closest('button[data-tab]');if(!b)return;ptTab=b.dataset.tab;ptSample='';ptAnimTok++;ptTabApply();fontFor(ptText()).then(()=>ptDraw())});
 $('tplEdBtn').onclick=ptOpen;
@@ -9863,14 +9863,17 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
   gear.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
   $('tsBack').onclick=close;
   const names={logo:'チャンネルロゴ',heading:'見出し1',subtitle:'字幕'};
-  function editor(kind){
-    // 既存編集画面を再利用するが、試作ページの状態や保存形式は書き換えない。
+  function editor(kind,design){
+    // v507: 既存編集機能へ選択したデザインを渡し、戻り先は字幕設定ページにする。
     close();
     if(typeof window.ptOpen!=='function'){$('tsStatus').textContent='既存の編集画面を開けません';return}
-    window.ptOpen();
+    window.ptOpen();window.tsStudioReturn=true;
     const tabs=$('s3tpl');const key=kind==='logo'?'ch':kind==='heading'?'point':'sub';
     const b=tabs&&tabs.querySelector('button[data-tab="'+key+'"]');if(b)b.click();
+    if(kind==='logo'){const sel=$('ptDes');if(sel&&[...sel.options].some(o=>o.value===design)){sel.value=design;sel.dispatchEvent(new Event('change',{bubbles:true}))}}
+    if(kind==='subtitle'){const btn=$('subSt')?.querySelector('button[data-u="'+design+'"]');if(btn)btn.click()}
   }
+  window.tsStudioRefresh=()=>{if(lastKind){const btn=studio.querySelector('.tsSpot[data-kind="'+lastKind+'"]');if(btn)btn.click()}};
   studio.querySelectorAll('.tsSpot').forEach(b=>b.onclick=()=>{
     lastKind=b.dataset.kind;
     studio.querySelectorAll('.tsSpot').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));
@@ -9899,8 +9902,8 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
       $('tsStatus').textContent=names[lastKind]+'：'+name;
     };
     sel.onchange=update;update();
-    const existing=document.createElement('button');existing.textContent='編集機能は安全な接続を準備中';existing.disabled=true;area.appendChild(existing);
-    $('tsNote').textContent='この画面で登録済みの種類を選べます。プレビュー反映・装飾編集・保存はまだ接続していません。';
+    const existing=document.createElement('button');existing.textContent='選んだデザインを編集';existing.className='primary';existing.onclick=()=>editor(lastKind,sel.value);area.appendChild(existing);
+    $('tsNote').textContent='デザインを選んで編集できます。変更は編集画面の「保存」を押すまで確定しません。';
   });
 })();
 </script>
