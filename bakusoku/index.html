@@ -4367,7 +4367,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v502';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v503';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -9761,4 +9761,97 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
   border-color:var(--line);color:var(--fg);
 }
 </style>
+
+<style>
+/* v503: 字幕テンプレート設定の独立試作。元の再生画面の寸法は変更しない */
+#tplStudio{gap:12px}
+#tplStudio .tsHead{display:flex;align-items:center;gap:10px;padding:8px 0}
+#tplStudio .tsHead h1{flex:1}
+#tplStudio .tsPreview{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);border-radius:8px;overflow:hidden;box-sizing:border-box}
+#tplStudio .tsPreview canvas{display:block;width:100%;height:100%;object-fit:contain}
+#tplStudio .tsShade{position:absolute;inset:0;background:rgba(0,0,0,.43);pointer-events:none}
+#tplStudio .tsSpot{position:absolute;z-index:1;min-height:36px;padding:3px 5px;border:2px solid var(--accent);border-radius:7px;background:rgba(20,21,24,.7);color:#fff;font-size:13px;font-weight:700;touch-action:manipulation}
+#tplStudio .tsSpot[data-kind=logo]{top:6%;left:3%;width:29%;height:22%}
+#tplStudio .tsSpot[data-kind=heading]{top:6%;right:3%;width:34%;height:22%}
+#tplStudio .tsSpot[data-kind=subtitle]{bottom:9%;left:18%;width:64%;height:24%}
+#tplStudio .tsSpot[aria-pressed=true]{background:rgba(255,90,78,.35);box-shadow:0 0 0 2px #fff7}
+#tplStudio .tsPane{background:var(--panel);border:2px solid var(--btnl);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+#tplStudio .tsPane h2{color:var(--fg);font-size:15px}
+#tplStudio .tsChoices{display:flex;flex-direction:column;gap:8px}
+#tplStudio .tsNote{color:var(--muted);font-size:12px;line-height:1.6}
+#tplStudio .tsPane[hidden]{display:none}
+</style>
+<main id="tplStudio" hidden>
+  <div class="tsHead"><button id="tsBack">← 戻る</button><h1>字幕テンプレート設定</h1></div>
+  <div class="tsPreview" id="tsPreview">
+    <canvas id="tsStill" width="960" height="540"></canvas>
+    <div class="tsShade"></div>
+    <button class="tsSpot" data-kind="logo" aria-pressed="false">チャンネルロゴ</button>
+    <button class="tsSpot" data-kind="heading" aria-pressed="false">見出し1</button>
+    <button class="tsSpot" data-kind="subtitle" aria-pressed="false">字幕</button>
+  </div>
+  <section class="tsPane" id="tsPane" hidden>
+    <h2 id="tsTitle"></h2>
+    <div id="tsChoices" class="tsChoices"></div>
+    <p class="tsNote" id="tsNote"></p>
+  </section>
+  <p class="msg" id="tsStatus">プレビュー上のロゴ・見出し・字幕を選択してください。</p>
+</main>
+<script>
+/* v503: 試作は画面切替と静止画だけ。保存データ・既存字幕処理には触れない */
+(function(){
+  const $=id=>document.getElementById(id);
+  const studio=$('tplStudio'),source=$('s4'),preview=$('tsStill');
+  if(!studio||!source||!$('t_iB'))return;
+  const gear=$('t_iB');
+  gear.textContent='⚙';gear.setAttribute('role','button');gear.setAttribute('tabindex','0');gear.setAttribute('aria-label','字幕テンプレート設定');
+  gear.style.cursor='pointer';gear.style.fontFamily='inherit';gear.style.fontSize='19px';
+  let lastKind='';
+  function still(){
+    const x=preview.getContext('2d'),w=preview.width,h=preview.height;
+    x.fillStyle='#000';x.fillRect(0,0,w,h);
+    const frame=$('t_pl'),vids=[$('t_pv'),$('t_pv2')];
+    const v=vids.find(el=>el&&el.videoWidth&&el.videoHeight&&getComputedStyle(el).visibility!=='hidden')||vids.find(el=>el&&el.videoWidth);
+    if(v){try{const k=Math.min(w/v.videoWidth,h/v.videoHeight),vw=v.videoWidth*k,vh=v.videoHeight*k;x.drawImage(v,(w-vw)/2,(h-vh)/2,vw,vh)}catch(e){}}
+    // 動画の静止画に現在の字幕・ロゴ等の描画を重ねる。元のcanvasは変更しない。
+    if(frame){for(const id of ['t_sc','t_enc']){const el=$(id);if(el&&el.width&&el.height){try{x.drawImage(el,0,0,w,h)}catch(e){}}}
+      const ov=$('t_ov');if(ov&&ov.textContent.trim()){x.textAlign='center';x.font='bold 30px sans-serif';x.fillStyle='#fff';x.shadowColor='#000';x.shadowBlur=7;x.fillText(ov.textContent.trim().slice(0,32),w/2,h*.83,w*.82);x.shadowBlur=0}
+    }
+  }
+  function close(){studio.hidden=true;source.hidden=false;window.scrollTo(0,0)}
+  function open(){
+    if(source.hidden)return;
+    // 停止位置のフレームを撮影してから動画を停止。再生画面自体の幅は不変。
+    still();
+    for(const id of ['t_pv','t_pv2']){try{$(id).pause()}catch(e){}}
+    source.hidden=true;studio.hidden=false;lastKind='';$('tsPane').hidden=true;
+    studio.querySelectorAll('.tsSpot').forEach(b=>b.setAttribute('aria-pressed','false'));
+    $('tsStatus').textContent='どのテキストを編集しますか？';window.scrollTo(0,0);
+    if(typeof window.cdlg==='function')window.cdlg('どのテキストを編集しますか？',[['選択する']]);
+  }
+  gear.addEventListener('click',e=>{e.stopPropagation();open()});
+  gear.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open()}});
+  $('tsBack').onclick=close;
+  const names={logo:'チャンネルロゴ',heading:'見出し1',subtitle:'字幕'};
+  function editor(kind){
+    // 既存編集画面を再利用するが、試作ページの状態や保存形式は書き換えない。
+    close();
+    if(typeof window.ptOpen!=='function'){$('tsStatus').textContent='既存の編集画面を開けません';return}
+    window.ptOpen();
+    const tabs=$('s3tpl');const key=kind==='logo'?'ch':kind==='heading'?'point':'sub';
+    const b=tabs&&tabs.querySelector('button[data-tab="'+key+'"]');if(b)b.click();
+  }
+  studio.querySelectorAll('.tsSpot').forEach(b=>b.onclick=()=>{
+    lastKind=b.dataset.kind;
+    studio.querySelectorAll('.tsSpot').forEach(el=>el.setAttribute('aria-pressed',String(el===b)));
+    $('tsPane').hidden=false;$('tsTitle').textContent=names[lastKind]+'のテンプレート';
+    $('tsStatus').textContent=names[lastKind]+'を選択中';
+    const area=$('tsChoices');area.replaceChildren();
+    const existing=document.createElement('button');existing.textContent='登録済みの設定を編集';existing.onclick=()=>editor(lastKind);area.appendChild(existing);
+    const fresh=document.createElement('button');fresh.textContent='＋ 新規作成（次の段階で対応）';fresh.disabled=true;area.appendChild(fresh);
+    $('tsNote').textContent='第1段階の試作です。登録済みの設定は従来の編集画面で操作できます。名称付き一覧・新規作成・AI作成・一括適用は次の段階で接続します。';
+  });
+})();
+</script>
+
 </body></html>
