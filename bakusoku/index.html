@@ -4394,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v511';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v512';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -9901,18 +9901,25 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
     const area=$('tsChoices');area.replaceChildren();
     // v504: 登録済みデザインの一覧をこの画面内で選択。保存データは触らない。
     const types=lastKind==='logo'?[['bandana','バンダナ'],['plate','看板'],['garakuta','我楽苦多 黒'],['gk3d','我楽苦多 白立体']]:lastKind==='heading'?[['point','ポイント']]:[['sub','ナレーション'],['subm','きんきん'],['subf','マリ'],['subs','空白縦'],['subh','空白横']];
+    // 削除は登録一覧からの除外。標準デザインや既存プロジェクトの設定データは破壊しない。
+    const removedKey='tsDeletedTemplates';
+    const readRemoved=()=>{try{const a=JSON.parse(localStorage.getItem(removedKey)||'[]');return Array.isArray(a)?a.filter(x=>typeof x==='string'):[]}catch(e){return []}};
+    const removed=new Set(readRemoved());
+    const visible=types.filter(([v])=>!removed.has(lastKind+':'+v));
     const lbl=document.createElement('label');lbl.textContent='登録済みデザイン';area.appendChild(lbl);
     const sel=document.createElement('select');sel.setAttribute('aria-label','登録済みデザイン');
-    types.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});
+    visible.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;sel.appendChild(o)});
     // 保存済みのロゴ種類を初期選択にする。初期表示と実際の保存値の食い違いを防ぐ。
-    if(lastKind==='logo'){const saved=window.tsStudioSavedLogo&&window.tsStudioSavedLogo();if(types.some(([v])=>v===saved))sel.value=saved}
+    if(lastKind==='logo'){const saved=window.tsStudioSavedLogo&&window.tsStudioSavedLogo();if(visible.some(([v])=>v===saved))sel.value=saved}
     area.appendChild(sel);
     const hint=document.createElement('p');hint.className='tsNote';area.appendChild(hint);
     // v505: 保存済みPTを読み取り専用で描画。プレビュー以外は一切変更しない。
     const base=document.createElement('canvas');base.width=preview.width;base.height=preview.height;
     base.getContext('2d').drawImage(window.tsEditorFrame||preview,0,0,base.width,base.height);
     const update=()=>{
-      const name=types.find(([v])=>v===sel.value)[1];
+      const selected=visible.find(([v])=>v===sel.value);
+      if(!selected){hint.textContent='登録済みデザインがありません';$('tsStatus').textContent='登録済みデザインがありません';return}
+      const name=selected[1];
       const g=preview.getContext('2d'),W=preview.width,H=preview.height,u=Math.min(H,W*9/16);
       g.drawImage(base,0,0);
       try{
@@ -9923,8 +9930,19 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
       $('tsStatus').textContent=names[lastKind]+'：'+name;
     };
     sel.onchange=update;update();
-    const existing=document.createElement('button');existing.textContent='選んだデザインを編集';existing.className='primary';existing.onclick=()=>editor(lastKind,sel.value);area.appendChild(existing);
-    $('tsNote').textContent='デザインを選んで編集できます。変更は編集画面の「保存」を押すまで確定しません。';
+    const existing=document.createElement('button');existing.textContent='選んだデザインを編集';existing.className='primary';existing.disabled=!visible.length;existing.onclick=()=>{if(sel.value)editor(lastKind,sel.value)};area.appendChild(existing);
+    const del=document.createElement('button');del.textContent='選んだデザインを削除';del.disabled=!visible.length;area.appendChild(del);
+    del.onclick=()=>{
+      const key=sel.value,chosen=visible.find(([v])=>v===key);if(!chosen)return;
+      cdlg('「'+chosen[1]+'」を登録一覧から削除しますか？\\nほかのデザインやプロジェクトは削除されません。',[
+        ['キャンセル'],['削除する',()=>{
+          const current=new Set(readRemoved());current.add(lastKind+':'+key);
+          try{localStorage.setItem(removedKey,JSON.stringify([...current]))}catch(e){$('tsStatus').textContent='保存できず、削除を中止しました';return}
+          const spot=studio.querySelector('.tsSpot[data-kind="'+lastKind+'"]');if(spot)spot.click();
+          $('tsStatus').textContent='「'+chosen[1]+'」を登録一覧から削除しました';
+        },'warn']]);
+    };
+    $('tsNote').textContent='削除は登録一覧からの除外です。既存の動画・テンプレート設定は残ります。';
   });
 })();
 </script>
