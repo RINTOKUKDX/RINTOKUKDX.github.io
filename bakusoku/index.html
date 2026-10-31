@@ -6,7 +6,13 @@
 #setSc{--ng:#c0262d;--hl:#fde7d6}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #setSc{--ng:#ff6b6b;--hl:#3a2416}}
 :root[data-theme="dark"] #setSc{--ng:#ff6b6b;--hl:#3a2416}
-</style><script>if(window.BakuApp)document.documentElement.classList.add('bkapp')</script><style>.bkapp button[aria-label="全画面"]{display:none!important}</style></head><body>
+</style><script>if(window.BakuApp)document.documentElement.classList.add('bkapp')</script><style>.bkapp button[aria-label="全画面"]{display:none!important}
+/* v506: APK全画面時はステータスバー跡の安全領域を空けない */
+html.bkapp{padding-top:0!important;scroll-padding-top:0!important}
+html.bkapp body:has(#s4:not([hidden]))::before{display:none!important}
+html.bkapp #t_stk{top:0}
+html.bkapp body:has(#s2:not([hidden])){height:calc(100dvh - env(safe-area-inset-bottom,0px))}
+</style></head><body>
 <title>爆速YouTuber</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Noto+Serif+JP:wght@600&family=Shippori+Mincho:wght@600&family=Cormorant+Garamond:wght@500&family=Rye&family=Zen+Antique&family=JetBrains+Mono:wght@500&family=Yusei+Magic&family=Yuji+Boku&family=Potta+One&family=Klee+One:wght@600&display=swap">
@@ -4388,7 +4394,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v505';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v506';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
