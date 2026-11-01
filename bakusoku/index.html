@@ -4411,7 +4411,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v517';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v520';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4871,10 +4871,12 @@ function ptSpecial(box){
       const durLabel=document.createElement('label');durLabel.textContent='クリップの時間 ';const dur=document.createElement('input');dur.type='number';dur.min='0.2';dur.max='60';dur.step='0.1';dur.value='2';dur.style.cssText='width:85px;margin-left:8px';durLabel.append(dur,document.createTextNode(' 秒'));detail.appendChild(durLabel);
       const colorLabel=document.createElement('label');colorLabel.textContent='空白の色 ';const color=document.createElement('input');color.type='color';color.value='#000000';color.style.marginLeft='8px';colorLabel.appendChild(color);detail.appendChild(colorLabel);
       const textLabel=document.createElement('label');textLabel.textContent='表示する文字';const tx=document.createElement('textarea');tx.rows=2;tx.placeholder='空白クリップに表示する文字';tx.style.width='100%';textLabel.appendChild(tx);detail.appendChild(textLabel);
-      const add=document.createElement('button');add.type='button';add.className='primary';add.textContent='現在位置にクリップを追加';
-      const msg=document.createElement('div');msg.setAttribute('role','status');
-      add.onclick=()=>{const err=window.tsAddBlankClip?window.tsAddBlankClip(tx.value,color.value,dur.value):'クリップ追加機能を使用できません';msg.textContent=err||'空白クリップを追加しました'};
-      detail.append(add,msg);section.appendChild(detail);body.appendChild(section)}
+      /* v520: 追加ボタンは置かず、この欄の中だけで見た目を確認する(プロジェクトや保存データには触れない。tsAddBlankClipは残す) */
+      const dr=window.tsBlankDraft=window.tsBlankDraft||{dur:'2',bg:'#000000',text:''};dur.value=dr.dur;color.value=dr.bg;tx.value=dr.text;
+      const pv=document.createElement('div');pv.id='tsBlankPv';pv.setAttribute('aria-label','空白クリップのプレビュー');pv.style.cssText='aspect-ratio:16/9;width:100%;max-width:360px;display:flex;align-items:center;justify-content:center;text-align:center;padding:8px;box-sizing:border-box;border:1px solid #41444d;border-radius:6px;color:#fff;font-weight:700;font-size:18px;white-space:pre-wrap;overflow:hidden;text-shadow:0 0 3px #000,0 0 3px #000';
+      const upd=()=>{dr.dur=dur.value;dr.bg=/^#[0-9a-f]{6}$/i.test(color.value)?color.value:'#000000';dr.text=tx.value;pv.style.background=dr.bg;pv.textContent=dr.text.trim()?dr.text:'サンプルテキスト'};
+      dur.oninput=upd;color.oninput=upd;color.onchange=upd;tx.oninput=upd;upd();
+      detail.append(pv);section.appendChild(detail);body.appendChild(section)}
   };
   const paint=()=>{const o=!!ptOpenG.special;h.innerHTML='';const a=document.createElement('span');a.textContent='特殊機能';const b=document.createElement('span');b.className='gi';b.textContent=o?'▾':'▸';h.append(a,b);h.setAttribute('aria-expanded',String(o));body.hidden=!o;if(o)fill()};
   h.onclick=()=>{const o=!ptOpenG.special;Object.keys(ptOpenG).forEach(k=>ptOpenG[k]=false);ptOpenG.special=o;ptPaints.forEach(f=>f())};
