@@ -2556,7 +2556,8 @@ async function togglePlay(){
 /* v357: プレビューに一言出す */let pvMsgT=0;function pvMsg(t){const w=document.querySelector('#pvSec .pcw');let o=document.getElementById('pvMsg');if(!o){o=document.createElement('div');o.id='pvMsg';o.style.cssText='position:absolute;left:8px;right:8px;top:40%;padding:10px;background:rgba(0,0,0,.8);color:#fff;border-radius:8px;text-align:center;font-size:14px;pointer-events:none;z-index:5';w.appendChild(o)}o.textContent=t;o.hidden=false;clearTimeout(pvMsgT);pvMsgT=setTimeout(()=>{o.hidden=true},4000)}
 $('pp').onclick=togglePlay;
 /* v545: フルサイズの間だけ画面を横にできる(アプリ=BakuApp.setOrient)。それ以外は縦のまま */
-const fsOrient=()=>{const on=!!document.querySelector('.pfs')||$('pvSec').classList.contains('full');try{const A=window.BakuApp;if(A&&A.setOrient)A.setOrient(on?'free':'port')}catch(e){}};window.fsOrient=fsOrient;
+const fsOrient=()=>{const on=!!document.querySelector('.pfs')||$('pvSec').classList.contains('full');try{const A=window.BakuApp;if(A&&A.setOrient)A.setOrient(on?'free':'port');else if(screen.orientation&&screen.orientation.lock){/* v546: ホーム画面に追加した版(PWA)や全画面のブラウザ用。使えない時は何もしない */const q=screen.orientation.lock(on?'any':'portrait');if(q&&q.catch)q.catch(()=>{})}}catch(e){}};window.fsOrient=fsOrient;
+try{setTimeout(()=>fsOrient(),1500)}catch(e){}
 window.fsExit=()=>{const e=document.querySelector('.pfs');let r=false;if(e){e.classList.remove('pfs');r=true}if($('pvSec').classList.contains('full')){$('pvSec').classList.remove('full');r=true}fsOrient();return r};
 const fsToggle=el=>{if(el.classList.contains('pfs')){el.classList.remove('pfs')}else{document.querySelectorAll('.pfs').forEach(x=>x.classList.remove('pfs'));el.classList.add('pfs')}fsOrient()};
 /* ダブルタップ=フルサイズ(カット画面・字幕・ナレーションの再生画面) */
@@ -4607,7 +4608,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v545';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v546';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
