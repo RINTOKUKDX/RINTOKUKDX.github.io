@@ -3354,7 +3354,7 @@ function subActive(){
   if(subNew&&subAct&&items.includes(subAct))return subAct;
   if(!subNew||!curGrp)return null;
   const g=items.filter(o=>(o.lane===3||o.fromSub)&&o.grp===curGrp).sort((a,b)=>a.start-b.start);return g[g.length-1]||null}
-let subWarn=null;
+let subWarn=null;/* v544: 空白を足す警告は廃止(未使用) */
 function openSubNew(fresh){
   if(fresh){curGrp=nextGrp();subWarn=null;subAct=null}
   boldView=false;
@@ -3374,20 +3374,18 @@ function confirmNew(){
   {const gm=same.filter(o=>o.grp&&o.grp===curGrp);
     if(gm.length){const ge=Math.max(...gm.map(o=>o.end)),nx=same.find(o=>o.start>=ge-1e-6),lim=nx?nx.start:all;
       if(lim-ge>=len-1e-6){t=ge;e=ge+len}
-      else if(!nx){t=ge;e=ge+len;if(e>all)tailPad+=e-all}
+      else if(!nx){t=ge;e=ge+len}
       else curGrp=nextGrp()}}
   if(t<0)for(const [a,b] of gaps){const s=Math.max(a,gt);if(b-s>=len-1e-6){t=s;e=s+len;break}}
-  if(t<0){t=Math.max(cur,gt>cur?gt:cur);e=t+len;if(e>all)tailPad+=e-all}
+  if(t<0){t=Math.max(cur,gt>cur?gt:cur);e=t+len}
   let kk=-1;
   if(corners.length&&cR){const k0=cview&&cIdx(cview)>=0?cIdx(cview):cAt(gt);kk=cAt(t);
     if(k0>=0&&kk!==k0){kk=k0;const r0=cR[k0];tailPad=tp0;
       t=same.reduce((m,o)=>o.start<r0.b-1e-6&&o.end>m?Math.max(m,o.end):m,Math.max(gt,r0.a));e=t+len;
       if(curGrp&&same.some(o=>o.grp===curGrp&&cAt(o.start)!==k0))curGrp=nextGrp()}}
-  if(corners.length&&cR){const k=kk,r=k>=0?cR[k]:null;
-    if(r&&e>r.b+0.01){tailPad=tp0;
-      if(subWarn!==corners[k].id){subWarn=corners[k].id;cdlg('字幕が「'+corners[k].name+'」の動画より長くなります。\nこのまま続けて入力すると、このコーナーの最後に空白を入れて長くします。',[['OK']]);return}
-      const g0=gt,gl=Math.round((e-r.b)*100)/100+0.01;gt=r.b;insertGap(gl,corners[k].id);gt=g0;flashSel('「'+corners[k].name+'」の最後に空白を '+gl.toFixed(1)+'秒 入れました')}}
-  tailPad=Math.round(tailPad*100)/100;
+  /* v544: 字幕が動画の終わり(コーナーの終わり)をはみ出す時、勝手に空白を足して長くするのはやめた。入る所までで切る。入る所が無ければ入れない */
+  {const r=corners.length&&cR&&kk>=0?cR[kk]:null,lim=r?r.b:all;
+    if(e>lim+0.01){e=lim;if(e-t<0.3){flashSel('ここには入りません（動画の最後です）');return}}}
   pushHist();
   if(!curGrp)curGrp=nextGrp();
   items.push({id:itemId++,lane:3,start:t,end:e,text:v,sample:false,style:'',tag:'',auto:true,grp:curGrp,cn:kk>=0?corners[kk].id:null});
@@ -3402,11 +3400,9 @@ function okAct(){
   if(selItem&&selItem.lane===3){
     const it=selItem,v=tx.value.replace(/\n/g,'').trim();
     if(!v){closeEd();return}
-    if(it.auto){const want=it.start+Math.max(1,[...v].length*subRate);
-      if(corners.length&&cR){const k=cAt(it.start),r=k>=0?cR[k]:null;
-        if(r&&want>r.b+0.01){
-          if(subWarn!==corners[k].id){subWarn=corners[k].id;cdlg('字幕が「'+corners[k].name+'」の動画より長くなります。\nこのまま続けて入力すると、このコーナーの最後に空白を入れて長くします。',[['OK']]);return}
-          const g0=gt,gl=Math.round((want-r.b)*100)/100+0.01;gt=r.b;insertGap(gl,corners[k].id);gt=g0;flashSel('「'+corners[k].name+'」の最後に空白を '+gl.toFixed(1)+'秒 入れました')}}
+    if(it.auto){let want=it.start+Math.max(1,[...v].length*subRate);
+      /* v544: コーナー(動画)の終わりをはみ出す時も、勝手に空白は足さない。入る所までで切る */
+      if(corners.length&&cR){const k=cAt(it.start),r=k>=0?cR[k]:null;if(r&&want>r.b+0.01)want=Math.max(it.start+0.3,r.b)}
       const[,hi]=bounds(it);it.end=Math.min(hi,want)}
     it.text=v;it.full=false;if(it.grp)curGrp=it.grp;renderLanes();renderPreview();openSubNew();return;
   }
@@ -4593,7 +4589,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v543';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v544';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
