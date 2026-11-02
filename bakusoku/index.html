@@ -2452,7 +2452,7 @@ async function togglePlay(){
       if(!(await svSwap(i)))await ensureClip(s.clip);
       const K=spdOf(s),st=(gt>o+0.02&&gt<o+segD(s))?s.start+(gt-o)*K:s.start;
       await seekTo(sv,st);if(tok!==playTok)return;
-      svRoute(i,st);/* v522: 速度(音程はブラウザが保つ) */try{sv.preservesPitch=true;sv.playbackRate=K}catch(e){}await sv.play();svPrep(i+1);stopNodes(pNodes,1);pNodes=scheduleNarr(pctx,pctx.destination,o+(st-s.start)/K,1);
+      svRoute(i,st);/* v522: 速度(音程はブラウザが保つ) */try{sv.preservesPitch=true;sv.playbackRate=Math.min(16,K)}catch(e){}await sv.play();svPrep(i+1);stopNodes(pNodes,1);pNodes=scheduleNarr(pctx,pctx.destination,o+(st-s.start)/K,1);
       await new Promise(res=>{const tick=()=>{
         if(tok!==playTok){res();return}
         const t=sv.currentTime;gt=o+Math.max(0,t-s.start)/K;svGain(i,t);
@@ -2963,7 +2963,7 @@ function segRun(s){let k=segs.indexOf(s);if(k<0)return[k,k];const kk=segKey(s);i
 window.segRun=segRun;
 function bindSeg(b,s){
   const grab=(h,side)=>h.addEventListener('pointerdown',e=>{
-    if(spdSel)return;e.stopPropagation();e.preventDefault();
+    e.stopPropagation();e.preventDefault();
     const pid=e.pointerId,sx=e.clientX,o={s:s.start,e:s.end},B=segBounds(s);let moved=false;dragBusy=true;
     try{h.setPointerCapture(pid)}catch(x){}
     const mv=ev=>{if(ev.pointerId!==pid)return;
@@ -3054,7 +3054,7 @@ function renderLanes(){
     if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});
       segs.forEach((s,k)=>{
       const d=segD(s);if(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3)){videoBlks.push(null);x+=d;return}
-      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'')+(spdSel&&spdSel.has(s)?' spdOn':'');
+      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'');
       b.style.left=(x*pps)+'px';bW(b,d*pps);
       if(s.clip&&inRun[k]){b.style.background='transparent';b.style.zIndex='1';const sp=document.createElement('span');sp.textContent=num(s.clip)+spdTx(s);b.appendChild(sp)}
       else if(s.clip){/* v367: 動画レーンは波形ではなくサムネイルを並べる(フィルムストリップ) */
@@ -3126,7 +3126,6 @@ function renderLanes(){
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
   const t=(e.clientX-$('cv').getBoundingClientRect().left)/pps;
-  /* v522: 速度ボタンで選んでいる間は、動画ブロックのタップ=選ぶ */if(spdSel){if(i===0||i===7)spdTap(t,e);return}
   /* v360: 動画・動画音声レーンのダブルタップ=動画のインスペクタ */if((i===0||i===7)&&dbl('lane07',e.clientX)){const L=locate(t),q=L&&segs[L.i];if(q&&q.clip){segIns(L.i,i===0?'v':'a');return}}
   if(roAll()){const k=cAt(t);if(k>=0){cornerPick(corners[k].id);return}}
   pausePreview();
@@ -3770,7 +3769,7 @@ function setCutMode(on){cutMode=!!on;const b=$('sp2');b.setAttribute('aria-press
   tw.style.outline=cutMode?'2px solid #e0453a':'';tw.style.outlineOffset='-2px';if(cutMode)flashSel('カットモード: 波形をスワイプして合わせ、タップでカット')}
 $('sp2').onclick=()=>{if(!cutMode&&selMode)setSelMode(false);setCutMode(!cutMode)};
 /* v522: 速度を入れる(0.25〜4倍)。後ろの字幕・ナレーションなどは一緒に動かす。そのクリップの中の字幕は伸び縮み、他は長さそのままで位置だけ */
-function setSpd(L,v){v=Math.max(0.25,Math.min(4,Math.round(v*100)/100));
+function setSpd(L,v){v=Math.max(0.25,Math.min(100,v>=10?Math.round(v*10)/10:Math.round(v*100)/100));
   const S=L.filter(q=>q&&q.clip&&segs.includes(q)&&spdOf(q)!==v).sort((a,b)=>segs.indexOf(b)-segs.indexOf(a));if(!S.length)return false;
   if(corners.length)itemCn();
   S.forEach(q=>{const a=cumAt(segs.indexOf(q)),d0=segD(q),e0=a+d0;if(v===1)delete q.spd;else q.spd=v;const d1=segD(q),dl=d1-d0,r=d1/d0;
@@ -3781,42 +3780,14 @@ function setSpd(L,v){v=Math.max(0.25,Math.min(4,Math.round(v*100)/100));
   if(corners.length)cornerSync();else cornerRebase();resetOut();renderLanes();renderSegs();renderPreview();return true}
 /* v522: 速度の操作部品(バーと よく使う倍率)。L()=変える物の一覧 */
 function spdUI(box,L,done){const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度';
-  const sl=document.createElement('input');sl.type='range';sl.min=0.25;sl.max=4;sl.step=0.05;const v=document.createElement('div');v.className='v';r.append(lb,sl,v);box.appendChild(r);
-  const ps=document.createElement('div');ps.className='seg';ps.style.margin='4px 0';const P=[0.5,1,1.5,2,3,4].map(x=>{const b=document.createElement('button');b.textContent=x+'倍';b.onclick=()=>put(x);ps.appendChild(b);return[b,x]});box.appendChild(ps);
-  const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin:4px 2px';nt.textContent='音の高さはそのまま。0.5〜2倍がきれいです（それ以上は声が崩れやすい）';box.appendChild(nt);
+  const sl=document.createElement('input');sl.type='range';sl.min=-2;sl.max=Math.log2(100);sl.step=0.02;/* v523: 0.25〜100倍(対数) */const v=document.createElement('div');v.className='v';r.append(lb,sl,v);box.appendChild(r);
+  const ps=document.createElement('div');ps.className='seg';ps.style.margin='4px 0';const P=[0.5,1,2,4,10,30,100].map(x=>{const b=document.createElement('button');b.textContent=x+'倍';b.onclick=()=>put(x);ps.appendChild(b);return[b,x]});box.appendChild(ps);
+  const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin:4px 2px';nt.textContent='音の高さはそのまま。0.5〜2倍がきれいです。4倍以上は声が崩れやすく、16倍を超えるとプレビューは倍率どおりに動きません（書き出しは倍率どおり）';box.appendChild(nt);
   let pushed=false;const cur=()=>{const l=L();return l.length?spdOf(l[0]):1};
-  const draw=()=>{const k=cur();if(document.activeElement!==sl)sl.value=k;v.textContent=k.toFixed(2)+'倍';P.forEach(([b,x])=>b.setAttribute('aria-pressed',String(Math.abs(x-k)<1e-3)));done&&done()};
+  const draw=()=>{const k=cur();if(document.activeElement!==sl)sl.value=Math.log2(k);v.textContent=(k>=10?k.toFixed(1):k.toFixed(2))+'倍';P.forEach(([b,x])=>b.setAttribute('aria-pressed',String(Math.abs(x-k)<1e-3)));done&&done()};
   function put(x){if(!pushed){pushed=true;segHist();segU[segU.length-1].items=cloneItems()}setSpd(L(),x);draw()}
-  sl.oninput=()=>{v.textContent=(+sl.value).toFixed(2)+'倍'};sl.onchange=()=>put(+sl.value);draw();return draw}
+  sl.oninput=()=>{const x=Math.pow(2,+sl.value);v.textContent=(x>=10?x.toFixed(1):x.toFixed(2))+'倍'};sl.onchange=()=>put(Math.pow(2,+sl.value));draw();return draw}
 /* v522: 「速度」ボタン。押す→動画ブロックをタップで選ぶ(複数可・もう一度タップで外す)→右下の「決定」で速度の画面。ダブルタップ=選んだ全部のインスペクタ */
-let spdSel=null;
-{const b=document.createElement('button');b.id='spdB';b.textContent='速度';b.setAttribute('aria-label','速度');b.setAttribute('aria-pressed','false');b.style.cssText='min-height:36px;min-width:44px;padding:0 6px';
- $('sp2').after(b);
- const bar=document.createElement('div');bar.id='spdBar';bar.hidden=true;
- bar.style.cssText='position:fixed;left:8px;right:8px;bottom:12px;z-index:9000;display:flex;gap:8px;align-items:center;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:8px;box-shadow:0 2px 12px #0009;font-size:14px';
- bar.innerHTML='<div id="spdMsg" style="flex:1">速度を変えるクリップをタップしてください（複数可）</div><button id="spdNo">やめる</button><button id="spdOk" class="primary" disabled>決定</button>';
- document.body.appendChild(bar);
- const upd=()=>{const n=spdSel?segs.filter(q=>spdSel.has(q)).length:0;$('spdOk').disabled=!n;$('spdMsg').textContent=n?'選んだクリップ: '+new Set(segs.filter(q=>spdSel.has(q)).map(q=>segRun(q)[0])).size+'つ':'速度を変えるクリップをタップしてください（複数可）'};
- window.spdEnd=()=>{if(!spdSel&&bar.hidden)return;spdSel=null;bar.hidden=true;b.setAttribute('aria-pressed','false');b.style.background=b.style.color=b.style.borderColor='';if(!$('s2').hidden)renderLanes()};
- const start=()=>{if(cutMode)setCutMode(false);if(selMode)setSelMode(false);if(multiMode)setMulti(false);pausePreview();spdSel=new Set();bar.hidden=false;b.setAttribute('aria-pressed','true');b.style.background=b.style.borderColor='var(--accent)';b.style.color='#fff';upd();renderLanes()};
- b.onclick=()=>{if(spdSel)spdEnd();else start()};
- /* 画面を移ったら終わる */new MutationObserver(()=>{if($('s2').hidden)spdEnd()}).observe($('s2'),{attributes:true,attributeFilter:['hidden']});
- $('spdNo').onclick=()=>spdEnd();
- window.spdTap=(t,e)=>{const L=locate(t),q=L&&segs[L.i];if(!q||!q.clip)return;const R=segRun(q),run=segs.slice(R[0],R[1]+1).filter(z=>z.clip);
-   if(dbl('spd',e.clientX)){run.forEach(z=>spdSel.add(z));const SEL=segs.filter(z=>spdSel.has(z)),i=segs.indexOf(q);spdEnd();segIns(i,'v',SEL);return}
-   const on=!run.every(z=>spdSel.has(z));run.forEach(z=>on?spdSel.add(z):spdSel.delete(z));upd();renderLanes()};
- $('spdOk').onclick=()=>{const SEL=segs.filter(q=>spdSel&&spdSel.has(q));if(!SEL.length)return;bar.hidden=true;
-   const M=insDlg('速度（'+new Set(SEL.map(q=>segRun(q)[0])).size+'つのクリップ）',()=>({secs:[]}));const box=M.w.querySelector('.ib');
-   const ls=document.createElement('div');ls.style.cssText='font-size:13px;margin:4px 2px 8px;max-height:96px;overflow:auto';box.appendChild(ls);
-   const L=()=>SEL.filter(q=>segs.includes(q));
-   const list=()=>{const g=new Map();L().forEach(q=>{const k=segRun(q)[0];if(!g.has(k))g.set(k,[]);g.get(k).push(q)});ls.innerHTML='';g.forEach(a=>{const d=document.createElement('div');const s0=a.reduce((x,q)=>x+q.end-q.start,0),s1=a.reduce((x,q)=>x+segD(q),0);d.textContent='動画'+num(a[0].clip)+'　'+s0.toFixed(1)+'秒 → '+s1.toFixed(1)+'秒';ls.appendChild(d)})};
-   spdUI(box,L,list);
-   const ft=document.createElement('div');ft.className='ft';
-   const ins=M.btn('インスペクタ（選んだ全部に効く）',()=>{const l=L();if(!l.length)return;spdEnd();segIns(segs.indexOf(l[0]),'v',l)});
-   const ok=M.btn('完了',()=>{M.close();spdEnd()});ft.append(ins,ok);M.w.appendChild(ft);
-   M.w.querySelector('.ih button').addEventListener('click',()=>spdEnd());
-   renderLanes()};
-}
 /* v434: 選択モード。波形をスワイプで位置を合わせ、タップ1回目=イン点、2回目=アウト点(3回目は選び直し)。範囲は selA..selB(全体の時間) */
 function setSelMode(on){if(on&&cutMode)setCutMode(false);selMode=!!on;const b=$('selB');if(b){b.setAttribute('aria-pressed',String(selMode));b.style.background=selMode?'#2f7cf0':'';b.style.color=selMode?'#fff':'';b.style.borderColor=selMode?'#2f7cf0':''}
   tw.style.outline=selMode?'2px solid #2f7cf0':cutMode?'2px solid #e0453a':'';tw.style.outlineOffset='-2px';
@@ -3904,7 +3875,7 @@ const doExport=async PV=>{const sayX=PV?PV.say:say;
       if(!run){await pauseAll();
         if(last!==s.clip){await loadSrc(ev,s.clip.url);last=s.clip}
         await seekTo(ev,c0);drawFrame(g,W,H,ev,from);
-        {try{ev.preservesPitch=true;ev.playbackRate=K}catch(e){}const pl=new Promise(r=>{ev.addEventListener('playing',r,{once:true});setTimeout(r,1500)});await ev.play();await pl}
+        {try{ev.preservesPitch=true;ev.playbackRate=Math.min(16,K)}catch(e){}const pl=new Promise(r=>{ev.addEventListener('playing',r,{once:true});setTimeout(r,1500)});await ev.play();await pl}
         const n=ac.currentTime;ramp(eg.gain,0,1,n,n+FD);
         stopNodes(enodes,1);enodes=scheduleNarr(ac,mg,from+Math.max(0,ev.currentTime-c0)/K,1);
         await resumeAll()}
@@ -4477,7 +4448,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v522';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v523';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5487,7 +5458,7 @@ $('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent=
 function bindSegLP(b,s){
   b.addEventListener('contextmenu',e=>e.preventDefault());
   b.addEventListener('pointerdown',e=>{
-    if(multiMode||spdSel||(roAll()&&!s.clip))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
+    if(multiMode||(roAll()&&!s.clip))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
     const R=segRun(s),RB=()=>videoBlks.slice(R[0],R[1]+1).filter(Boolean).concat(videoBlks.includes(b)?[]:[b]);const tm=setTimeout(()=>{fired=true;buzz();RB().forEach(e=>{e.style.opacity='.7'})},450);
     const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8)fin(false)};
     const up=ev=>{if(ev.pointerId===id)fin(fired)};
