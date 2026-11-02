@@ -470,11 +470,11 @@ body.cnTint:has(#s2:not([hidden])){--bg:color-mix(in srgb,var(--cx) 11%,var(--bg
   #s1 section.b>h2{margin:10px 8px 8px}
   #s1 section.b .stage{border-radius:0;max-height:none}
 }
-.pgnav{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:12px 0 calc(4px + env(safe-area-inset-bottom,0px));grid-column:1/-1}
+.pgnav{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:4px 0 8px;grid-column:1/-1}
 .pgnav button{min-height:48px;padding:0 1px;font-size:12px;letter-spacing:-.02em}
 .pgnav button.pgTl{grid-column:1/-1;order:9;min-height:38px}
 .pgnav button[aria-current=page]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-#s2>.pgnav{flex:none;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+#s2>.pgnav{flex:none;padding:6px 8px}
 body.editing .pgnav{display:none!important}
 #s1>.topbar2{gap:6px}#s1>.topbar2 h1{white-space:nowrap;font-size:16px;flex:1;min-width:0}#s1>.topbar2 button{white-space:nowrap;padding:0 8px;font-size:13px;flex:none}
 #topBtns{display:flex;gap:4px;flex:none}#topBtns button{padding:0 8px}
@@ -515,7 +515,7 @@ body.editing .pgnav{display:none!important}
 #s1>section.b .stage{border-radius:8px}
 #s1>section.c{background:color-mix(in srgb,var(--c3) 8%,var(--sec));border:2px solid color-mix(in srgb,var(--c3) 20%,var(--btnl));border-radius:12px}
 #s1>section.a>h2,#s1 #segD>summary{color:var(--fg)}
-#s1>.pgnav{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+/* v528: ページ移動の列は上へ移動(カットは爆速☆YouTuber枠の下、他のページは一番上) */
 /* v500: スマホ縦画面はカット枠を左右端まで広げ、映像まわりの余白をなくす */
 @media (orientation:portrait){
   #s1>section.b{margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px))) calc(-1*max(16px,env(safe-area-inset-right,0px)));padding:0 0 12px;border-inline-width:0;border-radius:0}
@@ -4473,7 +4473,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v527';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v528';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6018,10 +6018,10 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   };
   const mk=(par,cur)=>{const n=document.createElement('nav');n.className='pgnav';n.setAttribute('aria-label','ページ移動');
     Object.keys(go).forEach(t=>{const b=document.createElement('button');b.textContent=t;if(t==='タイムライン')b.className='pgTl';if(t===cur)b.setAttribute('aria-current','page');
-      b.onclick=()=>{if(t===(par.id==='s4'&&window.subMode&&window.subMode()==='nar'?'ナレーション':cur))return;pausePreview();if(!$('s5').hidden&&t!=='投稿'){$('s5').hidden=true;$('s1').hidden=false}go[t]()};n.appendChild(b)});par.appendChild(n);return n};
+      b.onclick=()=>{if(t===(par.id==='s4'&&window.subMode&&window.subMode()==='nar'?'ナレーション':cur))return;pausePreview();if(!$('s5').hidden&&t!=='投稿'){$('s5').hidden=true;$('s1').hidden=false}go[t]()};n.appendChild(b)});/* v528: カット画面=見出し枠の下／それ以外=一番上 */const hd=par.querySelector(':scope>.topbar2');if(hd)hd.after(n);else par.insertBefore(n,par.firstChild);return n};
   const n4=mk($('s4'),'字幕');
   mk($('s1'),'カット');mk($('s5'),'投稿');const n2=mk($('s2'),'タイムライン');mk(ex,'書き出し');
-  new MutationObserver(()=>{if($('s2').lastElementChild!==n2)$('s2').appendChild(n2)}).observe($('s2'),{childList:true});
+  new MutationObserver(()=>{if($('s2').firstElementChild!==n2)$('s2').insertBefore(n2,$('s2').firstChild)}).observe($('s2'),{childList:true});
   /* v256: テンプレート編集はタイムラインと字幕ページの一番下(ページ移動の上) *//* v294: テンプレート編集は⚙設定へ移動 */
 
   /* v287: 字幕ページの「タイムラインに入れる」= 今の動画(残す範囲と、字幕ページで入れた空白)を1つのブロックとして、タイムラインの再生位置の近くの切れ目に移す。
