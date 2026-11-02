@@ -597,7 +597,7 @@ body.editing .pgnav{display:none!important}
 
   <section id="pvSec" hidden>
     <div class="pcw"><canvas id="pc" width="960" height="540"></canvas></div>
-    <div class="pctl"><button id="pp" aria-label="再生・停止">⏯</button>
+    <div class="pctl"><button id="pp" aria-label="再生・停止">⏯</button><button id="pvMode" hidden aria-label="16倍超のプレビュー方式"></button>
       <input id="gseek" type="range" min="0" max="1" step="0.05" value="0" aria-label="位置"><button id="pfull" aria-label="プレビューを拡大">⛶</button></div>
     <div class="gt" id="gtime">0:00.0 / 0:00.0</div>
   </section>
@@ -2247,7 +2247,10 @@ const loadSrc=(v,u)=>new Promise((res,rej)=>{v.onloadedmetadata=()=>res();v.oner
 async function ensureClip(c){if(svClip!==c){svClip=c;sv._c=null;await loadSrc(sv,c.url);sv._c=c}}
 
 window._tlRedraw=()=>{if(!$('s2').hidden&&!playing)renderPreview();/* v437: ナレーション文字レーンを最新に。v475: 字幕ページの字幕・ナレーションの箱も */if(window.subTLNarTx){const k=JSON.stringify([window.subTLNarTx(),window.subTLSubTx?subTLSubTx():0,window.subTLNar?subTLNar().map(n=>n.a):0]);if(k!==nTxSig){nTxSig=k;renderLanes()}}};let nTxSig='';
-function renderPreview(){
+let pvFast=true;try{pvFast=localStorage.getItem('pvFast')!=='0'}catch(e){}
+/* v524: 16倍超の速度がある時だけ、プレビューの方式ボタンを出す(実速度=コマごとジャンプ / 遅く=ブラウザの上限16倍) */
+function pvModeUpd(){const b=$('pvMode');if(!b)return;const on=segs.some(q=>spdOf(q)>16);b.hidden=!on;if(on)b.textContent=pvFast?'⏩実速度':'🐢遅く';if(!b._o){b._o=1;b.onclick=()=>{pvFast=!pvFast;try{localStorage.setItem('pvFast',pvFast?'1':'0')}catch(e){}pvModeUpd();pvMsg(pvFast?'16倍超: 実速度で表示（音なし・コマが飛びます）':'16倍超: 遅く表示（16倍まで・書き出しは倍率どおり）');if(playing){pausePreview();togglePlay()}}}}
+function renderPreview(){pvModeUpd();
   drawFrame(pg,pc.width,pc.height,sv,gt);
   $('gtime').textContent=fmt(gt)+' / '+fmt(total());
   const gs=$('gseek');gs.max=Math.max(0.05,total());gs.value=gt;
@@ -2452,12 +2455,23 @@ async function togglePlay(){
       if(!(await svSwap(i)))await ensureClip(s.clip);
       const K=spdOf(s),st=(gt>o+0.02&&gt<o+segD(s))?s.start+(gt-o)*K:s.start;
       await seekTo(sv,st);if(tok!==playTok)return;
+      if(K>16&&pvFast){/* v524: 16倍超は、再生せず実時間でコマごとに元動画の先へジャンプして見せる(音なし・ナレーションとBGMは鳴る) */
+        sv.pause();svPrep(i+1);stopNodes(pNodes,1);const g0=Math.max(gt,o);pNodes=scheduleNarr(pctx,pctx.destination,g0,1);pvMsg('実速度で表示中（'+K+'倍・音なし・コマが飛びます）');
+        await new Promise(res=>{const t0=performance.now(),tick=()=>{
+          if(tok!==playTok){res();return}
+          gt=g0+(performance.now()-t0)/1000;const t=Math.min(s.end-0.001,s.start+(gt-o)*K);
+          if(!sv.seeking&&Math.abs(sv.currentTime-t)>0.001){try{sv.currentTime=t}catch(e){}}
+          followPlayhead();renderPreview();seP();updatePlayhead();if(gt>=lim-0.005){gt=lim;pausePreview();renderPreview();updatePlayhead();res();return}
+          if(gt>=o+segD(s)-0.001)res();else requestAnimationFrame(tick)};tick()});
+      }else{
+      if(K>16)pvMsg('16倍を超えるため遅く表示中（書き出しは'+K+'倍どおり・音なし）');
       svRoute(i,st);/* v522: 速度(音程はブラウザが保つ) */try{sv.preservesPitch=true;sv.playbackRate=Math.min(16,K)}catch(e){}await sv.play();svPrep(i+1);stopNodes(pNodes,1);pNodes=scheduleNarr(pctx,pctx.destination,o+(st-s.start)/K,1);
       await new Promise(res=>{const tick=()=>{
         if(tok!==playTok){res();return}
         const t=sv.currentTime;gt=o+Math.max(0,t-s.start)/K;svGain(i,t);
         followPlayhead();renderPreview();seP();updatePlayhead();if(gt>=lim-0.005){gt=lim;pausePreview();renderPreview();updatePlayhead();res();return}
         if(t>=s.end-0.03||sv.ended){sv.pause();res()}else requestAnimationFrame(tick)};tick()});
+      }
     }
     if(tok===playTok&&tailPad>0.01){
       const a=Math.max(gt,segSum());stopNodes(pNodes,1);pNodes=scheduleNarr(pctx,pctx.destination,a,1);
@@ -4448,7 +4462,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v523';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v524';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
