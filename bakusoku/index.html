@@ -1071,7 +1071,7 @@ let cutCn=null;
 function cutCnNow(){if(!corners.length)return undefined;if(cIdx(cutCn)<0){const l=segs[segs.length-1];cutCn=l&&cIdx(l.cn)>=0?l.cn:corners[0].id}return cutCn}
 function renderCutCn(){const w=$('cutCn');if(!w)return;w.innerHTML='';w.hidden=!corners.length;if(!corners.length)return;/* v430: 名前が cur(今の動画)と被っていて、今の動画にコーナーが入っていなかった */const cc=cutCnNow();
   corners.forEach((c,i)=>{const b=document.createElement('button');b.textContent=c.name;const on=c.id===cc;b.setAttribute('aria-pressed',String(on));
-    if(on){b.style.background=ccol(i);b.style.borderColor=ccol(i);b.style.color='#fff'}b.onclick=()=>{cutCn=c.id;/* v339: 今の動画とそれより後ろの動画をこのコーナーにする */if(cur&&clips.includes(cur)){const L=clips.slice(clips.indexOf(cur));segs.forEach(s=>{if(s.clip&&L.includes(s.clip))s.cn=c.id});/* v388: まだ開いていない動画の下書きも */L.forEach(k=>{const d=draft.get(k);if(d)d.forEach(s=>s.cn=c.id)});sortSegs();resetOut();renderSegs()}renderCutCn()};w.appendChild(b)})}
+    if(on){b.style.background=ccol(i);b.style.borderColor=ccol(i);b.style.color='#fff'}b.onclick=()=>{cutCn=c.id;/* v339: 今の動画とそれより後ろの動画をこのコーナーにする */if(cur&&clips.includes(cur)){const L=clips.slice(clips.indexOf(cur));segs.forEach(s=>{if(s.clip&&L.includes(s.clip))s.cn=c.id});/* v388: まだ開いていない動画の下書きも */L.forEach(k=>{const d=draft.get(k);if(d)d.forEach(s=>s.cn=c.id)});sortSegs();resetOut();renderSegs()}renderCutCn()};cnLP(b,i);w.appendChild(b)})}
 const ccol=i=>(corners[i]&&corners[i].col)||['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'][i%5];
 function cornerInit(){
   corners.forEach(c=>{c.ch=true;if(c.name==='挨拶・説明'&&!c.custom)c.name='説明';if(c.name==='完成・ED'&&!c.custom)c.name='ED'});
@@ -1217,9 +1217,17 @@ function renderCBar(){
   act.append(inp,ch,st);
 }
 /* v444: 上のコーナータグを長押し=名前を変える・削除 */
+/* v534: ブロック(Block1…)のボタンを長押し(0.5秒)で名前変更。タイムライン・カット・字幕・ナレーションのどれでも同じ(名前は全ページ共通なので連動する) */
+function cnLP(b,i){const f=b.onclick;let lp=0,lt=0;
+  b.onpointerdown=e=>{const x0=e.clientX,y0=e.clientY;lp=0;clearTimeout(lt);lt=setTimeout(()=>{lp=1;try{navigator.vibrate&&navigator.vibrate(20)}catch(_){}cornerEdit(i)},500);
+    const mv=ev=>{if(Math.abs(ev.clientX-x0)>10||Math.abs(ev.clientY-y0)>10)end()},end=()=>{clearTimeout(lt);removeEventListener('pointermove',mv);removeEventListener('pointerup',end);removeEventListener('pointercancel',end)};
+    addEventListener('pointermove',mv);addEventListener('pointerup',end);addEventListener('pointercancel',end)};
+  b.oncontextmenu=e=>e.preventDefault();b.onclick=e=>{if(lp){lp=0;return}f&&f.call(b,e)}}
+/* 名前を変えた後は、全ページの表示を更新 */
+function cnRefresh(){try{renderCBar()}catch(e){}try{renderLanes()}catch(e){}try{renderCutCn()}catch(e){}try{window.subBlkDraw&&subBlkDraw()}catch(e){}try{renderSegs()}catch(e){}try{const sel=$('exRange');if(sel&&window.exPrep&&!$('exSec').hidden)exPrep()}catch(e){}}
 function cornerEdit(i){const c=corners[i];if(!c)return;
   const inp=document.createElement('input');inp.value=c.name;inp.id='cnEdIn';inp.setAttribute('aria-label','名前');inp.style.cssText='width:100%;box-sizing:border-box;font-size:16px;padding:10px;margin:4px 0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)';
-  const ok=()=>{const v=inp.value.trim();if(v&&v!==c.name){c.name=v;c.custom=true;renderCBar();renderLanes();try{renderCutCn()}catch(e){}}};
+  const ok=()=>{const v=inp.value.trim();if(v&&v!==c.name){c.name=v;c.custom=true;cnRefresh()}};
   cdlg('名前を変える・削除',[['決定',ok],['このブロックを削除',()=>{if(corners.length<2){cdlg('1つ以上必要です',[['閉じる']]);return}
     cdlg('「'+c.name+'」を削除しますか?\n(中の動画は前のブロックに入ります)',[['削除',()=>cornerDel(c.id),'warn'],['やめる']])},'warn'],['やめる']]);
   const d=document.querySelector('.cdlg p');d.after(inp);inp.onkeydown=e=>{if(e.key==='Enter'){document.querySelector('.cdlg').remove();ok()}};setTimeout(()=>{try{inp.focus();inp.select()}catch(e){}},50)}
@@ -4502,7 +4510,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v533';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v534';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6060,7 +6068,7 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
     bar.hidden=!on;if(!on)return;bar.innerHTML='';const sel=window.subBlk||null,lock=!!(window.tlSel&&window.tlSel());
     const tab=(id,html,i)=>{const b=document.createElement('button');b.innerHTML=html;b.setAttribute('aria-pressed',String(sel===id));
       if(i!=null){b.style.borderColor=ccol(i);b.style.background=sel===id?ccol(i):'color-mix(in srgb,'+ccol(i)+' 28%,var(--bg))'}
-      b.onclick=()=>{if(window.subBlk===id)return;window.subBlk=id;chipGo=1;try{(window.subMode&&window.subMode()==='nar'?go['ナレーション']:go['字幕'])()}finally{chipGo=0}setTimeout(window.subBlkDraw,50)};bar.appendChild(b)};
+      b.onclick=()=>{if(window.subBlk===id)return;window.subBlk=id;chipGo=1;try{(window.subMode&&window.subMode()==='nar'?go['ナレーション']:go['字幕'])()}finally{chipGo=0}setTimeout(window.subBlkDraw,50)};if(i!=null)cnLP(b,i);bar.appendChild(b)};
     corners.forEach((c,i)=>tab(c.id,c.name.replace(/</g,'&lt;'),i));tab(null,'全て',null);
     bar.title=lock?'タイムラインで範囲を選んでいる間は、その範囲だけが出ます':'';}
   new MutationObserver(()=>{if(!$('s4').hidden)window.subBlkDraw()}).observe($('s4'),{attributes:true,attributeFilter:['hidden']});
