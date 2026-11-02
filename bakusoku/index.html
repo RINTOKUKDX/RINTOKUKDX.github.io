@@ -145,6 +145,15 @@ button:disabled{opacity:.4}
   padding:max(8px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) max(8px,env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 #pvSec.full .pcw{flex:1;min-height:0}
 #pvSec.full .pcw canvas{max-height:calc(100vh - 130px)}
+/* v545: 再生画面のフルサイズ(カット・字幕・ナレーション)。16:9のまま、画面に収まる最大の大きさで中央に */
+.pfs{position:fixed!important;z-index:700;left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;transform:translate(-50%,-50%);width:min(100vw,calc(100vh*16/9))!important;height:auto!important;max-height:none!important;aspect-ratio:16/9;margin:0!important;border-radius:0!important;box-shadow:0 0 0 200vmax #000}
+/* タイムラインのフルサイズ: 横向きなら操作を隠して画面いっぱい(16:9) */
+@media (orientation:landscape){
+  #pvSec.full{padding:0;background:#000}
+  #pvSec.full .pctl,#pvSec.full .gt{display:none}
+  #pvSec.full .pcw{display:flex;align-items:center;justify-content:center;background:#000}
+  #s2 #pvSec.full .pcw canvas,#pvSec.full .pcw canvas{width:min(100vw,calc(100vh*16/9))!important;height:auto!important;aspect-ratio:16/9;max-height:100vh!important;max-width:100vw!important}
+}
 @media (orientation:landscape) and (min-width:700px){
   #s1{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);grid-template-areas:"h h" "a b" "c b";align-items:start}
   #s1>.topbar2{grid-area:h} #s1 .a{grid-area:a} #s1 .b{grid-area:b} #s1 .c{grid-area:c}
@@ -2546,7 +2555,14 @@ async function togglePlay(){
 }
 /* v357: プレビューに一言出す */let pvMsgT=0;function pvMsg(t){const w=document.querySelector('#pvSec .pcw');let o=document.getElementById('pvMsg');if(!o){o=document.createElement('div');o.id='pvMsg';o.style.cssText='position:absolute;left:8px;right:8px;top:40%;padding:10px;background:rgba(0,0,0,.8);color:#fff;border-radius:8px;text-align:center;font-size:14px;pointer-events:none;z-index:5';w.appendChild(o)}o.textContent=t;o.hidden=false;clearTimeout(pvMsgT);pvMsgT=setTimeout(()=>{o.hidden=true},4000)}
 $('pp').onclick=togglePlay;
-$('pfull').onclick=()=>{$('pvSec').classList.toggle('full')};
+/* v545: フルサイズの間だけ画面を横にできる(アプリ=BakuApp.setOrient)。それ以外は縦のまま */
+const fsOrient=()=>{const on=!!document.querySelector('.pfs')||$('pvSec').classList.contains('full');try{const A=window.BakuApp;if(A&&A.setOrient)A.setOrient(on?'free':'port')}catch(e){}};window.fsOrient=fsOrient;
+window.fsExit=()=>{const e=document.querySelector('.pfs');let r=false;if(e){e.classList.remove('pfs');r=true}if($('pvSec').classList.contains('full')){$('pvSec').classList.remove('full');r=true}fsOrient();return r};
+const fsToggle=el=>{if(el.classList.contains('pfs')){el.classList.remove('pfs')}else{document.querySelectorAll('.pfs').forEach(x=>x.classList.remove('pfs'));el.classList.add('pfs')}fsOrient()};
+/* ダブルタップ=フルサイズ(カット画面・字幕・ナレーションの再生画面) */
+function fsDbl(el){if(!el||el._fsd)return;el._fsd=1;let last=0,x0=0,y0=0;el.addEventListener('pointerup',e=>{const n=Date.now();if(n-last<320&&Math.hypot(e.clientX-x0,e.clientY-y0)<30){last=0;fsToggle(el)}else{last=n;x0=e.clientX;y0=e.clientY}},true)}
+$('pfull').onclick=()=>{$('pvSec').classList.toggle('full');fsOrient()};
+setTimeout(()=>{fsDbl(document.querySelector('#s1 .stage'));fsDbl($('t_pl'))},0);
 $('gseek').addEventListener('input',e=>{pausePreview();seekGlobal(+e.target.value)});
 
 /* v302: 再生画面の細かさ(高960/中640/低426)。低いほど軽い。設定画面で選ぶ */
@@ -2767,6 +2783,7 @@ function drawTW(t){
     window.bkBack()});
   /* v433: 戻る(端からスワイプ)の中身。アプリ(箱 ver6〜)は戻るでこれを直接呼ぶ(履歴を使うとアプリが閉じることがあったため) */
   window.bkBack=()=>{
+    if(window.fsExit&&fsExit())return;/* v545: フルサイズ中の戻る=フルサイズを閉じる */
     {const y=keepY;requestAnimationFrame(()=>{scrollTo(0,y);requestAnimationFrame(()=>scrollTo(0,y))})}
     if(!$('s4').hidden){{const sh=document.getElementById('t_sheet');if(sh&&!sh.hidden){sh.hidden=true;document.getElementById('t_shIn').innerHTML='';return}}window.subUndo&&window.subUndo();return}
     if(!$('s1').hidden&&!document.body.classList.contains('editing')){if(document.querySelector('.cdlg'))return;$('undo').click();cutMsg('元に戻した');clearTimeout(window._cmT);window._cmT=setTimeout(()=>{if($('cutMsg').textContent==='元に戻した')cutMsg('')},1500);return}
@@ -2811,6 +2828,7 @@ function drawTW(t){
   window.fineN=()=>[FU.length,FR.length];
   const ob=window.bkBack;
   window.bkBack=()=>{
+    if(window.fsExit&&fsExit())return;/* v545 */
     if(on()&&!document.querySelector('.cdlg')&&!(!$('s1').hidden&&inT!=null)){
       const redo=!$('s2').hidden&&Date.now()-window.bkTs<1500&&window.bkSide>0;
       const ok=redo?window.fineRedo():window.fineUndo();
@@ -4589,7 +4607,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v544';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v545';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
