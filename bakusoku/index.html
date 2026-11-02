@@ -2220,11 +2220,14 @@ function drawFrame(g,W,H,vid,t){
   for(let lane=1;lane<=4;lane++)for(const it of items){
     if(inBk||(blankBg&&lane!==3))continue;
     if(it.lane!==lane||t<it.start||t>=it.end)continue;
+    /* v540: 再生画面のスワイプ・ピンチで動かした位置と大きさ(画面の中心を基準に拡大して、ずらす。動画のピンチと同じ式) */const xf=it.zm||it.px||it.py;if(xf){g.save();g.translate(W/2+(it.px||0)*W,H/2+(it.py||0)*H);g.scale(it.zm||1,it.zm||1);g.translate(-W/2,-H/2)}
+    try{
     if(lane===1){const R=chRun(t);if(R===false)continue;const CS=chFor(PT,chSt(it.chStyle?it:PT));if(!R){chDraw(g,W,H,u,it.text,t-it.start,CS,aIn(it)?t-it.start:99,aOut(it)?it.end-t:99);continue}
       const a=Math.max(it.start,R.a),b=Math.min(it.end,R.b);chDraw(g,W,H,u,it.text,t-a,CS,(aIn(it)||R.a>it.start+1e-3)?t-a:99,(aOut(it)||R.b<it.end-1e-3)?b-t:99)}
     else if(lane===2)telopPoint(g,W,H,u,it.text,PT,aIn(it)?t-it.start:99,aOut(it)?it.end-t:99);
     else if(lane===3){if(it.bold)bigText(g,W,H,u,{...it,style:it.bstyle||'setsumei_yoko'},t-it.start,it.end-t);else subtitle(g,W,H,u,it.text,t-it.start,it.end-t)}
     else bigText(g,W,H,u,it,t-it.start,it.end-t);
+    }finally{if(xf)g.restore()}
   }
   /* v227: 字幕ページで作った字幕(き・奥・太・枠)を一番上に */
   if(window.subTLDraw)try{window.subTLDraw(g,W,H,t,segs)}catch(e){}
@@ -2306,6 +2309,7 @@ let pvFast=true;try{pvFast=localStorage.getItem('pvFast')!=='0'}catch(e){}
 /* v524: 16倍超の速度がある時だけ、プレビューの方式ボタンを出す(実速度=コマごとジャンプ / 遅く=ブラウザの上限16倍) */
 function pvModeUpd(){const b=$('pvMode');if(!b)return;const on=segs.some(q=>spdOf(q)>16);b.hidden=!on;if(on)b.textContent=pvFast?'⏩実速度':'🐢遅く';if(!b._o){b._o=1;b.onclick=()=>{pvFast=!pvFast;try{localStorage.setItem('pvFast',pvFast?'1':'0')}catch(e){}pvModeUpd();pvMsg(pvFast?'16倍超: 実速度で表示（音なし・コマが飛びます）':'16倍超: 遅く表示（16倍まで・書き出しは倍率どおり）');if(playing){pausePreview();togglePlay()}}}}
 function renderPreview(){pvModeUpd();
+  try{window.xfTA&&xfTA()}catch(e){}
   drawFrame(pg,pc.width,pc.height,sv,gt);
   $('gtime').textContent=fmt(gt)+' / '+fmt(total());
   const gs=$('gseek');gs.max=Math.max(0.05,total());gs.value=gt;
@@ -2878,14 +2882,48 @@ function lblAdj(e,i){
   pc.style.touchAction='pan-y';pc.onclick=null;
   let st=null,scrub=false,hideT=0,tapT=0,lastTap=0;
   const show=()=>{ov.style.opacity='1';clearTimeout(hideT);hideT=setTimeout(()=>{ov.style.opacity='0'},1400)};
-  pc.addEventListener('pointerdown',e=>{st={x:e.clientX,y:e.clientY,g:gt};scrub=false;try{pc.setPointerCapture(e.pointerId)}catch(x){}});
-  pc.addEventListener('pointermove',e=>{if(!st)return;const dx=e.clientX-st.x,dy=e.clientY-st.y;
+  /* v540: 再生画面はタップで再生しない。今アクティブな物(見出し・ロゴ・字幕・動画)を、スワイプで動かし、ピンチで拡大縮小する。アクティブな物が無い時だけ、左右スワイプで再生位置を動かす(従来) */
+  const XT=()=>{const it=selItem;
+    if(it&&(it.lane===1||it.lane===2||it.lane===3||it.lane===4))return{k:'item',o:it};
+    if(it&&it.lane===8)return{k:'ov',o:it};
+    if(actLane===3&&window.subXfAt){const X=subXfAt(gt);if(X)return{k:'sub',o:X}}
+    if(actLane===0||actLane===7){const L=locate(gt),q=segs[L.i];if(q&&q.clip)return{k:'vid',o:q}}
+    return null};
+  const XG=T=>{const o=T.k==='ov'?(T.o.fx&&T.o.fx.v)||{}:T.k==='vid'?segV(T.o)||{}:T.o;return{px:o.px||0,py:o.py||0,zm:o.zm||1}};
+  const XS=(T,v)=>{const q=x=>({px:+x.px.toFixed(4),py:+x.py.toFixed(4),zm:+x.zm.toFixed(3)});v=q(v);
+    const put=o=>{['px','py','zm'].forEach(k=>{if(k==='zm'?v[k]===1:!v[k])delete o[k];else o[k]=v[k]})};
+    if(T.k==='item')put(T.o);
+    else if(T.k==='sub')window.subXfSet(T.o,v);
+    else if(T.k==='ov'){T.o.fx=fxC(T.o.fx)||{};const o=T.o.fx.v=T.o.fx.v||{};put(o);if(!Object.keys(o).length)delete T.o.fx.v;if(!Object.keys(T.o.fx).length)delete T.o.fx}
+    else{const i=segs.indexOf(T.o),[a,b]=visBlk(i);segs.slice(a,b+1).forEach(z=>{z.fx=fxC(z.fx)||{};const o=z.fx.v=z.fx.v||{};put(o);if(!Object.keys(o).length)delete z.fx.v;if(!Object.keys(z.fx).length)delete z.fx})}};
+  const PTR=new Map();let xs=null;
+  const ctr=()=>{const r=pc.getBoundingClientRect(),P=[...PTR.values()],n=P.length||1;let x=0,y=0;P.forEach(p=>{x+=p.x;y+=p.y});x/=n;y/=n;let d=0;if(P.length>1)d=Math.hypot(P[0].x-P[1].x,P[0].y-P[1].y);return{x:(x-r.left)/r.width,y:(y-r.top)/r.height,d,r}};
+  /* 指の数が変わるたびに、その時の状態を基準にし直す(ピンチ→指1本に戻した時にずれないように) */
+  const xBase=()=>{const T=xs?xs.T:XT();if(!T){xs=null;return}const c=ctr();xs={T,v0:XG(T),c0:c,moved:xs?xs.moved:false,pushed:xs?xs.pushed:false}};
+  const xTA=()=>{const want=XT()?'none':'pan-y';if(pc.style.touchAction!==want)pc.style.touchAction=want};window.xfTA=xTA;
+  pc.addEventListener('pointerdown',e=>{PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});try{pc.setPointerCapture(e.pointerId)}catch(x){}
+    if(PTR.size===1){st={x:e.clientX,y:e.clientY,g:gt};scrub=false;xs=null}
+    xBase()});
+  pc.addEventListener('pointermove',e=>{if(!PTR.has(e.pointerId))return;PTR.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(xs){const c=ctr(),z0=xs.v0.zm;
+      if(!xs.moved){if(Math.hypot((c.x-xs.c0.x)*c.r.width,(c.y-xs.c0.y)*c.r.height)<6&&(PTR.size<2||Math.abs(c.d-xs.c0.d)<6))return;xs.moved=true;
+        if(!xs.pushed){xs.pushed=true;pausePreview();if(xs.T.k==='item'||xs.T.k==='ov')pushHist();else if(xs.T.k==='vid')segHist()}}
+      const z1=Math.max(0.2,Math.min(6,z0*(PTR.size>1&&xs.c0.d>0?c.d/xs.c0.d:1)));
+      /* 指の下にあった点が、指の動きについてくるようにする */
+      const qx=(xs.c0.x-(1-z0)*.5-xs.v0.px)/z0,qy=(xs.c0.y-(1-z0)*.5-xs.v0.py)/z0;
+      XS(xs.T,{px:c.x-z1*qx-(1-z1)*.5,py:c.y-z1*qy-(1-z1)*.5,zm:z1});renderPreview();show();return}
+    if(!st||PTR.size!==1)return;const dx=e.clientX-st.x,dy=e.clientY-st.y;
     if(!scrub){if(Math.abs(dx)<10||Math.abs(dx)<Math.abs(dy))return;scrub=true;pausePreview()}
     const w=pc.getBoundingClientRect().width||1;show();{const r=twR(),L=r.b-r.a;seekGlobal(Math.max(r.a,Math.min(r.b-0.001,st.g+dx/w*L)))}});
-  pc.addEventListener('pointerup',()=>{if(!st)return;const was=scrub;st=null;if(was){show();return}
-    const now=Date.now();if(now-lastTap<300){clearTimeout(tapT);lastTap=0;$('pfull').click();return}
-    lastTap=now;tapT=setTimeout(()=>{lastTap=0;togglePlay();show()},300)});
-  pc.addEventListener('pointercancel',()=>{st=null});
+  const xUp=e=>{const had=PTR.delete(e.pointerId);if(!had)return;
+    if(PTR.size>0){xBase();return}
+    const was=scrub,mv=xs&&xs.moved;xs=null;st=null;scrub=false;
+    if(mv){resetOut();try{renderLanes()}catch(x){}renderPreview();return}
+    if(was){show();return}
+    /* ダブルタップ=全画面。1回のタップでは何もしない(再生は⏯ボタン) */
+    const now=Date.now();if(now-lastTap<300){lastTap=0;$('pfull').click();return}lastTap=now;show()};
+  pc.addEventListener('pointerup',xUp);
+  pc.addEventListener('pointercancel',e=>{PTR.delete(e.pointerId);if(!PTR.size){st=null;xs=null}});
 }
 const nextGrp=()=>items.reduce((a,o)=>Math.max(a,o.grp||0),0)+1;
 /* ダブルタップ判定(長タップと同じ動きにする) */
@@ -3195,6 +3233,7 @@ function renderLanes(){
   if(cview){const m=document.createElement('div');m.style.cssText='position:absolute;top:0;bottom:0;left:'+(V.b*pps)+'px;right:0;background:var(--bg);border-left:1px solid var(--line);z-index:3;pointer-events:none';cv.appendChild(m)}
   if(cview&&V.empty){const w0=Math.max(200,szOf($('scr')).w);cv.style.width=(V.a*pps+w0)+'px';const m=document.createElement('div');m.textContent='このコーナーには まだ動画がありません';m.style.cssText='position:absolute;top:0;bottom:0;left:'+(V.a*pps)+'px;width:'+w0+'px;z-index:7;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--muted);font-size:13px';cv.appendChild(m)}
   ph=document.createElement('div');ph.className='ph';cv.appendChild(ph);updatePlayhead();renderLbls();renderSelBar();lzRun();try{if(selA!=null)selDraw()}catch(e){}
+  try{window.xfTA&&xfTA()}catch(e){}/* v540 */
 }
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
@@ -4521,7 +4560,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v539';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v540';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7494,14 +7533,14 @@ async function tlLoad(segs){
   /* v477: もう1本として入れた動画(key#2)は元の動画の文字起こしを使う */const BK=k=>String(k||'').replace(/#\d+$/,'');
   const keys=[...new Set(segs.filter(s=>s.clip).map(s=>BK(s.clip.key)))];
   if(TL.dirty||keys.join('|')!==TL.keys){TL.dirty=false;
-    const rows={};let pref=null,pv=null;try{pref=localStorage.getItem('asrView');pv=localStorage.getItem('asrVv')}catch(e){}
+    const rows={},resM={};let pref=null,pv=null;try{pref=localStorage.getItem('asrView');pv=localStorage.getItem('asrVv')}catch(e){}
     for(const K of keys){const rs={};for(const m of SUBM()){const r=await kv('res_'+m+'|'+K);if(r&&r.raw)rs[m]=r}
       const ms=Object.keys(rs);if(!ms.length)continue;let base=[];
       if(ms.length){const m=rs[pref]?pref:ms.sort((a,b)=>((rs[b].info||{}).at||0)-((rs[a].info||{}).at||0))[0];
-        base=((pv==='raw'?rs[m].raw:rs[m].fix)||rs[m].raw||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim())}
+        base=((pv==='raw'?rs[m].raw:rs[m].fix)||rs[m].raw||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim());resM[K]={key:'res_'+m+'|'+K,r:rs[m]}}
       rows[K]=base}
-    {const nr=await kv('res_nar|ALL'),nrows=((nr&&nr.raw)||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim());if(nrows.length)rows['_nar']=nrows}
-    TL.rows=rows;TL.keys=keys.join('|');TL.sig='';
+    {const nr=await kv('res_nar|ALL'),nrows=((nr&&nr.raw)||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim());if(nrows.length){rows['_nar']=nrows;resM['_nar']={key:'res_nar|ALL',r:nr}}}
+    TL.res=resM;TL.rows=rows;TL.keys=keys.join('|');TL.sig='';
     {const t=await kv('tpl');if(t){TPL=Object.assign(TPL,t);if(!TPL.b)TPL.b={c:TDEF.b}}}
     const sl=await kv('se|list');if(sl)SE=sl}
   const sig=tlSig(segs);
@@ -7512,7 +7551,7 @@ async function tlLoad(segs){
     const out=[];
     Object.entries(TL.rows).forEach(([K,L])=>L.forEach(g=>{const IS=[...new Set(M.filter(q=>q.i&&(q.k===g.ka||q.k===g.kb)).map(q=>q.i))];(IS.length>1&&K!=='_nar'?IS:[null]).forEach(I=>{let s=at(g.ka,g.oa,false,I),e=at(g.kb,g.ob,true,I);
       if(!s&&!e)return;if(!e)e={v:s.m.g+(s.m.b-s.m.a)/s.m.r};if(!s)s={v:e.m.g};
-      if(e.v-s.v<0.05)return;const o=Object.assign({},g,{a:s.v,b:e.v});if(I&&o.grp)o.grp=o.grp+'@'+I;if(K==='_nar')o.nar=1;if(g.vka!=null){const q=at(g.vka,g.voa,false,I);o.va=q?q.v:s.v}out.push(o)})}));
+      if(e.v-s.v<0.05)return;const o=Object.assign({},g,{a:s.v,b:e.v});if(I&&o.grp)o.grp=o.grp+'@'+I;if(K==='_nar')o.nar=1;if(g.vka!=null){const q=at(g.vka,g.voa,false,I);o.va=q?q.v:s.v}o._src=g;o._K=K;out.push(o)})}));
     out.sort((x,y)=>x.a-y.a);
     {const n={};out.forEach(x=>{if(x.grp)n[x.grp]=(n[x.grp]||0)+1});out.forEach(x=>{if(x.grp&&n[x.grp]<2)delete x.grp})}
     const G={};out.forEach(x=>{if(x.grp)(G[x.grp]=G[x.grp]||[]).push(x)});
@@ -7709,7 +7748,11 @@ window.subTLDraw=(g,W,H,t,segs)=>{
   let e=TL.cache.get(ck);if(e&&e.exp&&performance.now()>e.exp){TL.cache.delete(ck);e=null}
   if(!e){e=tlRender(W,H,t);/* v232: 背景の画像やフォントがまだ読み込み中の時は0.5秒後に描き直す */if(!Object.values(TL.imgs).every(m=>m.complete)||(document.fonts&&document.fonts.status!=='loaded')){e.exp=performance.now()+500;clearTimeout(TL.rt);TL.rt=setTimeout(()=>{window._tlRedraw&&window._tlRedraw()},600)}
     TL.cache.set(ck,e);if(TL.cache.size>(W*H>1e6?3:6))TL.cache.delete(TL.cache.keys().next().value)}
-  if(k[0]==='r'&&tlDrawA(g,e,TL.list[+k.slice(1)],t,H))return;tlDrawE(g,e)};
+  /* v540: タイムラインの再生画面で動かした字幕の位置と大きさ */const X=window.subXfAt(t),xf=X&&(X.zm||X.px||X.py);if(xf){g.save();g.translate(W/2+(X.px||0)*W,H/2+(X.py||0)*H);g.scale(X.zm||1,X.zm||1);g.translate(-W/2,-H/2)}
+  try{if(k[0]==='r'&&tlDrawA(g,e,TL.list[+k.slice(1)],t,H))return;tlDrawE(g,e)}finally{if(xf)g.restore()}};
+/* v540: 今映っている字幕(位置・大きさを動かす相手)と、その保存 */window.subXfAt=t=>TL.list.find(x=>!x.nar&&t>=x.a&&t<x.b&&!x.se)||TL.list.find(x=>t>=x.a&&t<x.b&&!x.se)||null;
+let xfSv=0;window.subXfSet=(X,v)=>{const put=o=>{['px','py','zm'].forEach(k=>{if(v[k]==null||(k==='zm'?v[k]===1:!v[k]))delete o[k];else o[k]=v[k]})};put(X);if(X._src)put(X._src);
+  const R=TL.res&&TL.res[X._K];if(R){clearTimeout(xfSv);xfSv=setTimeout(()=>{kv(R.key,R.r).catch(()=>{})},600)}};
 /* 書き出しの前に: 字幕・フォント・SEの準備 */
 window.subTLPrep=async(segs,t0)=>{await (TL.busy||Promise.resolve());TL.dirty=true;await tlLoad(segs);TL.cache.clear();tlHost(16,16);
   const fams=new Set(['"Shippori Mincho"','"Yusei Magic"','"Noto Sans JP"']);TL.list.forEach(g=>{const f=fk(g);if(f&&window.PFAM&&window.PFAM[f])fams.add(window.PFAM[f].split(',')[0])});
