@@ -227,7 +227,6 @@ button:disabled{opacity:.4}
 #s2 .tpls button{min-height:40px;font-size:14px}
 #s2 .pcw{border-radius:0}
 #s2 .pctl{grid-template-columns:1fr 52px;margin:4px 8px 0}
-#s2 #pp{display:none}
 #s2 .pctl button{min-height:40px}
 #s2 .gt{margin:2px 8px 0}
 #s2 .tlhead{padding:0 8px;margin:4px 0}
@@ -266,6 +265,8 @@ body.editing.subedit #s2 #pvSec .pcw canvas{max-height:25vh}
 #selBar,#zo,#zi,#tlTotal{display:none!important}
 .lbls .ln{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #s2 .tlhead{justify-content:flex-start}
+/* v525: 再生・💬…の列。入りきらない分は次の行へ。↺↻は一番右 */#s2 .tlhead .z{flex:1;min-width:0;flex-wrap:wrap}
+#s2 .tlhead #iu{margin-left:auto}#s2 .tlhead #ir{margin-left:0}
 #s2 #exSec{position:fixed;inset:0;z-index:100;background:var(--bg);overflow:auto;padding:12px;display:none!important}
 #s2 #exSec.open:not([hidden]){display:block!important}
 #s2 .pctl{display:none!important}
@@ -597,14 +598,13 @@ body.editing .pgnav{display:none!important}
 
   <section id="pvSec" hidden>
     <div class="pcw"><canvas id="pc" width="960" height="540"></canvas></div>
-    <div class="pctl"><button id="pp" aria-label="再生・停止">⏯</button><button id="pvMode" hidden aria-label="16倍超のプレビュー方式"></button>
-      <input id="gseek" type="range" min="0" max="1" step="0.05" value="0" aria-label="位置"><button id="pfull" aria-label="プレビューを拡大">⛶</button></div>
+    <div class="pctl">      <input id="gseek" type="range" min="0" max="1" step="0.05" value="0" aria-label="位置"><button id="pfull" aria-label="プレビューを拡大">⛶</button></div>
     <div class="gt" id="gtime">0:00.0 / 0:00.0</div>
   </section>
 
   <section id="tlSec" hidden>
     <div class="tlhead"><h2 style="margin:0" id="tlTotal"></h2>
-      <div class="z"><button id="aiB" aria-label="Claudeに指示">💬</button><button id="sp2" aria-label="再生位置で分割">✂</button><button id="iu" aria-label="元に戻す" disabled>↺</button><button id="ir" aria-label="やり直し" disabled>↻</button><button id="nd" hidden aria-label="ナレーションを削除">🗑</button><button id="zo" aria-label="縮小">−</button><button id="zi" aria-label="拡大">＋</button></div></div>
+      <div class="z"><button id="pp" aria-label="再生・停止">⏯</button><button id="pvMode" hidden aria-label="16倍超のプレビュー方式"></button><button id="aiB" aria-label="Claudeに指示">💬</button><button id="sp2" aria-label="再生位置で分割">✂</button><button id="nd" hidden aria-label="ナレーションを削除">🗑</button><button id="zo" aria-label="縮小">−</button><button id="zi" aria-label="拡大">＋</button><button id="iu" aria-label="元に戻す" disabled>↺</button><button id="ir" aria-label="やり直し" disabled>↻</button></div></div>
     <div class="selbar" id="selBar"></div>
     <div class="tlwrap">
       <div class="lbls" id="lbls"></div>
@@ -2304,7 +2304,7 @@ function pausePreview(){playTok++;playing=false;if(window.nrPv)try{window.nrPv()
 function insDlg(title,make){
   pausePreview();const old=$('insP');if(old)old.remove();
   const w=document.createElement('div');w.id='insP';
-  const place=()=>{const r=$('pc').getBoundingClientRect();w.style.top=Math.max(40,Math.min(innerHeight-200,r.bottom+6))+'px'};place();
+  const place=()=>{const r=$('pc').getBoundingClientRect(),h=document.querySelector('#s2 .tlhead'),hr=h&&h.offsetParent?h.getBoundingClientRect():null;/* v525: 再生・↺↻のある列を隠さない */w.style.top=Math.max(40,Math.min(innerHeight-200,Math.max(r.bottom+6,hr?hr.bottom+4:0)))+'px'};place();
   const hd=document.createElement('div');hd.className='ih';const tt=document.createElement('b');tt.textContent=title;
   const close=()=>{w.remove();removeEventListener('resize',place)};addEventListener('resize',place);
   const x=document.createElement('button');x.textContent='✕';x.style.width='34px';x.onclick=close;hd.append(tt,x);w.appendChild(hd);
@@ -2678,11 +2678,8 @@ function drawTW(t){
     /* v434: ◁◁ ◁ ▷ ▷▷ は廃止(きんきんさん)。代わりに「選択」(範囲選択モード) */
     {const b=document.createElement('button');b.id='selB';b.textContent='選択';b.setAttribute('aria-pressed','false');b.style.cssText='min-height:36px;min-width:52px;padding:0 6px';b.onclick=()=>setSelMode(!selMode);z.insertBefore(b,$('sp2'));
       /* v448: 全選択=今見ているタイムライン(コーナーを選んでいればその範囲)を全部選ぶ */const a2=document.createElement('button');a2.id='selAll';a2.textContent='全選択';a2.style.cssText=b.style.cssText+';min-width:60px';a2.onclick=()=>{const V=viewR();selA=V.a;selB=V.b;selDraw();flashSel('全選択 '+fmt(selA)+' 〜 '+fmt(selB))};z.insertBefore(a2,$('sp2'))}
-    $('ir').style.display='none';
     {const gb=document.createElement('button');gb.textContent='空白';gb.style.cssText='min-height:36px;min-width:44px;padding:0 6px';gb.onclick=()=>{const n0=segs.length;insertGap(1);/* v448: 入った事が分かるように */if(segs.length>n0)flashSel('再生ヘッドの位置に空白を1秒入れました（端からスワイプで戻せます）')};z.insertBefore(gb,$('sp2'));const tb=document.createElement('button');tb.textContent='文字挿入';tb.style.cssText='min-height:36px;min-width:64px;padding:0 6px';tb.onclick=()=>insertTextGap(1);z.insertBefore(tb,$('sp2'))}
-    const row=document.createElement('div');row.style.cssText='display:flex;justify-content:flex-end;padding:4px 8px';
-    $('iu').style.cssText='min-height:40px;min-width:56px';row.appendChild($('iu'));
-    row.style.display='none';/* v440: ↺ボタンは出さない(端スワイプの戻るで使う) */document.querySelector('#s2 .tlwrap').after(row)}
+    /* v525: ↺↻は✂の列の一番右に出す(以前の隠すやり方は廃止) */}
   const ex=$('exSec');
   
   const t2=document.querySelector('#s2>.topbar');
@@ -4462,7 +4459,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v524';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v525';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
