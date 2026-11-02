@@ -4514,7 +4514,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v536';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v537';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4573,11 +4573,13 @@ const idbDel=(s,k)=>idbTx(s,'readwrite',o=>o.delete(k));
 const idbClear=s=>idbTx(s,'readwrite',o=>o.clear());
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 let restored=false,lastSig='',newArm=false;
+/* v537: 開いている画面の名前(更新後にそこから再開するため保存) */
+function curPage(){try{if(!$('s5').hidden)return'投稿';if(!$('s4').hidden)return window.subMode&&subMode()==='nar'?'ナレーション':'字幕';if(!$('s2').hidden)return $('exSec').classList.contains('open')?'書き出し':'タイムライン'}catch(e){}return'カット'}
 function snapshot(){
   return{clips:clips.map(c=>({key:c.key,name:c.name,d:c.d,w:c.w,h:c.h,meta:c.meta,ord:c.ord,ov:c.ov})),
     segs:tlSegs().filter(s=>!(s.clip&&s.clip.pend)).map(s=>({k:s.clip?s.clip.key:'gap',start:s.start,end:s.end,cn:s.cn,bk:s.bk,bg:s.bg,bo:s.bo,sp:s.sp,spd:s.spd,fx:s.fx})),
     pend:Object.fromEntries(clips.filter(c=>c.pend).map(c=>[c.key,(draft.get(c)||segs.filter(q=>q.clip===c)).map(q=>({start:q.start,end:q.end,cn:q.cn}))])),corners,cview,cPreset,cKey,
-    items,itemId,tpl,workMade,noCH,segMan,pps,thr,auto,tailPad,tltDone,cur:cur&&cur.key,gt,screen:$('s2').hidden&&$('s3').hidden?'s1':'s2'};
+    items,itemId,tpl,workMade,noCH,segMan,pps,thr,auto,tailPad,tltDone,cur:cur&&cur.key,gt,screen:$('s2').hidden&&$('s3').hidden?'s1':'s2',page:curPage(),sb:window.subBlk||null};
 }
 setInterval(async()=>{
   if(!restored||playing)return;/* v408: 再生中は自動保存しない(止めた時に保存) */
@@ -4670,6 +4672,9 @@ async function restore(){
     select(by[st.cur]||clips[0]);
     /* v403: 開き直した時はカット画面から(タイムラインへ直接行くとスマホで固まるため)。再生位置だけ覚えておく */
     gt=st.gt||0;
+    /* v537: 前回開いていた画面から再開(v403で直接タイムラインへ行くと固まった経緯があるので、前回の再開の途中で落ちていたら1回だけカットから) */
+    try{const pg=st.page;if(pg&&pg!=='カット'&&window.goPage){if(localStorage.getItem('resumeTry')==='1'){localStorage.removeItem('resumeTry')}else{localStorage.setItem('resumeTry','1');
+      setTimeout(async()=>{try{await window.goPage(pg,st.sb);setTimeout(()=>{try{seekGlobal(gt)}catch(e){}},900)}catch(e){}setTimeout(()=>{try{localStorage.removeItem('resumeTry')}catch(e){}},6000)},600)}}}catch(e){}
   }catch(e){const v=$('ver');if(v)v.textContent='v17 ERR '+e.message}
 }
 $('newp').onclick=async()=>{
@@ -5089,7 +5094,7 @@ const tPut=(k,v)=>tTx('readwrite',o=>o.put(v,k)),tGet=k=>tTx('readonly',o=>o.get
 const tKeys=()=>tTx('readonly',o=>o.getAllKeys());
 async function tList(ty){try{const ks=(await tKeys()).filter(k=>String(k).startsWith('m|'+ty+'|'));const out=[];for(const k of ks){const m=await tGet(k);if(m)out.push(m)}return out.sort((a,b)=>(a.id==='default'?-1:b.id==='default'?1:a.at-b.at))}catch(e){return[]}}
 async function tSave(ty,name,id){
-  const st=snapshot();st.screen='s1';id=id||(Date.now().toString(36));
+  const st=snapshot();st.screen='s1';st.page='カット';id=id||(Date.now().toString(36));
   const old=(await tKeys()).filter(k=>String(k).startsWith('b|'+id+'|'));for(const k of old)await tDel(k);
   for(const c of clips){if(c.file)await tPut('b|'+id+'|'+c.key,c.file)}
   /* v321: ナレーション・BGMなどの音声も一緒に保存 */
@@ -6058,6 +6063,8 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
     'サムネ':()=>{cdlg('サムネ作成は準備中です',[['閉じる']])},
     '投稿':()=>{leave4();if(exOpen())ex.classList.remove('open');$('s1').hidden=true;$('s2').hidden=true;$('s5').hidden=false;scrollTo(0,0);window.ypOpen&&window.ypOpen()}
   };
+  /* v537: 起動後に前回の画面へ(sb=字幕・ナレーションで選んでいたBlock) */
+  window.goPage=(t,sb)=>{if(!go[t])return;if(t==='字幕'||t==='ナレーション'){window.subBlk=sb||null;chipGo=1;try{return go[t]()}finally{chipGo=0}}return go[t]()};
   const mk=(par,cur)=>{const n=document.createElement('nav');n.className='pgnav';n.setAttribute('aria-label','ページ移動');
     Object.keys(go).forEach(t=>{const b=document.createElement('button');b.textContent=t;if(t==='タイムライン')b.className='pgTl';if(t===cur)b.setAttribute('aria-current','page');
       b.onclick=()=>{if(t===(par.id==='s4'&&window.subMode&&window.subMode()==='nar'?'ナレーション':cur))return;pausePreview();if(!$('s5').hidden&&t!=='投稿'){$('s5').hidden=true;$('s1').hidden=false}go[t]()};n.appendChild(b)});/* v528: カット画面=見出し枠の下／それ以外=一番上 */const hd=par.querySelector(':scope>.topbar2');if(hd)hd.after(n);else par.insertBefore(n,par.firstChild);return n};
