@@ -4521,7 +4521,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v538';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v539';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6706,7 +6706,7 @@ $('bN').onclick=()=>{if(!cur)return;const base=sel?sel.a:(posSet?pos:-1),n=cur.l
    const t=Math.max(0,Math.min(VD,sd.t0+dx/sd.w*VD));showAt(t);showOv(t);drawWf(t)});
  /* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */
  const se=e=>{if(!sd||e.pointerId!==sd.id)return;const m=sd.mv;sd=null;if(!m||!cur)return;posSet=true;
-   const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(d=>{const on=d._g.a===g.a&&d._g.b===g.b;d.classList.toggle('sel',on);if(on)toRow(d)})}showOv(pos);drawWf(pos)};
+   const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(d=>{const on=d._g.a===g.a&&d._g.b===g.b;d.classList.toggle('sel',on);if(on&&!isN())toRow(d)})}showOv(pos);drawWf(pos)};
  tl.addEventListener('pointerup',se);tl.addEventListener('pointercancel',se);
  tl.addEventListener('touchmove',e=>{if(sd&&sd.mv)e.preventDefault()},{passive:false})}
 /* 再生画面の字幕 */
@@ -7103,7 +7103,7 @@ addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
      save();drawResults();
      if(g.gap){const n=withGaps(cur.list).find(x=>x.gap&&Math.abs(x.a-g.a)<0.02&&Math.abs(x.b-g.b)<0.02);g=n||null;if(!g)wEdge=null;else wEdge.g=g}
      sel=g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',!!g&&r._g.a===g.a&&r._g.b===g.b));showAt(d.t0);drawWf(d.t0);return}
-   if(d.moved){/* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */posSet=true;if(cur){const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(r=>{const on=r._g.a===g.a&&r._g.b===g.b;r.classList.toggle('sel',on);if(on)toRow(r)})}}showOv(pos);drawWf(pos);return}
+   if(d.moved){/* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */posSet=true;if(cur){const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(r=>{const on=r._g.a===g.a&&r._g.b===g.b;r.classList.toggle('sel',on);if(on&&!isN())/* v539: ナレーションでは波形を動かして離した時に画面を勝手に下げない */toRow(r)})}}showOv(pos);drawWf(pos);return}
    if(d.near){wEdge={g:sel,k:d.near};drawWf(d.t0);return}
    if(wEdge){wEdge=null;drawWf(d.t0)}
    const t=Math.max(0,Math.min(VD,d.map.A+(d.map.B-d.map.A)*(d.x0-d.r.left)/d.r.width));
