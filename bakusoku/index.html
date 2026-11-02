@@ -697,6 +697,10 @@ body.editing .pgnav{display:none!important}
 #s4 .sp.gh{visibility:hidden}
 body:has(#s4:not([hidden]))::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:2;pointer-events:none}
 body:has(#s1[hidden]) #fsBtn{display:none}
+#sBlk{display:flex;gap:6px;overflow-x:auto;padding:6px 8px 0;flex:none}
+#sBlk button{flex:0 0 auto;min-height:40px;padding:0 14px;border:2px solid var(--btnl);border-radius:10px;font-weight:600}
+#sBlk button[aria-pressed=true]{color:#fff}
+#sBlk[hidden]{display:none}
 #t_stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:var(--bg);display:flex;flex-direction:column;gap:6px;padding:0 0 6px}
 #t_pl{background:#000;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;aspect-ratio:16/9;width:100%}/* v167: 16:9固定(このアプリは16:9のみ) */
 #t_pl video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}
@@ -4473,7 +4477,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v528';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v529';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6002,13 +6006,13 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   /* 字幕ページから出る時はカット画面に戻してから移動 */
   const leave4=()=>{if($('s4').hidden)return false;window.subClose&&window.subClose();return true};
   /* v447: 範囲を選ばずに字幕・ナレーションへ来たら案内して、×でタイムラインへ */
-  const needSel=()=>{if(window.tlSel&&window.tlSel())return false;cdlg('タイムラインで範囲を指定してください',[['×',()=>go['タイムライン']()]]);{const d=document.querySelector('.cdlg');if(d){d.id='needSel';d.addEventListener('click',e=>{if(e.target===d){e.stopImmediatePropagation();d.remove();go['タイムライン']()}},true)}}return true};
-  const go={
+  /* v529: 範囲が無くても、Blockを選んでいればそのBlock全体で開く */const needSel=()=>{if(window.tlSel&&window.tlSel())return false;if(subBlkR())return false;cdlg('タイムラインで範囲を指定してください',[['×',()=>go['タイムライン']()]]);{const d=document.querySelector('.cdlg');if(d){d.id='needSel';d.addEventListener('click',e=>{if(e.target===d){e.stopImmediatePropagation();d.remove();go['タイムライン']()}},true)}}return true};
+  let chipGo=0;const go={
     'カット':()=>{if(leave4())return;if(exOpen())ex.classList.remove('open');if(!$('s2').hidden)$('back').click()},
     /* v435: タイムラインで範囲を選んでいたら、字幕・ナレーションのページはその範囲だけ(window.subRange) */
-    '字幕':async()=>{if(needSel())return;window.subRange=window.tlSel&&window.tlSel()||null;if(window.subRange){const P=window.trRange(window.subRange,false);if(!P.c){window.subRange=null}else{if(P.c!==cur){if(!$('s4').hidden)window.subClose&&window.subClose();window.subRange=window.tlSel();await select(P.c)}pv.pause();window.subOpen&&window.subOpen();return}}
+    '字幕':async()=>{if(!chipGo)window.subBlk=cview||null;if(needSel())return;window.subRange=window.tlSel&&window.tlSel()||subBlkR()||null;if(window.subRange){const P=window.trRange(window.subRange,false);if(!P.c){window.subRange=null}else{if(P.c!==cur){if(!$('s4').hidden)window.subClose&&window.subClose();window.subRange=window.tlSel();await select(P.c)}pv.pause();window.subOpen&&window.subOpen();return}}
       if(!window.trSrc().length){cdlg('先に残す範囲を作ってください',[['閉じる']]);return}pv.pause();window.subOpen&&window.subOpen()},
-    'ナレーション':()=>{if(needSel())return;window.subRange=window.tlSel&&window.tlSel()||null;if(!window.trAll().length){cdlg('先に残す範囲を作ってください',[['閉じる']]);return}pv.pause();window.subOpen&&window.subOpen(false,false,false,'nar')},
+    'ナレーション':()=>{if(!chipGo)window.subBlk=cview||null;if(needSel())return;window.subRange=window.tlSel&&window.tlSel()||subBlkR()||null;if(!window.trAll().length){cdlg('先に残す範囲を作ってください',[['閉じる']]);return}pv.pause();window.subOpen&&window.subOpen(false,false,false,'nar')},
     'タイムライン':()=>{leave4();if(exOpen()){ex.classList.remove('open');return}
       if(!$('s1').hidden){if($('toS2').disabled){cdlg(clips.some(c=>c.pend)?'まだタイムラインに入っていません。\nカット画面の「TLに挿入」を押してください':'先に残す範囲を作ってください',[['閉じる']]);return}$('toS2').click()}},
     '書き出し':()=>{leave4();if(!$('s1').hidden){if($('toS2').disabled){cdlg(clips.some(c=>c.pend)?'まだタイムラインに入っていません。\nカット画面の「TLに挿入」を押してください':'先に残す範囲を作ってください',[['閉じる']]);return}$('toS2').click()}
@@ -6020,6 +6024,20 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
     Object.keys(go).forEach(t=>{const b=document.createElement('button');b.textContent=t;if(t==='タイムライン')b.className='pgTl';if(t===cur)b.setAttribute('aria-current','page');
       b.onclick=()=>{if(t===(par.id==='s4'&&window.subMode&&window.subMode()==='nar'?'ナレーション':cur))return;pausePreview();if(!$('s5').hidden&&t!=='投稿'){$('s5').hidden=true;$('s1').hidden=false}go[t]()};n.appendChild(b)});/* v528: カット画面=見出し枠の下／それ以外=一番上 */const hd=par.querySelector(':scope>.topbar2');if(hd)hd.after(n);else par.insertBefore(n,par.firstChild);return n};
   const n4=mk($('s4'),'字幕');
+
+  /* v529: 字幕・ナレーションページの再生画面の上に Block1・Block2…・全て の帯(タイムラインと同じ見た目)。押すとそのブロック全体を表示して編集。タイムラインで範囲選択があればその部分だけ(従来どおり) */
+  window.subBlk=null;
+  function subBlkR(){const i=window.subBlk?cIdx(window.subBlk):-1,r=i>=0&&cR&&cR[i];return r&&r.b-r.a>0.05?{a:r.a,b:r.b}:null}
+  window.subBlkDraw=()=>{const stkw=document.getElementById('t_stk');if(!stkw)return;let bar=document.getElementById('sBlk');
+    const on=corners.length>0&&!!cR;
+    if(!bar){bar=document.createElement('div');bar.id='sBlk';stkw.insertBefore(bar,stkw.firstChild)}
+    bar.hidden=!on;if(!on)return;bar.innerHTML='';const sel=window.subBlk||null,lock=!!(window.tlSel&&window.tlSel());
+    const tab=(id,html,i)=>{const b=document.createElement('button');b.innerHTML=html;b.setAttribute('aria-pressed',String(sel===id));
+      if(i!=null){b.style.borderColor=ccol(i);b.style.background=sel===id?ccol(i):'color-mix(in srgb,'+ccol(i)+' 28%,var(--bg))'}
+      b.onclick=()=>{if(window.subBlk===id)return;window.subBlk=id;chipGo=1;try{(window.subMode&&window.subMode()==='nar'?go['ナレーション']:go['字幕'])()}finally{chipGo=0}setTimeout(window.subBlkDraw,50)};bar.appendChild(b)};
+    corners.forEach((c,i)=>tab(c.id,c.name.replace(/</g,'&lt;'),i));tab(null,'全て',null);
+    bar.title=lock?'タイムラインで範囲を選んでいる間は、その範囲だけが出ます':'';}
+  new MutationObserver(()=>{if(!$('s4').hidden)window.subBlkDraw()}).observe($('s4'),{attributes:true,attributeFilter:['hidden']});
   mk($('s1'),'カット');mk($('s5'),'投稿');const n2=mk($('s2'),'タイムライン');mk(ex,'書き出し');
   new MutationObserver(()=>{if($('s2').firstElementChild!==n2)$('s2').insertBefore(n2,$('s2').firstChild)}).observe($('s2'),{childList:true});
   /* v256: テンプレート編集はタイムラインと字幕ページの一番下(ページ移動の上) *//* v294: テンプレート編集は⚙設定へ移動 */
