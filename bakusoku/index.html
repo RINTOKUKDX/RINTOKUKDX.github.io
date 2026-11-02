@@ -2835,7 +2835,10 @@ function rlDown(e){
   addEventListener('pointermove',mv);addEventListener('pointerup',up);addEventListener('pointercancel',up);
 }
 const customH={};
-const laneH=i=>autoH?autoH:customH[i]!=null?customH[i]:Math.round((i===0?76:smallL.has(i)?40:actLane===i?112:76)*laneSc);
+/* v543: 同じ種類のクリップが重なる時の「レーンを追加」=同じ種類のレーンの下に1段足す(it.row=1,2…)。高さは段の数だけ増える */
+const rowsOf=i=>{let m=0;for(const o of items)if(o.lane===i&&(o.row||0)>m)m=o.row;return m+1};
+const laneH0=i=>autoH?autoH:customH[i]!=null?customH[i]:Math.round((i===0?76:smallL.has(i)?40:actLane===i?112:76)*laneSc);
+const laneH=i=>laneH0(i)*rowsOf(i);
 const LSK='cutapp-lanes';
 try{const s=JSON.parse(localStorage.getItem(LSK)||'null');if(s){laneSc=s.sc||1;Object.assign(customH,s.h||{});lowOpen=!!s.lo}}catch(e){}
 const saveLanes=()=>{try{localStorage.setItem(LSK,JSON.stringify({sc:laneSc,h:customH,sm:[...smallL],lo:lowOpen}))}catch(e){}};
@@ -3206,6 +3209,7 @@ function renderLanes(){
     else items.filter(o=>o.lane===i&&!o.pk&&(o.end-o.start>=0.01||!o.cfid)&&(!cview||(o.end>V.a-1e-3&&o.start<V.b+1e-3&&(cIdx(o.cn)<0||o.cn===cview)))).forEach(it=>{
       const b=document.createElement('div');b.className='blk it l'+i+(it.bold?' fsub':'')+(it===selItem?' sel':'')+(msel.has(it)?' msel':'');blkEl.set(it,b);
       b.style.left=(it.start*pps)+'px';bW(b,(it.end-it.start)*pps);
+      {const R0=rowsOf(i);if(R0>1){const base=laneH(i)/R0,rr=it.row||0;b.style.top=(rr*base+4)+'px';b.style.bottom='auto';b.style.height=(base-8)+'px'}}/* v543 */
       b.textContent=(it.text||'').replace(/\n/g,' ');if(i===8)ovBlk(b,it);
       if(i===5)addWave(b,narPeaks[it.akey],it.off||0,(it.off||0)+(it.end-it.start));
       ['l','r'].forEach(c=>{const h=document.createElement('i');h.className='hd '+c;b.appendChild(h)});
@@ -3259,15 +3263,28 @@ function laneTap(i,e){
 const TPL_LIST=i=>i===3?[['ナレーション','sub'],['きんきん','subm'],['マリ','subf']]:i===4?Object.keys(STN).map(k=>[STN[k],k]):i===1?[['バンダナ','bandana'],['看板','plate'],['我楽苦多 黒','garakuta'],['我楽苦多 白立体','gk3d']]:i===2?[[(TPL[tpl]&&TPL[tpl].tag)||'見出1','tag']]:null;
 function tplMenu(i){const L=TPL_LIST(i);if(!L)return;pausePreview();
   cdlg(laneName(i)+'に入れるテンプレート\n（再生ヘッドの位置 '+fmt(gt)+' に入ります）',L.map(([n,k])=>[n,()=>tplInsert(i,k)]).concat([['閉じる']]))}
-function tplInsert(lane,key){const t=gt;if(roLane(lane)){flashSel('先に上のBlockを選んでください');return}pausePreview();let it;
-  if(lane===1||lane===2){/* ロゴ・見出しは、元からある全体の1つに重なってもよい */
-    const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total(),start=Math.max(0,Math.min(t,all-0.5)),end=Math.min(start+DUR,all);if(end-start<0.5){flashSel('ここには入りません');return}
-    pushHist();it={id:itemId++,lane,start,end,text:lane===1?CHANNEL:DEF[2],sample:lane===2,style:'',tag:lane===2?TPL[tpl].tag:'',cn:cview||null};if(lane===1)it.chStyle=key;items.push(it)}
-  else{it=addItem(lane,t);if(!it){flashSel('ここには入りません');return}if(lane===3)it.sk=key;else it.style=key}
-  selItem=it;actLane=lane;renderLanes();seekGlobal(it.start+0.01);if(lane!==1)openEd(it)}
+function tplInsert(lane,key){const t=gt;if(roLane(lane)){flashSel('先に上のBlockを選んでください');return}pausePreview();
+  const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total(),start=Math.max(0,Math.min(t,all-0.5)),end=Math.min(start+DUR,all);
+  if(end-start<0.5){flashSel('ここには入りません');return}
+  const mk=row=>{const it={id:itemId++,lane,start,end,text:lane===1?CHANNEL:DEF[lane],sample:lane!==1,style:lane===4?key:'',tag:lane===2?TPL[tpl].tag:'',cn:cview||null};
+    if(lane===1)it.chStyle=key;if(lane===3)it.sk=key;if(row>0)it.row=row;items.push(it);selItem=it;actLane=lane;renderLanes();seekGlobal(it.start+0.01);if(lane!==1)openEd(it)};
+  const hit=(row)=>items.filter(o=>o.lane===lane&&!o.pk&&(o.row||0)===row&&o.start<end-1e-6&&o.end>start+1e-6);
+  const over=hit(0);
+  if(!over.length){pushHist();mk(0);return}
+  /* v543: すでにクリップがある時は、どちらにするか聞く */
+  cdlg('既にクリップがあります。',[
+    ['レーンを追加して挿入',()=>{let row=1;while(hit(row).length)row++;pushHist();mk(row)}],
+    ['重なる部分を消して挿入',()=>{pushHist();
+      over.forEach(o=>{o.full=false;
+        if(o.start>=start-1e-6&&o.end<=end+1e-6){items.splice(items.indexOf(o),1)}
+        else if(o.start<start-1e-6&&o.end>end+1e-6){items.push({...o,id:itemId++,start:end,end:o.end});o.end=start}
+        else if(o.start<start-1e-6)o.end=start;
+        else o.start=end});
+      mk(0)}],
+    ['やめる']])}
 function addItem(lane,t){
   const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total();let start=Math.max(0,Math.min(t,all-0.5));
-  const same=items.filter(o=>o.lane===lane).sort((a,b)=>a.start-b.start);
+  const same=items.filter(o=>o.lane===lane&&!(o.row>0)).sort((a,b)=>a.start-b.start);
   for(const o of same){if(start>=o.start-1e-6&&start<o.end-1e-6)start=o.end}
   let end=Math.min(start+DUR,all);
   for(const o of same){if(o.start>=start-1e-6&&o.start<end)end=o.start}
@@ -3473,7 +3490,7 @@ $('edOk').onclick=okAct;
 $('edDel').onclick=()=>{if(!selItem)return;pushHist();items=items.filter(o=>o!==selItem);selItem=null;closeEd();renderLanes();renderPreview()};
 function bounds(it){
   let[lo,hi]=cnLim(it);
-  items.forEach(o=>{if(o===it||o.lane!==it.lane)return;
+  items.forEach(o=>{if(o===it||o.lane!==it.lane||(o.row||0)!==(it.row||0))return;
     if(o.end<=it.start+1e-6)lo=Math.max(lo,o.end);
     if(o.start>=it.end-1e-6)hi=Math.min(hi,o.start)});
   return[lo,hi];
@@ -4576,7 +4593,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v542';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v543';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
