@@ -2227,7 +2227,7 @@ function drawFrame(g,W,H,vid,t){
     if(lane===1){const R=chRun(t);if(R===false)continue;const CS=chFor(PT,chSt(it.chStyle?it:PT));if(!R){chDraw(g,W,H,u,it.text,t-it.start,CS,aIn(it)?t-it.start:99,aOut(it)?it.end-t:99);continue}
       const a=Math.max(it.start,R.a),b=Math.min(it.end,R.b);chDraw(g,W,H,u,it.text,t-a,CS,(aIn(it)||R.a>it.start+1e-3)?t-a:99,(aOut(it)||R.b<it.end-1e-3)?b-t:99)}
     else if(lane===2)telopPoint(g,W,H,u,it.text,PT,aIn(it)?t-it.start:99,aOut(it)?it.end-t:99);
-    else if(lane===3){if(it.bold)bigText(g,W,H,u,{...it,style:it.bstyle||'setsumei_yoko'},t-it.start,it.end-t);else subtitle(g,W,H,u,it.text,t-it.start,it.end-t)}
+    else if(lane===3){if(it.bold)bigText(g,W,H,u,{...it,style:it.bstyle||'setsumei_yoko'},t-it.start,it.end-t);else subtitle(g,W,H,u,it.text,t-it.start,it.end-t,it.sk&&PT[it.sk]?PT[it.sk]:undefined)}
     else bigText(g,W,H,u,it,t-it.start,it.end-t);
     }finally{if(xf)g.restore()}
   }
@@ -2837,7 +2837,7 @@ function rlDown(e){
 const customH={};
 const laneH=i=>autoH?autoH:customH[i]!=null?customH[i]:Math.round((i===0?76:smallL.has(i)?40:actLane===i?112:76)*laneSc);
 const LSK='cutapp-lanes';
-try{const s=JSON.parse(localStorage.getItem(LSK)||'null');if(s){laneSc=s.sc||1;Object.assign(customH,s.h||{});(s.sm||[]).forEach(x=>smallL.add(x));lowOpen=!!s.lo}}catch(e){}
+try{const s=JSON.parse(localStorage.getItem(LSK)||'null');if(s){laneSc=s.sc||1;Object.assign(customH,s.h||{});lowOpen=!!s.lo}}catch(e){}
 const saveLanes=()=>{try{localStorage.setItem(LSK,JSON.stringify({sc:laneSc,h:customH,sm:[...smallL],lo:lowOpen}))}catch(e){}};
 function lblAdj(e,i){
   const id=e.pointerId,y0=e.clientY,h0=laneH(i);
@@ -3255,6 +3255,16 @@ function laneTap(i,e){
   renderLanes();
   seekGlobal(it?it.start+0.01:t);
 }
+/* v542: 左の名前を長押し → テンプレート名の一覧 → タップで再生ヘッドの位置に挿入 */
+const TPL_LIST=i=>i===3?[['ナレーション','sub'],['きんきん','subm'],['マリ','subf']]:i===4?Object.keys(STN).map(k=>[STN[k],k]):i===1?[['バンダナ','bandana'],['看板','plate'],['我楽苦多 黒','garakuta'],['我楽苦多 白立体','gk3d']]:i===2?[[(TPL[tpl]&&TPL[tpl].tag)||'見出1','tag']]:null;
+function tplMenu(i){const L=TPL_LIST(i);if(!L)return;pausePreview();
+  cdlg(laneName(i)+'に入れるテンプレート\n（再生ヘッドの位置 '+fmt(gt)+' に入ります）',L.map(([n,k])=>[n,()=>tplInsert(i,k)]).concat([['閉じる']]))}
+function tplInsert(lane,key){const t=gt;if(roLane(lane)){flashSel('先に上のBlockを選んでください');return}pausePreview();let it;
+  if(lane===1||lane===2){/* ロゴ・見出しは、元からある全体の1つに重なってもよい */
+    const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total(),start=Math.max(0,Math.min(t,all-0.5)),end=Math.min(start+DUR,all);if(end-start<0.5){flashSel('ここには入りません');return}
+    pushHist();it={id:itemId++,lane,start,end,text:lane===1?CHANNEL:DEF[2],sample:lane===2,style:'',tag:lane===2?TPL[tpl].tag:'',cn:cview||null};if(lane===1)it.chStyle=key;items.push(it)}
+  else{it=addItem(lane,t);if(!it){flashSel('ここには入りません');return}if(lane===3)it.sk=key;else it.style=key}
+  selItem=it;actLane=lane;renderLanes();seekGlobal(it.start+0.01);if(lane!==1)openEd(it)}
 function addItem(lane,t){
   const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total();let start=Math.max(0,Math.min(t,all-0.5));
   const same=items.filter(o=>o.lane===lane).sort((a,b)=>a.start-b.start);
@@ -3484,8 +3494,7 @@ function renderLbls(){
   $('lbls').innerHTML='<div class="rl"></div>'+ordNow().map(i=>'<div class="ln'+(actLane===i?' act':'')+(i===3?' g3':i===4?' g4':'')+'" style="height:'+laneH(i)+'px">'+names[i]+'</div>').join('')+(!chRow()?'':'<div class="ln" style="height:26px;font-size:11px">'+(lowOpen?'▾':'▸')+'CH</div>');
   [...$('lbls').children].forEach((el,k)=>{if(!k){el.textContent=adjLane?'↕':'全部';if(lset==='all'&&!adjLane)el.style.color='var(--fg)';el.style.cssText+=';display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);cursor:pointer';el.onpointerdown=rlDown;el.style.touchAction='none';if(!adjLane&&lsetName(lset).length>3)el.style.fontSize='11px';if(adjLane){el.style.background='var(--accent)';el.style.color='#fff'}return}const i=ordNow()[k-1];if(i===undefined){el.onclick=()=>{lowOpen=!lowOpen;renderLanes()};return}
     if(adjLane)el.style.touchAction='none';
-    el.addEventListener('pointerdown',e=>{if(adjLane){lblAdj(e,i);return}clearTimeout(lpT);lpT=setTimeout(()=>{if(i===0)return;lpFlag=true;setTimeout(()=>{lpFlag=false},700);
-      if(smallL.has(i))smallL.delete(i);else{smallL.add(i);if(actLane===i)actLane=null}renderLanes()},500)});
+    el.addEventListener('pointerdown',e=>{if(adjLane){lblAdj(e,i);return}clearTimeout(lpT);lpT=setTimeout(()=>{/* v542: 長押し=テンプレート一覧→タップで再生ヘッドの位置に挿入(レーンを小さくする長押しは廃止) */if(!TPL_LIST(i))return;lpFlag=true;setTimeout(()=>{lpFlag=false},700);buzz();tplMenu(i)},500)});
     ['pointerup','pointercancel','pointerleave'].forEach(n=>el.addEventListener(n,()=>clearTimeout(lpT)));
     {const g=GCOL[LGRP[i]];/* v440: グループの色はグループ全体をぐるっと囲む枠(上下は端の見出しだけ) */if(g){const o=ordNow(),pv=o[k-2],nx=o[k],sh=['inset 2px 0 0 '+g,'inset -2px 0 0 '+g];if(pv==null||LGRP[pv]!==LGRP[i])sh.push('inset 0 2px 0 '+g);if(nx==null||LGRP[nx]!==LGRP[i])sh.push('inset 0 -2px 0 '+g);el.style.boxShadow=sh.join(',')}}
     el.onclick=e=>{if(dbl('lbl',e.clientY)){setLset(LGRP[i]||'all');return}if(lpFlag||adjLane||i===7||i===9)return;smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes()}});
@@ -4567,7 +4576,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v541';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v542';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
