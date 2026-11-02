@@ -783,8 +783,8 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_rg.on #t_rT{color:#e8b33a;border-color:#e8b33a}
 #t_lt{display:flex;align-items:center;gap:8px;font-size:14px;margin:0 8px;background:color-mix(in srgb,#3d7bd9 22%,transparent);border:1px solid #3d7bd9;border-radius:10px;padding:4px 8px}#t_lt>span:first-child{flex:none;width:4.5em}#t_lt input{flex:1;accent-color:#5b9bff}#t_lt .v{flex:none;width:6.5em;text-align:right;white-space:nowrap;font-size:13px}
 #t_dn{position:fixed;right:10px;z-index:4;width:44px;height:44px;border-radius:50%;padding:0;font-size:20px;background:var(--panel);color:var(--fg);border:1px solid var(--line);box-shadow:0 2px 8px rgba(0,0,0,.25)}
-#t_ctl{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;padding:0 8px}
-#t_bR,#t_bV,#t_bZ,#t_narD{display:none}#s4.nar #t_bR,#s4.nar #t_bV,#s4.nar #t_bZ{display:block}#s4.nar #t_ctl{grid-template-columns:repeat(6,1fr)}#t_bZ.on{background:#d33;color:#fff;border-color:#d33}
+#t_ctl{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:0 8px}
+#t_bR,#t_bV,#t_bZ,#t_narD{display:none}#s4.nar #t_bR,#s4.nar #t_bV,#s4.nar #t_bZ{display:block}#s4.nar #t_ctl{grid-template-columns:repeat(8,1fr)}#t_bU,#t_bY{font-size:18px}#s4.nar #t_ctl button{font-size:16px}#t_bZ.on{background:#d33;color:#fff;border-color:#d33}
 #s4.nar #t_bR.on{background:#d33;color:#fff;border-color:#d33}#t_toast{position:absolute;left:8px;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-size:14px;line-height:1.4;padding:8px 10px;border-radius:8px;z-index:5;pointer-events:none;white-space:pre-wrap}#t_cnt{position:fixed;left:50%;top:28%;transform:translate(-50%,-50%);font:900 140px/1 sans-serif;color:#fff;text-shadow:0 0 16px #000,0 0 4px #000;z-index:9999;pointer-events:none}#s4.nar #t_azD,#s4.nar .lck{display:none!important}
 #t_narD:not([hidden]){display:block}#t_narD .rg{display:grid;grid-template-columns:3em 1fr 1fr 1fr;gap:6px;align-items:center;margin-bottom:6px}#t_narD .rg.sp3 input{width:4.5em;margin:0 4px;display:inline-block}#t_narD .rg button{min-height:40px;font-size:14px}#t_narD .rg span{font-size:15px}#t_narD textarea,#t_narD input{width:100%;box-sizing:border-box;font-size:16px;padding:8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
 #t_narD textarea{line-height:1.6;min-height:200px}#t_narD .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}#t_narD .two button{min-height:48px}
@@ -946,7 +946,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
   <div id="t_stk">
     <div id="t_pl"><video id="t_pv" playsinline preload="auto"></video><video id="t_pv2" playsinline preload="auto"></video><canvas id="t_sc"></canvas><div id="t_ov"></div><b id="t_iB">i</b></div>
     <canvas id="t_wf"></canvas><canvas id="t_nw"></canvas><canvas id="t_tx"></canvas>
-    <div id="t_ctl"><button id="t_bP" aria-label="選んだ行を再生・停止">▶‖</button><button id="t_bA" aria-label="続けて再生">▶▶</button><button id="t_bN" aria-label="次の字幕へ">次へ</button><button id="t_bR" aria-label="再生位置から録音">🎤</button><button id="t_bZ" aria-label="合成音声で読む">🗣</button><button id="t_bV" aria-label="動画の音を出す・消す">🔊</button></div>
+    <div id="t_ctl"><button id="t_bP" aria-label="選んだ行を再生・停止">▶‖</button><button id="t_bA" aria-label="続けて再生">▶▶</button><button id="t_bN" aria-label="次の字幕へ">次へ</button><button id="t_bR" aria-label="再生位置から録音">🎤</button><button id="t_bZ" aria-label="合成音声で読む">🗣</button><button id="t_bV" aria-label="動画の音を出す・消す">🔊</button><button id="t_bU" aria-label="ひとつ戻る">↺</button><button id="t_bY" aria-label="やり直し">⟳</button></div>
     <div class="r lt" id="t_lt"><span>軽量化</span><input id="t_ltI" type="range" min="0" max="1" step="1" aria-label="軽量化"><span class="v" id="t_ltV"></span></div>
     <div id="t_skw"><div class="time" hidden><span id="t_tNow">0:00.0</span><span id="t_tAll">0:00.0</span></div><div class="tl" id="t_tl"><div class="tl-track"></div><input id="t_seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="再生位置"></div></div>
     <div class="st" id="t_rSt"></div>
@@ -4514,7 +4514,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v535';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v536';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6311,17 +6311,21 @@ function ann(list){(list||[]).forEach(g=>{if(g.va!=null){const q=fromV(g.va);if(
 /* 字幕の結果は動画ごとに保存(res_モデル|動画key) */
 const rk=k=>'res_'+k+'|'+(k==='nar'?'ALL':((JOB.find(r=>!r.blank)||{}).key||''));
 /* v259: 字幕ページの「ひとつ戻る」(スマホの戻る操作)。保存のたびに全結果の写しを積む */
-const UH=[];let uhLock=false;
+const UH=[],UR=[];let uhLock=false;
 const uhSnap=()=>JSON.stringify(Object.keys(R).map(k=>[k,{raw:R[k].raw,fix:R[k].fix,rawOut:R[k].rawOut,fixOut:R[k].fixOut}]));
-const uhPush=()=>{if(uhLock)return;const v=uhSnap();if(UH[UH.length-1]===v)return;UH.push(v);if(UH.length>40)UH.splice(1,1)};
-window.subUndo=()=>{if(UH.length<2){st('これ以上戻せません');setTimeout(()=>{if($('st').textContent==='これ以上戻せません')st('')},1500);return}
-  UH.pop();const S=new Map(JSON.parse(UH[UH.length-1]));
+const uhPush=()=>{if(uhLock)return;const v=uhSnap();if(UH[UH.length-1]===v)return;UR.length=0;UH.push(v);if(UH.length>40)UH.splice(1,1)};
+const applySnap=(v,msg)=>{const S=new Map(JSON.parse(v));
   const bl=new Set();S.forEach(v=>[...(v.raw||[]),...(v.fix||[])].forEach(g=>{if(g.bl)bl.add(g.ka)}));
   const cur0=new Set();Object.values(R).forEach(r=>[...(r.raw||[]),...(r.fix||[])].forEach(g=>{if(g.bl)cur0.add(g.ka)}));
   cur0.forEach(ka=>{if(!bl.has(ka)&&window.blankDel)window.blankDel(ka)});
   S.forEach((v,k)=>{if(!R[k])return;['raw','fix','rawOut','fixOut'].forEach(q=>{if(v[q]===undefined)delete R[k][q];else R[k][q]=v[q]})});
   uhLock=true;reJob();Object.keys(R).forEach(k=>saveR(k,R[k]));uhLock=false;
-  sel=null;drawResults();st('元に戻した');setTimeout(()=>{if($('st').textContent==='元に戻した')st('')},1500)};
+  sel=null;drawResults();st(msg);setTimeout(()=>{if($('st').textContent===msg)st('')},1500)};
+window.subUndo=()=>{if(UH.length<2){st('これ以上戻せません');setTimeout(()=>{if($('st').textContent==='これ以上戻せません')st('')},1500);return}
+  UR.push(UH.pop());applySnap(UH[UH.length-1],'元に戻した')};
+/* v536: やり直し(⟳)。戻した状態をURに積み、新しい変更が入ったら捨てる */
+window.subRedo=()=>{if(!UR.length){st('これ以上やり直せません');setTimeout(()=>{if($('st').textContent==='これ以上やり直せません')st('')},1500);return}
+  const v=UR.pop();UH.push(v);applySnap(v,'やり直した')};
 window.subForget=()=>{loadedFor=false;Object.keys(R).forEach(k=>delete R[k])};
 const saveR=(k,r)=>{ann(r.raw);ann(r.fix);blSync();uhPush();return kv(rk(k),r).then(x=>{try{window.subTLDirty&&window.subTLDirty()}catch(_){}return x})};
 /* カットが変わっていたら仮想の時間を付け直す(残す範囲から外れた行は消える) */
@@ -6674,6 +6678,7 @@ $('bP').onclick=playSel;$('bA').onclick=playAll;
   b.onclick=()=>{stop();const y0=scrollY,y1=document.documentElement.scrollHeight-innerHeight,d=y1-y0;if(d<=2)return;const T=Math.min(1600,500+d*0.35),t0=performance.now();
     const f=now=>{const k=Math.min(1,(now-t0)/T),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;scrollTo(0,y0+d*e);if(k<1)an=requestAnimationFrame(f);else an=0};an=requestAnimationFrame(f)}}
 /* v171: 次へ=次の字幕の行を選ぶ(無音の行は飛ばす) */
+$('bU').onclick=()=>window.subUndo();$('bY').onclick=()=>window.subRedo();/* v536 */
 $('bN').onclick=()=>{if(!cur)return;const base=sel?sel.a:(posSet?pos:-1),n=cur.list.slice().sort((x,y)=>x.a-y.a).find(x=>x.a>base+0.001);if(!n)return;pick(n);
   const d=[...$('rows').children].find(r=>r._g===n);if(d)toRow(d)};
 {const tl=$('tl');let sd=null;
