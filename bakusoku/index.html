@@ -267,6 +267,11 @@ body.editing.subedit #s2 #pvSec .pcw canvas{max-height:25vh}
 #s2 .tlhead{justify-content:flex-start}
 /* v525: 再生・💬…の列。入りきらない分は次の行へ。↺↻は一番右 */#s2 .tlhead .z{flex:1;min-width:0;flex-wrap:wrap}
 #s2 .tlhead #iu{margin-left:auto}#s2 .tlhead #ir{margin-left:0}
+#s2 .tlhead #selB,#s2 .tlhead #selAll,#s2 .tlhead #gapB,#s2 .tlhead #txtGapB,#s2 .tlhead #msel{display:none!important}
+#s2 .tlhead .dd{position:relative;display:inline-block}
+#s2 .tlhead .ddm{display:none;position:absolute;top:100%;left:0;z-index:60;flex-direction:column;gap:4px;min-width:130px;padding:4px;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 4px 14px #000a}
+#s2 .tlhead .ddm.on{display:flex}
+#s2 .tlhead .ddm button{min-height:40px;text-align:left;padding:0 10px}
 #s2 #exSec{position:fixed;inset:0;z-index:100;background:var(--bg);overflow:auto;padding:12px;display:none!important}
 #s2 #exSec.open:not([hidden]){display:block!important}
 #s2 .pctl{display:none!important}
@@ -2678,7 +2683,14 @@ function drawTW(t){
     /* v434: ◁◁ ◁ ▷ ▷▷ は廃止(きんきんさん)。代わりに「選択」(範囲選択モード) */
     {const b=document.createElement('button');b.id='selB';b.textContent='選択';b.setAttribute('aria-pressed','false');b.style.cssText='min-height:36px;min-width:52px;padding:0 6px';b.onclick=()=>setSelMode(!selMode);z.insertBefore(b,$('sp2'));
       /* v448: 全選択=今見ているタイムライン(コーナーを選んでいればその範囲)を全部選ぶ */const a2=document.createElement('button');a2.id='selAll';a2.textContent='全選択';a2.style.cssText=b.style.cssText+';min-width:60px';a2.onclick=()=>{const V=viewR();selA=V.a;selB=V.b;selDraw();flashSel('全選択 '+fmt(selA)+' 〜 '+fmt(selB))};z.insertBefore(a2,$('sp2'))}
-    {const gb=document.createElement('button');gb.textContent='空白';gb.style.cssText='min-height:36px;min-width:44px;padding:0 6px';gb.onclick=()=>{const n0=segs.length;insertGap(1);/* v448: 入った事が分かるように */if(segs.length>n0)flashSel('再生ヘッドの位置に空白を1秒入れました（端からスワイプで戻せます）')};z.insertBefore(gb,$('sp2'));const tb=document.createElement('button');tb.textContent='文字挿入';tb.style.cssText='min-height:36px;min-width:64px;padding:0 6px';tb.onclick=()=>insertTextGap(1);z.insertBefore(tb,$('sp2'))}
+    {const gb=document.createElement('button');gb.id='gapB';gb.textContent='空白';gb.style.cssText='min-height:36px;min-width:44px;padding:0 6px';gb.onclick=()=>{const n0=segs.length;insertGap(1);/* v448: 入った事が分かるように */if(segs.length>n0)flashSel('再生ヘッドの位置に空白を1秒入れました（端からスワイプで戻せます）')};z.insertBefore(gb,$('sp2'));const tb=document.createElement('button');tb.id='txtGapB';tb.textContent='文字挿入';tb.style.cssText='min-height:36px;min-width:64px;padding:0 6px';tb.onclick=()=>insertTextGap(1);z.insertBefore(tb,$('sp2'));
+    /* v526: ボタンを減らす。「選択▾」「空白▾」のドロップダウン(元のボタンは隠して、そのまま押す) */
+    const mk=(label,items)=>{const w=document.createElement('div');w.className='dd';const bt=document.createElement('button');bt.textContent=label+' ▾';bt.style.cssText='min-height:36px;min-width:52px;padding:0 6px';const m=document.createElement('div');m.className='ddm';
+      items.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=e=>{e.stopPropagation();m.classList.remove('on');f()};m.appendChild(b)});
+      bt.onclick=e=>{e.stopPropagation();const o=m.classList.contains('on');document.querySelectorAll('.ddm.on').forEach(x=>x.classList.remove('on'));if(!o)m.classList.add('on')};w.append(bt,m);return w};
+    z.insertBefore(mk('選択',[['複数選択',()=>$('msel').click()],['範囲選択',()=>$('selB').click()],['全選択',()=>$('selAll').click()]]),$('sp2'));
+    z.insertBefore(mk('空白',[['空白を挿入',()=>$('gapB').click()],['文字入り空白',()=>$('txtGapB').click()]]),$('sp2'));
+    document.addEventListener('click',()=>document.querySelectorAll('.ddm.on').forEach(x=>x.classList.remove('on')))}
     /* v525: ↺↻は✂の列の一番右に出す(以前の隠すやり方は廃止) */}
   const ex=$('exSec');
   
@@ -4459,7 +4471,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v525';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v526';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
