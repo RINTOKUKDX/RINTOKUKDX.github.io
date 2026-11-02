@@ -808,6 +808,11 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_ctl button{min-height:48px;padding:0;background:var(--panel);color:var(--fg);border:1px solid var(--line);font-size:18px;font-weight:700;letter-spacing:-.08em}
 #t_ctl button.on{color:var(--accent-fg);background:var(--accent);border-color:var(--accent)}
 #t_rSt:empty{display:none}
+#t_skw{display:none!important}/* v547: シークバーは廃止(要素は残置) */
+html.s4open{overflow-anchor:none}/* 行の高さが変わっても勝手に画面が動かないように */
+#t_fold{display:flex;justify-content:flex-end;padding:0 8px}
+#t_fold button{min-height:32px;min-width:56px;padding:0 14px;font-size:18px;line-height:1;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px}
+#s4.fold #t_lt,#s4.fold #t_rg,#s4.fold #t_rSt{display:none!important}
 #t_skw{padding:0 8px}#t_tl input{pointer-events:none}
 #t_job{padding:0 14px;font-size:13px;color:var(--muted)}
 #s4 details{box-sizing:border-box;border-top:1px solid var(--line);padding-top:8px;margin:0 14px}
@@ -4608,7 +4613,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v546';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v547';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6189,6 +6194,11 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
    pb2.onclick=()=>setLock(!pad._lock);un.onclick=()=>setLock(false);
    $('s4').insertBefore(pad,$('s4').firstChild);
    new MutationObserver(()=>{if($('s4').hidden&&pad._lock)setLock(false)}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}
+
+  /* v547: 字幕・ナレーションページの「軽量化〜自動生成・再生成…」の範囲を畳める。畳んだ時は▼、開いている時は▲。初期は開く */
+  {const stk=$('t_stk'),lt=$('t_lt');if(stk&&lt&&!$('t_fold')){const f=document.createElement('div');f.id='t_fold';const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','軽量化・自動生成の欄を畳む');f.appendChild(b);lt.before(f);
+    const set=o=>{$('s4').classList.toggle('fold',!o);b.textContent=o?'▲':'▼';b.setAttribute('aria-expanded',String(o))};set(true);window.s4FoldOpen=()=>set(true);b.onclick=()=>set($('s4').classList.contains('fold'));
+    new MutationObserver(()=>{const open=!$('s4').hidden;document.documentElement.classList.toggle('s4open',open);if(open)set(true)}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}}
   mk($('s1'),'カット');mk($('s5'),'投稿');const n2=mk($('s2'),'タイムライン');mk(ex,'書き出し');
   new MutationObserver(()=>{if($('s2').firstElementChild!==n2)$('s2').insertBefore(n2,$('s2').firstChild)}).observe($('s2'),{childList:true});
   /* v256: テンプレート編集はタイムラインと字幕ページの一番下(ページ移動の上) *//* v294: テンプレート編集は⚙設定へ移動 */
@@ -6793,7 +6803,7 @@ $('bN').onclick=()=>{if(!cur)return;const base=sel?sel.a:(posSet?pos:-1),n=cur.l
    const t=Math.max(0,Math.min(VD,sd.t0+dx/sd.w*VD));showAt(t);showOv(t);drawWf(t)});
  /* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */
  const se=e=>{if(!sd||e.pointerId!==sd.id)return;const m=sd.mv;sd=null;if(!m||!cur)return;posSet=true;
-   const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(d=>{const on=d._g.a===g.a&&d._g.b===g.b;d.classList.toggle('sel',on);if(on&&!isN())toRow(d)})}showOv(pos);drawWf(pos)};
+   const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(d=>{const on=d._g.a===g.a&&d._g.b===g.b;d.classList.toggle('sel',on)})}showOv(pos);drawWf(pos)};
  tl.addEventListener('pointerup',se);tl.addEventListener('pointercancel',se);
  tl.addEventListener('touchmove',e=>{if(sd&&sd.mv)e.preventDefault()},{passive:false})}
 /* 再生画面の字幕 */
@@ -7190,7 +7200,7 @@ addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
      save();drawResults();
      if(g.gap){const n=withGaps(cur.list).find(x=>x.gap&&Math.abs(x.a-g.a)<0.02&&Math.abs(x.b-g.b)<0.02);g=n||null;if(!g)wEdge=null;else wEdge.g=g}
      sel=g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',!!g&&r._g.a===g.a&&r._g.b===g.b));showAt(d.t0);drawWf(d.t0);return}
-   if(d.moved){/* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */posSet=true;if(cur){const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(r=>{const on=r._g.a===g.a&&r._g.b===g.b;r.classList.toggle('sel',on);if(on&&!isN())/* v539: ナレーションでは波形を動かして離した時に画面を勝手に下げない */toRow(r)})}}showOv(pos);drawWf(pos);return}
+   if(d.moved){/* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */posSet=true;if(cur){const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(r=>{const on=r._g.a===g.a&&r._g.b===g.b;r.classList.toggle('sel',on)})}}/* v547: 字幕・ナレーションとも、波形を動かして離した時に画面を勝手に動かさない(行を選ぶだけ) */showOv(pos);drawWf(pos);return}
    if(d.near){wEdge={g:sel,k:d.near};drawWf(d.t0);return}
    if(wEdge){wEdge=null;drawWf(d.t0)}
    const t=Math.max(0,Math.min(VD,d.map.A+(d.map.B-d.map.A)*(d.x0-d.r.left)/d.r.width));
@@ -8092,7 +8102,7 @@ window.subOpen=async(auto,render,fresh,mode)=>{MODE=mode==='nar'?'nar':'sub';{co
     delete $('go').dataset.busy;working=false;$('go').disabled=false;showAt(0);$('go').click();return}
   if(auto&&ok&&!Object.keys(R).some(k=>R[k].raw.length))$('go').click()};
 /* v538: 開いてから字幕の波形・画像ができるまで、再生画面の真ん中に「読み込み中」を出す */
-{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');let ld=document.getElementById('t_ld');if(!ld){ld=document.createElement('div');ld.id='t_ld';ld.innerHTML='読み込み中 <i>𖦹</i>';pl.appendChild(ld)}ld.hidden=false;
+{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');let ld=document.getElementById('t_ld');if(!ld){ld=document.createElement('div');ld.id='t_ld';ld.innerHTML='読み込み中 <i>𖦹</i>';pl.appendChild(ld)}ld.hidden=false;try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
   try{const r=await o(...a);if(JOB.length&&!wfPk)await Promise.race([wfData(),new Promise(z=>setTimeout(z,30000))]);return r}finally{ld.hidden=true}}}
 window.subClose=()=>{window.subRange=null;stopPlay();document.getElementById('s4').hidden=true;document.getElementById('s1').hidden=false;scrollTo(0,0)};
 </script>
