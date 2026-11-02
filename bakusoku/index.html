@@ -684,8 +684,9 @@ body.editing .pgnav{display:none!important}
 #s4:not([hidden]){min-height:121vh}/* v548: 内容が少なくても、開いた位置(上の空きの下)まで画面を送れるように */
 #s4Pad{box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:8px 16px}
 #s4Pad button{width:100%;height:100%;min-height:96px;font-size:30px;font-weight:700;border-radius:14px}
-#s4Cover{position:fixed;left:0;right:0;top:0;z-index:2;background:var(--bg)}
-#s4Unlock{position:fixed;left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));top:max(8px,env(safe-area-inset-top,0px));z-index:500;min-height:44px;padding:0 18px;font-size:26px;font-weight:700;background:var(--accent);color:var(--accent-fg);border:0;border-radius:12px;box-shadow:0 2px 10px #0008}
+#s4Cover{position:fixed;left:0;right:0;top:0;z-index:1;background:var(--bg)}
+html.s4lock #s4Pad,html.s4lock #s4>.pgnav{position:relative;z-index:2}/* 止めた上の空きとページ移動は、下の文字を隠す幕の上に見せる */
+#s4Unlock{display:none}
 #s4Unlock[hidden]{display:none}
 #t_ld{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:.4em;background:rgba(0,0,0,.6);color:#fff;font-size:22px;font-weight:700;z-index:6;pointer-events:none}
 #t_ld[hidden]{display:none}
@@ -4615,7 +4616,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v549';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v550';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6190,16 +6191,15 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   {const pad=document.createElement('div');pad.id='s4Pad';const pb2=document.createElement('button');pb2.textContent='固定';pad.appendChild(pb2);
    /* v549: 上へ行ける限界は、写真の高さ(画面の約21%)まで */const H=()=>Math.max(120,Math.round(innerHeight*0.21));window.s4PadH=()=>H();
    const setH=()=>{pad.style.height=H()+'px'};setH();addEventListener('resize',()=>{if(!pad._lock)setH()});
-   const un=document.createElement('button');un.id='s4Unlock';un.textContent='固定解除';un.hidden=true;document.body.appendChild(un);
    /* v549: 固定=再生画面などの上の部分を今の位置に止めて、下の文字(字幕の行・ナレーションの欄)だけスライドできる。止めた位置より上へは行かない。上の空きに大きな「固定解除」 */
    const cv=document.createElement('div');cv.id='s4Cover';cv.hidden=true;document.body.appendChild(cv);let lockY=0;
    const setLock=v=>{pad._lock=v;const stk=$('t_stk');
-     if(v){lockY=scrollY;const t=Math.max(0,Math.round(stk.getBoundingClientRect().top));stk.style.top=t+'px';cv.style.height=t+'px';cv.hidden=t<60;un.style.height=Math.max(44,t-16)+'px'}
-     else{stk.style.top='';cv.hidden=true;un.style.height=''}
-     document.documentElement.classList.toggle('s4lock',v);pb2.textContent=v?'固定解除':'固定';un.hidden=!(v&&!$('s4').hidden)};
+     if(v){lockY=scrollY;const t=Math.max(0,Math.round(stk.getBoundingClientRect().top));stk.style.top=t+'px';cv.style.height=t+'px';cv.hidden=t<20}
+     else{stk.style.top='';cv.hidden=true}
+     document.documentElement.classList.toggle('s4lock',v);pb2.textContent=v?'固定解除':'固定'};
    addEventListener('scroll',()=>{if(pad._lock&&scrollY<lockY-0.5)scrollTo(0,lockY)},{passive:true});
-   /* v538: 固定中は画面の上(止めた部分の上)の「固定解除」でいつでも解除できる */
-   pb2.onclick=()=>setLock(!pad._lock);un.onclick=()=>setLock(false);
+   /* v550: 解除は、上の空きの同じボタン(「固定解除」)。止めた位置より上へは行けないので、止めた位置まで戻せば必ず見える */
+   pb2.onclick=()=>setLock(!pad._lock);
    $('s4').insertBefore(pad,$('s4').firstChild);
    new MutationObserver(()=>{if($('s4').hidden&&pad._lock)setLock(false)}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}
 
