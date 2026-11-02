@@ -684,8 +684,9 @@ body.editing .pgnav{display:none!important}
 #s4:not([hidden]){min-height:121vh}/* v548: 内容が少なくても、開いた位置(上の空きの下)まで画面を送れるように */
 #s4Pad{box-sizing:border-box;display:flex;align-items:center;justify-content:center;padding:8px 16px}
 #s4Pad button{width:100%;height:100%;min-height:96px;font-size:30px;font-weight:700;border-radius:14px}
-#s4Cover{position:fixed;left:0;right:0;top:0;z-index:1;background:var(--bg)}
-html.s4lock #s4Pad,html.s4lock #s4>.pgnav{position:relative;z-index:2}/* 止めた上の空きとページ移動は、下の文字を隠す幕の上に見せる */
+#t_root{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}/* v551: 下の文字だけスクロール。上のメニューは動かない */
+#t_root #t_stk{top:0}
+#s4Cover{display:none}
 #s4Unlock{display:none}
 #s4Unlock[hidden]{display:none}
 #t_ld{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:.4em;background:rgba(0,0,0,.6);color:#fff;font-size:22px;font-weight:700;z-index:6;pointer-events:none}
@@ -693,7 +694,7 @@ html.s4lock #s4Pad,html.s4lock #s4>.pgnav{position:relative;z-index:2}/* 止め�
 #t_ld i{display:inline-block;font-style:normal;animation:ldspin 1.1s linear infinite}
 @keyframes ldspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){#t_ld i{animation:none}}
-html.s4lock{overscroll-behavior-y:contain}
+html.s4lock,html.s4lock body{overflow:hidden!important;overscroll-behavior:none}
 #s4 p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
 #s4 h2{font-size:15px;margin:0;letter-spacing:0;color:var(--fg);font-weight:700}
 #s4 .tsec{display:flex;flex-direction:column;gap:8px;min-width:0}
@@ -4616,7 +4617,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v550';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v551';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6191,17 +6192,13 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   {const pad=document.createElement('div');pad.id='s4Pad';const pb2=document.createElement('button');pb2.textContent='固定';pad.appendChild(pb2);
    /* v549: 上へ行ける限界は、写真の高さ(画面の約21%)まで */const H=()=>Math.max(120,Math.round(innerHeight*0.21));window.s4PadH=()=>H();
    const setH=()=>{pad.style.height=H()+'px'};setH();addEventListener('resize',()=>{if(!pad._lock)setH()});
-   /* v549: 固定=再生画面などの上の部分を今の位置に止めて、下の文字(字幕の行・ナレーションの欄)だけスライドできる。止めた位置より上へは行かない。上の空きに大きな「固定解除」 */
-   const cv=document.createElement('div');cv.id='s4Cover';cv.hidden=true;document.body.appendChild(cv);let lockY=0;
-   const setLock=v=>{pad._lock=v;const stk=$('t_stk');
-     if(v){lockY=scrollY;const t=Math.max(0,Math.round(stk.getBoundingClientRect().top));stk.style.top=t+'px';cv.style.height=t+'px';cv.hidden=t<20}
-     else{stk.style.top='';cv.hidden=true}
-     document.documentElement.classList.toggle('s4lock',v);pb2.textContent=v?'固定解除':'固定'};
-   addEventListener('scroll',()=>{if(pad._lock&&scrollY<lockY-0.5)scrollTo(0,lockY)},{passive:true});
-   /* v550: 解除は、上の空きの同じボタン(「固定解除」)。止めた位置より上へは行けないので、止めた位置まで戻せば必ず見える */
+   /* v551: 下の文字(字幕の行・ナレーションの欄)は #t_root の中だけでスクロールする(上のメニューは動かない)。固定=ページ全体の上下位置を今の位置に止める。解除は上の空きの同じボタン */
+   const setLock=v=>{pad._lock=v;document.documentElement.classList.toggle('s4lock',v);pb2.textContent=v?'固定解除':'固定'};
+   const fitRoot=()=>{const root=$('t_root');if(!root||$('s4').hidden)return;root.style.height='';const o=window.s4PadH(),top=root.getBoundingClientRect().top+scrollY-o;root.style.height=Math.max(240,innerHeight-top)+'px'};window.s4Fit=fitRoot;
+   addEventListener('resize',()=>setTimeout(fitRoot,50));
    pb2.onclick=()=>setLock(!pad._lock);
    $('s4').insertBefore(pad,$('s4').firstChild);
-   new MutationObserver(()=>{if($('s4').hidden&&pad._lock)setLock(false)}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}
+   new MutationObserver(()=>{if($('s4').hidden){if(pad._lock)setLock(false)}else{fitRoot();setTimeout(fitRoot,300);setTimeout(fitRoot,1200)}}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}
 
   /* v547: 字幕・ナレーションページの「軽量化〜自動生成・再生成…」の範囲を畳める。畳んだ時は▼、開いている時は▲。初期は開く */
   {const stk=$('t_stk'),lt=$('t_lt');if(stk&&lt&&!$('t_fold')){const f=document.createElement('div');f.id='t_fold';const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','軽量化・自動生成の欄を畳む');f.appendChild(b);lt.before(f);
@@ -6252,7 +6249,7 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
      const ok=await exportX({r:{a,b:z},say:t=>{$('pvMsg').textContent=/^書き出し中/.test(t)?m0:t},p:x=>{$('pvBar').style.width=x+'%'},
        done:(bl,inf)=>{v.src=URL.createObjectURL(bl);v.hidden=false;$('pvMsg').textContent='できました\n'+(inf||'');$('pvBar').style.width='100%';try{v.play()}catch(e){}}});
      $('pvX').hidden=false;if(ok===false){$('pvMsg').textContent='作れませんでした'}};
-   /* v530: 字幕・ナレーションページは、この2つを一番下の箱へ(カット画面のページ移動と同じ見た目) */{const bot=document.createElement('div');bot.id='s4Bot';b.style.gridColumn='auto';pb.style.gridColumn='auto';bot.append(pb,b);$('s4').appendChild(bot);new MutationObserver(()=>{if($('s4').lastElementChild!==bot)$('s4').appendChild(bot)}).observe($('s4'),{childList:true})}}
+   /* v530: 字幕・ナレーションページは、この2つを一番下の箱へ(カット画面のページ移動と同じ見た目) */{const bot=document.createElement('div');bot.id='s4Bot';b.style.gridColumn='auto';pb.style.gridColumn='auto';bot.append(pb,b);$('t_root').appendChild(bot);new MutationObserver(()=>{if($('t_root').lastElementChild!==bot)$('t_root').appendChild(bot)}).observe($('t_root'),{childList:true})}}
   /* v482: Claude の APIキー(この端末だけに保存)とモデル。英語字幕で使う */
   {const MD={opus:['claude-opus-5-5','最上位 Opus'],sonnet:['claude-sonnet-5-5','標準 Sonnet'],haiku:['claude-haiku-5-5','軽量 Haiku']},gk=k=>{try{return localStorage.getItem(k)||''}catch(e){return ''}},sk=(k,v)=>{try{v?localStorage.setItem(k,v):localStorage.removeItem(k)}catch(e){}};
    const mdl=()=>MD[gk('apiModel')]||MD.opus;window.apiKey=()=>gk('apiKey');window.apiModelName=()=>mdl()[1];
@@ -6720,7 +6717,7 @@ function withGaps(list){const cov=list.map(g=>[g.a,g.b]).sort((x,y)=>x[0]-y[0]);
   cov.forEach(([a,b])=>{if(a-t>=0.5)out.push({a:t,b:a,gap:true});t=Math.max(t,b)});if(D-t>=0.5)out.push({a:t,b:D,gap:true});
   return list.concat(out).sort((x,y)=>x.a-y.a)}
 /* v172: 再生中の行をシークバーの真下(見える位置)に持ってくる */
-function toRow(d){const stk=$('stk'),y=d.getBoundingClientRect().top-stk.getBoundingClientRect().bottom;if(Math.abs(y)>2)scrollBy({top:y,behavior:'smooth'})}
+function toRow(d){const stk=$('stk'),y=d.getBoundingClientRect().top-stk.getBoundingClientRect().bottom;if(Math.abs(y)>2)$('root').scrollBy({top:y,behavior:'smooth'})}/* v551: 下の文字は #t_root の中でスクロール */
 function pick(g){sel=g;[...$('rows').children].forEach(d=>d.classList.toggle('sel',d._g===g));showSel()}
 function showSel(){stopPlay();posSet=false;showOv();const ok=!!sel;['bP','bA'].forEach(i=>$(i).disabled=!ok&&!JOB.length);if(sel)showAt(sel.a+0.01);drawWf()}
 /* 動画2本で、つなげた後の時間(仮想の時間)を再生する。切替はカットページの▶▶と同じやり方 */
@@ -6794,12 +6791,12 @@ $('bP').onclick=playSel;$('bA').onclick=playAll;
 {const i=$('ltI'),put=()=>{$('ltV').textContent=LITE?'音と字幕だけ':'通常'};i.value=LITE?0:1;put();
   i.oninput=()=>{const was=playing()&&!!(pl&&pl.lite)!==(+i.value===0);LITE=+i.value===0;put();try{localStorage.setItem('subLite',LITE?'1':'')}catch(e){}if(was){const t=pos,a=$('bA').classList.contains('on');stopPlay();if(a){posSet=true;setPos(t);playAll()}else showAt(t)}}}
 /* v481: 字幕欄の右上の⬇ = 一番下までスーッと(加速して)動かす */
-{const b=document.createElement('button');b.id='t_dn';b.textContent='⬇';b.setAttribute('aria-label','字幕欄の一番下へ');b.hidden=true;$('rows').before(b);let an=0;
-  const pl0=()=>{const r=$('rows').getBoundingClientRect(),sb=$('stk').getBoundingClientRect().bottom,H=innerHeight;const on=$('rows').children.length>3&&r.bottom>H+4&&r.top<H;b.hidden=!on;if(on)b.style.top=Math.max(sb,r.top)+8+'px'};
-  addEventListener('scroll',pl0,{passive:true});addEventListener('resize',pl0);new MutationObserver(pl0).observe($('rows'),{childList:true});
+{const b=document.createElement('button');b.id='t_dn';b.textContent='⬇';b.setAttribute('aria-label','字幕欄の一番下へ');b.hidden=true;$('rows').before(b);let an=0;const R=$('root');
+  const pl0=()=>{const r=$('rows').getBoundingClientRect(),sb=$('stk').getBoundingClientRect().bottom,H=R.getBoundingClientRect().bottom;const on=$('rows').children.length>3&&r.bottom>H+4&&r.top<H;b.hidden=!on;if(on)b.style.top=Math.max(sb,r.top)+8+'px'};
+  R.addEventListener('scroll',pl0,{passive:true});addEventListener('scroll',pl0,{passive:true});addEventListener('resize',pl0);new MutationObserver(pl0).observe($('rows'),{childList:true});
   const stop=()=>{if(an){cancelAnimationFrame(an);an=0}};['touchstart','wheel'].forEach(k=>addEventListener(k,e=>{if(e.target!==b)stop()},{passive:true}));
-  b.onclick=()=>{stop();const y0=scrollY,y1=document.documentElement.scrollHeight-innerHeight,d=y1-y0;if(d<=2)return;const T=Math.min(1600,500+d*0.35),t0=performance.now();
-    const f=now=>{const k=Math.min(1,(now-t0)/T),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;scrollTo(0,y0+d*e);if(k<1)an=requestAnimationFrame(f);else an=0};an=requestAnimationFrame(f)}}
+  b.onclick=()=>{stop();const y0=R.scrollTop,y1=R.scrollHeight-R.clientHeight,d=y1-y0;if(d<=2)return;const T=Math.min(1600,500+d*0.35),t0=performance.now();
+    const f=now=>{const k=Math.min(1,(now-t0)/T),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;R.scrollTo(0,y0+d*e);if(k<1)an=requestAnimationFrame(f);else an=0};an=requestAnimationFrame(f)}}
 /* v171: 次へ=次の字幕の行を選ぶ(無音の行は飛ばす) */
 $('bU').onclick=()=>window.subUndo();$('bY').onclick=()=>window.subRedo();/* v536 */
 $('bN').onclick=()=>{if(!cur)return;const base=sel?sel.a:(posSet?pos:-1),n=cur.list.slice().sort((x,y)=>x.a-y.a).find(x=>x.a>base+0.001);if(!n)return;pick(n);
