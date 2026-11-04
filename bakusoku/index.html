@@ -2129,7 +2129,7 @@ window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.
   /* v486: ストロークを大きさに合わせるため、元の大きさを覚えておく */s.sz0=s.size||60;
   /* v552: 字幕ごとの中色(cIn)・外色(cOut)・外の線の太さ(wOut)・影の濃さ(shP)と色(shC) */if(o.cIn)s.color=o.cIn;if(o.cOut){s.stColor=o.cOut;if(!(s.stW>0)&&o.wOut==null)s.stW=6}if(o.wOut!=null)s.stW=o.wOut;if(o.shP!=null){s.shOp=o.shP;if(!(s.shBlur>0))s.shBlur=8}if(o.shC)s.shColor=o.shC;
   /* v556: 位置テンプレート(o.pp): 縦文字/横文字・揃え・文字と行の間隔・余白(文字が入る範囲 ar)。余白がある時は揃えの辺を基準に置く */
-  const PP=o.pp||null;if(PP){if(PP.vt)s.vert=PP.vt==='v'?'1':'';s.pp=PP;const a=PP.ar;if(a){s.x=PP.ha==='l'?a.l:PP.ha==='r'?a.r:(a.l+a.r)/2;s.y=PP.va==='t'?a.t:PP.va==='b'?a.b:(a.t+a.b)/2}}
+  const PP=o.pp||null;if(PP){if(PP.vt)s.vert=PP.vt==='v'?'1':'';s.pp=PP;/* v560: 自動でサイズを変える(fit)。余白がある時は余白いっぱいに(s.fill)、切ると元の大きさ×指の大きさ */if(PP.fit===false)o.fit=false;else if(PP.ar){s.fill=true;o.fit=false;o.osc=null}const a=PP.ar;if(a){s.x=PP.ha==='l'?a.l:PP.ha==='r'?a.r:(a.l+a.r)/2;s.y=PP.va==='t'?a.t:PP.va==='b'?a.b:(a.t+a.b)/2}}
   /* v264: き・奥は文字が少ないと大きく(v268: 最大4.5倍、幅の9割まで)、多いと小さく。4文字以下は真ん中、その2回に1回は縦書き */
   if(o.fit){const L=Math.max(1,[...txt.replace(/\n/g,'')].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0));if(o.mid){s.x=.5;s.y=.5;if(o.vt)s.vert='1'}
     const v=s.vert==='1',ar=PP&&PP.ar;s.size=Math.min((s.size||60)*4.5,(v?(ar?(ar.b-ar.t)*H:H*.88):(ar?(ar.r-ar.l)*W:W*.9))/L/k/(1+(PP&&PP.lsp||0)));
@@ -2191,6 +2191,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     const unit=()=>{g.font=F(fs);LS.forEach(o=>{o.U=o.cc.map((ch,j)=>{if(vert)return fs*(1.1+LSP);const f=cs(o.i0+j).f;if(f){g.save();g.font=PFONT(fs,f)}const v=g.measureText(ch).width+fs*LSP;if(f)g.restore();return v})})};
     const len=o=>o.U.reduce((a,u,j)=>a+u*E[o.i0+j],0);
     unit();
+    /* v560: 余白いっぱいに大きくする(行の数で入らなければ下で小さくなる) */if(s.fill){const l0=Math.max(...LS.map(len));if(l0>0){fs*=Lm/l0;unit()}}
     /* 先に、全部等倍の時に収まる大きさにしておく(ピンチの最初に急に大きくならないように) */
     {const l0=Math.max(...LS.map(o=>o.U.reduce((a,b)=>a+b,0)));if(l0>Lm){fs*=Lm/l0;unit()}}
     /* はみ出す行だけ、まず大きくしていない文字を小さくする。それでも足りなければその行だけ小さくする */
@@ -4623,7 +4624,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v559';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v560';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6865,15 +6866,17 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
       if(tt>=m[0].a&&tt<m[m.length-1].b){const on=m.filter(x=>x.a<=tt);onR=on;g=m[0];txt=on.map(x=>x.t).join('\n');all=m.map(x=>x.t);allR=m;nOn=on.length;break}}}}
   if(!g){if(t!=null&&LS)g=LS.find(x=>t>=x.a&&t<x.b)||null;else if(!X&&sel&&!sel.gap)g=sel}
   o._g=null;if(!g){o.textContent='';return}const k=SPK(g);o.textContent=txt!=null?txt:brT(g);
-  if(k==='b'){const b=BIG[g.bs]||BIG.setsumei_yoko,H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
+  if(k==='b'){const PB=g.fr?null:stP(g);let b=BIG[g.bs]||BIG.setsumei_yoko;/* v560: 位置テンプレートの縦文字/横文字で、太字の種類の縦/横を選ぶ */if(PB&&PB.vt){const nm=Object.keys(BIG).find(q=>BIG[q]===b)||'setsumei_yoko',bn=nm.replace(/_(tate|yoko)$/,'')+(PB.vt==='v'?'_tate':'_yoko');if(BIG[bn])b=BIG[bn]}const H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
     /* v196: 行間=2行は広め、3行、4行と狭く。文字が少ないと大きく、はみ出しそうなら小さく。上の左右(固定テロップ)には入らない */
     {const W=X?X.W:$('pl').clientWidth||H*16/9,lines=all||String(txt!=null?txt:brT(g)).split('\n'),n=lines.length,lh=allR&&allR.some(q=>q.en)?1.9:n<=1?1.15:n===2?1.6:n===3?1.35:1.18;/* v493: 行ごとの英語を置く余白 */
      const cw=s=>[...s].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0),L=Math.max(1,...lines.map(cw)),pnl=b.mode==='panel',ph=pnl?1.2:.3,pv=pnl?.7:.2,base=b.fs/1080*H;
-     const aW=W*.9,aH=H*.74,fs=Math.max(8,b.v?Math.min(base*1.6,aH/(L+ph),aW/(n*lh+pv)):Math.min(base*1.6,aW/(L+ph),aH/(n*lh+pv)));
+     /* v560: 位置テンプレート: 余白=入る範囲、自動でサイズ(余白があれば余白いっぱい・切ると元の大きさ) */const AR=PB&&PB.ar,auto=!PB||PB.fit!==false,cap=AR&&auto?1e9:auto?base*1.6:base;
+     const aW=AR?(AR.r-AR.l)*W:W*.9,aH=AR?(AR.b-AR.t)*H:H*.74,fs=Math.max(8,b.v?Math.min(cap,aH/(L+ph),aW/(n*lh+pv)):Math.min(cap,aW/(L+ph),aH/(n*lh+pv)));
      const bw=b.v?fs*(n*lh+pv):fs*(L+ph),bh=b.v?fs*(L+ph):fs*(n*lh+pv),cl=(v,lo,hi)=>lo>hi?(lo+hi)/2:Math.max(lo,Math.min(hi,v));
      /* v198: 指で動かした分(ox,oy)と大きさ(osc)を足す */
-     const cx=cl(b.x*W,W*.05+bw/2,W*.95-bw/2)+(g.ox||0)*W,cy=cl(b.y*H,H*.2+bh/2,H*.95-bh/2)+(g.oy||0)*H,fz=fs*(g.osc||1);o._g=g;
-     const ff=fk(g);o.style.cssText=(ff&&window.PFAM?'font-family:'+window.PFAM[ff].replace(/"/g,"'")+';':'')+'left:'+cx.toFixed(1)+'px;top:'+cy.toFixed(1)+'px;font-size:'+fz.toFixed(1)+'px;line-height:'+lh+';transform:translate(-50%,-50%) rotate('+(b.rot||0)+'deg)'+(txt!=null||n>1?';white-space:pre':'')
+     const OX=PB?PB.x||0:g.ox||0,OY=PB?PB.y||0:g.oy||0,OS=AR&&auto?1:PB?PB.s||1:g.osc||1,ha=PB&&PB.ha||'c',va=PB&&PB.va||'c';
+     const cx=(AR?(ha==='l'?AR.l*W+bw/2:ha==='r'?AR.r*W-bw/2:(AR.l+AR.r)/2*W):cl(b.x*W,W*.05+bw/2,W*.95-bw/2))+OX*W,cy=(AR?(va==='t'?AR.t*H+bh/2:va==='b'?AR.b*H-bh/2:(AR.t+AR.b)/2*H):cl(b.y*H,H*.2+bh/2,H*.95-bh/2))+OY*H,fz=fs*OS;o._g=g;
+     const ff=fk(g);o.style.cssText=(ff&&window.PFAM?'font-family:'+window.PFAM[ff].replace(/"/g,"'")+';':'')+'left:'+cx.toFixed(1)+'px;top:'+cy.toFixed(1)+'px;font-size:'+fz.toFixed(1)+'px;line-height:'+(lh*(PB&&PB.lhm||1))+';transform:translate(-50%,-50%) rotate('+(b.rot||0)+'deg)'+(txt!=null||n>1?';white-space:pre':'')+(PB?';letter-spacing:'+(PB.lsp||0)+'em;text-align:'+({l:'left',r:'right',t:'left',b:'right'}[b.v?va:ha]||'center'):'')
      /* v236: 1文字ずつの大きさ・角度・フォント・反転。はみ出しそうなら、まず他の文字を小さく。v240: 改行した行は別々に収める */
      {const LN=lines.map(l=>[...l]),NC=LN.reduce((a,l)=>a+l.length,0),FL=LN.flat(),D=FL.map(c=>window.dsK?window.dsK(c):1),skip=txt!=null&&!(onR&&onR.length===1&&n===1),base=skip?null:txt==null?g.cs:onR[0].cs,
         c0=base&&base.length===NC?base:null,ccs=skip?null:(c0&&c0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y)))||D.some(v=>v!==1)?(c0||FL.map(()=>0)):null;
@@ -7088,7 +7091,7 @@ async function popSe(g,id0){if(!SE.length){showFn('SEが登録されていませ
   const sel=document.createElement('select');sel.id='t_seSel';sel.style.cssText='min-height:40px;font-size:15px;max-width:60%';const opts=()=>{sel.innerHTML='';SE.forEach(x=>{const o=document.createElement('option');o.value=x.id;o.textContent=x.n;sel.appendChild(o)});sel.value=id};opts();
   const pl=document.createElement('button');pl.type='button';pl.textContent='▶ 試し聞き';pl.style.cssText='min-height:40px;margin-left:auto';
   {const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px';r.append(sel,pl);w.appendChild(r)}
-  const vol=w.rng(0,200,Math.round(P.v*100),v=>v+'%'),ech=w.rng(0,100,Math.round(P.e*100),v=>v+'%');w.row('音量',vol,vol._o);w.row('エコー',ech,ech._o);
+  const vol=w.rng(0,500,Math.round(P.v*100),v=>v+'%')/* v560: 500%まで */,ech=w.rng(0,100,Math.round(P.e*100),v=>v+'%');w.row('音量',vol,vol._o);w.row('エコー',ech,ech._o);
   vol.oninput=()=>{P.v=vol.value/100;vol._o.textContent=vol.value+'%'};ech.oninput=()=>{P.e=ech.value/100;ech._o.textContent=ech.value+'%'};
   const cv=document.createElement('canvas');cv.id='t_seWf';cv.style.cssText='display:block;width:100%;height:90px;background:#111;border-radius:8px;touch-action:none;margin:6px 0';w.appendChild(cv);
   const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin-bottom:6px';nt.textContent='薄い所=この字幕の声、濃い所=SE。SEの中をスワイプ=鳴る位置、右の端をスワイプ=鳴る長さ';w.appendChild(nt);
@@ -7207,7 +7210,7 @@ function stList(w,g){const k0=w.k0;delete w.dataset.ed;stArOff();w.body.innerHTM
     const x=stBtn('削除',()=>ask('「'+p.n+'」を削除しますか？','削除する',()=>{const o=stAll();o[k0].pos=o[k0].pos.filter(z=>z.id!==p.id);stSave(o);if(g.pz===p.id)delete g.pz;save();stList(w,g)}),'font-size:13px;min-width:64px');
     r.append(nm,e,x);box.appendChild(r)});
   const reg=stBtn('登録',()=>{const o=stAll(),L=o[k0].pos;let i=L.length+1;while(L.some(z=>z.n==='位置'+i))i++;
-    const p={id:'p'+Date.now().toString(36),n:'位置'+i,x:+(g.ox||0).toFixed(4),y:+(g.oy||0).toFixed(4),s:+(g.osc||1).toFixed(3),vt:subFit(g,SPK(g),null,cur&&cur.list).vt?'v':'h',ha:'c',va:'c',lsp:0,lhm:1,ar:null};
+    const p={id:'p'+Date.now().toString(36),n:'位置'+i,x:+(g.ox||0).toFixed(4),y:+(g.oy||0).toFixed(4),s:+(g.osc||1).toFixed(3),vt:subFit(g,SPK(g),null,cur&&cur.list).vt?'v':'h',fit:true,ha:'c',va:'c',lsp:0,lhm:1,ar:null};
     L.push(p);stSave(o);g.pz=p.id;save();showOv(pos);stList(w,g);showFn('「'+p.n+'」を登録しました')},'');reg.id='t_stPR';reg.className='tbig';
   w.foot(reg)}
 /* 揃えのアイコン(横の3本線/箱の中の棒) */
@@ -7223,6 +7226,8 @@ function stEdit(w,g,id){const k0=w.k0,P=()=>stAll()[k0].pos.find(z=>z.id===id);i
   const seg=(id2,opts,get,set,ico)=>{const r=document.createElement('div');r.id=id2;r.style.cssText='display:grid;grid-template-columns:repeat('+opts.length+',1fr);gap:6px;margin:6px 0';
     const paint=()=>[...r.children].forEach(b=>{const on=b.dataset.v===get();b.classList.toggle('on',on);b.setAttribute('aria-pressed',on?'true':'false');b.style.outline=on?'2px solid var(--accent)':'none';b.style.background=on?'color-mix(in srgb,var(--accent) 30%,transparent)':''});
     opts.forEach(([v,t])=>{const b=stBtn('',()=>{set(v);paint();up()},'display:flex;align-items:center;justify-content:center;gap:4px');b.dataset.v=v;if(ico){b.innerHTML=stIco(ico,v);b.setAttribute('aria-label',t)}else b.textContent=t;r.appendChild(b)});paint();w.body.appendChild(r);return r};
+  {const l=document.createElement('label');l.style.cssText='display:flex;align-items:center;gap:8px;min-height:40px;margin-top:4px';const c=document.createElement('input');c.type='checkbox';c.id='t_stFit';c.checked=P().fit!==false;c.style.cssText='width:22px;height:22px';
+   c.onchange=()=>{P().fit=c.checked;up()};l.append(c,document.createTextNode('自動でサイズを変える'));w.body.appendChild(l)}/* v560 */
   seg('t_stVt',[['v','縦文字'],['h','横文字']],()=>P().vt||'h',v=>{P().vt=v});
   seg('t_stHa',[['l','左揃え'],['c','中央揃え'],['r','右揃え']],()=>P().ha||'c',v=>{P().ha=v},'h');
   seg('t_stVa',[['t','上揃え'],['c','中央揃え'],['b','下揃え']],()=>P().va||'c',v=>{P().va=v},'v');
