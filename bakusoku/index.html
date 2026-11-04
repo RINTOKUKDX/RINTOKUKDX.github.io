@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v569';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v570';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6770,13 +6770,9 @@ function drawResults(){
       const drawSp=()=>{const k=SPK(g),c=TPL[k].c;const fr=!!g.fr&&k==='b';/* v206: フレームは太だけ */sp.className='sp '+k+(fr?' fr':'');sp.textContent=(fr?'「':'')+stSpL(g)+(fr?'」':'');sp.style.background=c||'';tx.style.color=c||'';tx.style.fontWeight=k==='b'?'800':'';if(g.bl){sp.textContent=g.bl==='h'?'横':'縦';sp.style.background='#444';tx.style.color='#fff';d.classList.add('kuh')}};
       tx.textContent=g.t;drawSp();if(g.en){const e=document.createElement('i');e.className='en';e.textContent=g.en;tx.parentNode.appendChild(e)}
       press(sp,{tap:()=>{if(g.grp){/* v207: グループは太↔「太」だけ切り替え(先頭の行に保存) */const h0=(gm||[g])[0];if(h0.fr)delete h0.fr;else h0.fr=true;drawSp();saveR(view.m,r);showOv();return}/* v206: き→奥→太→「太」(「」=フレーム付き) */stSpNext(g);drawSp();saveR(view.m,r);showOv()},dbl:()=>tplEdit(SPK(g)),
-        long:()=>{pick(g);const isB=SPK(g)==='b';sheet((b,close)=>{
-          /* v225: 白と黒を逆にする(グループは全部の行) */
-          const iv=document.createElement('button');iv.textContent=g.inv?'白黒を元に戻す':'白と黒を逆にする';iv.onclick=()=>{const on=!g.inv;(gm||[g]).forEach(x=>{if(on)x.inv=true;else delete x.inv});saveR(view.m,r);close();showOv()};b.appendChild(iv);
-          if(!isB){const c=document.createElement('button');c.className='no';c.textContent='閉じる';c.onclick=close;b.appendChild(c);return}
-          const h=document.createElement('h2');h.textContent='太字の種類';const w=document.createElement('div');w.className='bsl';
-          Object.keys(BIG).forEach(key=>{const bt=document.createElement('button');bt.textContent=BIG[key].n;bt.classList.toggle('on',(g.bs||'setsumei_yoko')===key);bt.onclick=()=>{if(bt.classList.contains('on')){close();return}(gm||[g]).forEach(x=>x.bs=key);saveR(view.m,r);[...w.children].forEach(x=>x.classList.toggle('on',x===bt));showOv()};w.appendChild(bt)});
-          const c=document.createElement('button');c.className='no';c.textContent='閉じる';c.onclick=close;b.append(h,w,c);
+        long:()=>{pick(g);sheet((b,close)=>{/* v570: 白黒反転・太字の種類は廃止。グループ解除と閉じるだけ */
+          if(g.grp){const u=document.createElement('button');u.id='t_grpOff';u.textContent='グループを解除';u.onclick=()=>{close();(gm||grpOf(list,g)).forEach(x=>delete x.grp);sel=g;save();drawResults();showOv()};b.appendChild(u)}
+          const c=document.createElement('button');c.className='no';c.textContent='閉じる';c.onclick=close;b.appendChild(c);
           $('sheet').style.background='transparent'})}});
       ['pointerdown','pointerup'].forEach(ev=>sp.addEventListener(ev,e=>e.stopPropagation()));
       const sm=d.querySelector('small');if(g.o&&g.o.replace(/\s/g,'')!==g.t.replace(/\s/g,''))sm.textContent=g.o;else sm.remove();
