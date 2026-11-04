@@ -754,6 +754,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_ov.big.pop{color:#ffe14a;-webkit-text-stroke:.2em #1b2a6b;paint-order:stroke fill;text-shadow:.07em .09em 0 #ff4f9a}
 #t_ov.big{pointer-events:auto;touch-action:none}
 /* v213: 「太」の枠は6種類(タップで切替) 0=赤い箇条書き 1=ノート 2=大正ロマン 3=アンティーク旅 4=黒板 5=ガレージ鉄板 */
+#t_ov.exI>.in{padding:.35em .7em .4em;background:none}#t_ov.exI .hd{text-align:center;font-size:1.12em;margin-bottom:.3em;font-weight:800}#t_ov.exI .it b{font-size:.6em;margin-right:.3em}
 #t_ov.big.ex{text-align:left;text-shadow:none;-webkit-text-stroke:0;white-space:nowrap;padding:0;background:none;box-shadow:none;border:0}
 #t_ov.ex>.in{position:relative}
 #t_ov.ex .it{display:flex;align-items:center;gap:.4em;position:relative}
@@ -4697,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v566';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v567';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6943,7 +6944,7 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
       if(tt>=m[0].a&&tt<m[m.length-1].b){const on=m.filter(x=>x.a<=tt);onR=on;g=m[0];txt=on.map(x=>x.t).join('\n');all=m.map(x=>x.t);allR=m;nOn=on.length;break}}}}
   if(!g){if(t!=null&&LS)g=LS.find(x=>t>=x.a&&t<x.b)||null;else if(!X&&sel&&!sel.gap)g=sel}
   o._g=null;if(!g){o.textContent='';return}const k=SPK(g);o.textContent=txt!=null?txt:brT(g);
-  if(k==='b'){const PB=g.fr?null:stP(g);let b=BIG[stBs(g)]||BIG.setsumei_yoko;/* v560: 位置テンプレートの縦文字/横文字で、太字の種類の縦/横を選ぶ */if(PB&&PB.vt){const nm=Object.keys(BIG).find(q=>BIG[q]===b)||'setsumei_yoko',bn=nm.replace(/_(tate|yoko)$/,'')+(PB.vt==='v'?'_tate':'_yoko');if(BIG[bn])b=BIG[bn]}const H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
+  if(k==='b'){const PB=stFr(g)?null:stP(g);let b=BIG[stBs(g)]||BIG.setsumei_yoko;/* v560: 位置テンプレートの縦文字/横文字で、太字の種類の縦/横を選ぶ */if(PB&&PB.vt){const nm=Object.keys(BIG).find(q=>BIG[q]===b)||'setsumei_yoko',bn=nm.replace(/_(tate|yoko)$/,'')+(PB.vt==='v'?'_tate':'_yoko');if(BIG[bn])b=BIG[bn]}const H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
     /* v196: 行間=2行は広め、3行、4行と狭く。文字が少ないと大きく、はみ出しそうなら小さく。上の左右(固定テロップ)には入らない */
     {const W=X?X.W:$('pl').clientWidth||H*16/9,lines=all||String(txt!=null?txt:brT(g)).split('\n'),n=lines.length,lh=allR&&allR.some(q=>q.en)?1.9:n<=1?1.15:n===2?1.6:n===3?1.35:1.18;/* v493: 行ごとの英語を置く余白 */
      const cw=s=>[...s].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0),L=Math.max(1,...lines.map(cw)),pnl=b.mode==='panel',ph=pnl?1.2:.3,pv=pnl?.7:.2,base=b.fs/1080*H;
@@ -6968,12 +6969,13 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
           if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(c.r){st+='transform:rotate('+c.r+'deg);';sp.dataset.r=c.r}if(c.f&&window.PFAM)st+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){st+='filter:'+INVF;sp.dataset.v=1}
           sp.style.cssText=st;o.appendChild(sp)})})}}}
     /* v195: グループは最初から全部入った時の位置に置き、まだの行は隠す(縦書きは右の行から順に出る) */
-    if(g.fr){const xs=(g.exs|0)%EXC.length;o.className='big ex '+EXC[xs];const L=all||[o.textContent],n0=all?nOn:1;o.textContent='';
+    if(stFr(g)){const LP=stLp(g),LI=LP&&LP.ex==='i'&&lpUrl(LP.img),xs=LP?(LP.ex==='i'?1:(+LP.ex|0)%EXC.length):(g.exs|0)%EXC.length;o.className='big ex '+(LI?'exI':EXC[xs]);const L=all||[o.textContent],n0=all?nOn:1;o.textContent='';
       /* v210: 画面の右半分(上の固定テロップより下)に余白を取って収める。少し透ける */
       {const W=X?X.W:$('pl').clientWidth||H*16/9,cw=s=>[...s].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0),Lc=Math.max(4,cw(g.ttl||'見出し(長押しで入力)')*.85,...L.map(x=>cw(x)+2.2)),n=L.length+1;
        const aW=W*.42,aH=H*.66,fs=Math.min(H*.1,aW/(Lc+2.6),aH/(n*1.55+1.6))*(g.osc||1);
        o.style.cssText='left:'+((.74+(g.ox||0))*W).toFixed(1)+'px;top:'+((.58+(g.oy||0))*H).toFixed(1)+'px;font-size:'+fs.toFixed(1)+'px;line-height:1.3;white-space:nowrap;opacity:.95;transform:translate(-50%,-50%)'}
       const ek=g.a+'|'+n0,nw=o._exK!==ek;o._exK=ek;const inn=document.createElement('div');inn.className='in';o.appendChild(inn);
+      /* v567: 箇条書きパネルの画像の枠(四隅を保って伸ばす=9分割。書き出しは tlBox が inn._nine で描く) */if(LI){const sl=Math.max(1,Math.min(49,+LP.sl||30)),bw=Math.max(.1,(+LP.bw||12)/10);inn.style.border=bw+'em solid transparent';inn.style.borderImage='url("'+LI+'") '+sl+'% fill / '+bw+'em stretch';inn._nine={u:LI,sl:sl/100};inn.style.color=LP.c||'#ffffff';if(X)tlImg(LI)}
       const mk=(c,i)=>{const d=document.createElement('div');d.className=c+(nw&&i===n0-1&&n0>1?' on':'');if(i>=n0)d.style.visibility='hidden';inn.appendChild(d);return d};
       const mark=i=>['❖','･','・','●'][xs];
       /* v211: 一番上は枠の大見出し(g.ttl。画面の見出しを長押しで入力)。字幕の行は全部箇条書き。バイクの絵はなし */
@@ -7139,7 +7141,7 @@ function tapSp(g){if(g.bl){showFn('空白は切り替えできません');return
   if(g.grp){const h0=rowsOf(g)[0];if(h0.fr)delete h0.fr;else h0.fr=true;tapDone(h0.fr?'「太」':'太');return}
   stSpNext(g);tapDone((g.fr?'「':'')+stJ(STK(g))+(g.fr?'」':''))}
 /* v565: 真ん中のタップ=字幕テンプレートを一覧の順に(太の描き方は次へ行く前に「太」(枠付き)を挟む) */
-function stSpNext(g){const k0=SPK(g);if(k0==='b'&&!g.fr){g.fr=true}else{delete g.fr;const L=stAll().ord;g.sp=L[(L.indexOf(STK(g))+1)%L.length]}g.spm=true}
+function stSpNext(g){const k0=SPK(g);if(k0==='b'&&!g.fr&&!stLp(g)){g.fr=true}else{delete g.fr;const L=stAll().ord;g.sp=L[(L.indexOf(STK(g))+1)%L.length]}g.spm=true}
 function tapInv(g){const on=!g.inv;rowsOf(g).forEach(x=>{if(on)x.inv=true;else delete x.inv});tapDone(on?'白黒反転':'白黒もとに戻す')}
 const ANS=['type','pop','slide','zoom','spin'],ANN={'':'動きなし',type:'タイプ',pop:'ポップ',slide:'スライド',zoom:'ズーム',spin:'回転'};
 function tapAn(g){if(g.fr||g.grp||g.bl||SPK(g)==='b'){showFn('太字・枠には動きを付けられません');return}
@@ -7225,7 +7227,11 @@ function STK(g){const o=stAll(),s=g&&g.sp||'m';return o.ord.includes(s)?s:o.ord[
 /* 字幕の一覧の印: 字幕テンプレートの名前の頭3文字(v566) */
 const stSpL=g=>[...stJ(STK(g))].slice(0,3).join('');
 const stJ=k=>{const t=stAll()[k];return t&&t.n||STN[k]||'字幕'};/* v566: き/奥/太 の呼び名は使わず、字幕テンプレートの名前だけ */
-const stBs=g=>{const T=stAll()[STK(g)];return T&&T.bs&&BIG[T.bs]?T.bs:g.bs};
+const stBs=g=>g.bs;/* v567: 字幕テンプレートの太字の種類は廃止 */
+/* v567: 箇条書きパネル(「太」の枠を字幕テンプレートで選ぶ)。T.lp={on,ex:0〜3(今の4種)|'i'(画像),img,sl(角の大きさ%),bw(枠の太さ 0.1em),c(文字の色)} */
+const LPD={on:0,ex:0,img:'',sl:30,bw:12,c:'#ffffff'};
+const stLp=g=>{if(!g||g.bl)return null;const T=stAll()[STK(g)];return T&&T.lp&&T.lp.on?T.lp:null};
+const stFr=g=>!!(g&&(g.fr||stLp(g)));
 function stSave(o){STC=o;try{localStorage.setItem('stpl',JSON.stringify(o))}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key==='stpl')STC=null});
 /* この字幕が使っている位置テンプレート(無ければ null) */
@@ -7438,6 +7444,13 @@ function subList(w,g){stArOff();stClr(w);const hd=w.querySelector('b');hd.textCo
     const id='t'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),f0=(FONTS.find(f=>!f.u&&!f.file)||FONTS[0]).k;
     q[id]={n:'字幕'+i,kd:'m',font:[f0],pos:[],sty:[]};q.ord.push(id);stSave(q);stAll();showFn('「字幕'+i+'」を追加しました');subList(w,g)},'');add.id='t_sbA';add.className='tbig';
   w.foot(add)}
+/* v567: 箇条書きパネルの枠の画像(全体の一覧。kv 'lpimg|list'=[{k,n}]・'lpimg|'+k=ファイル)。表示は blob の URL */
+let LPL=[];const LPU={};const lpUrl=k=>k&&LPU[k]||null;
+async function lpAdd(f){if(!f||!/^image\//.test(f.type||''))return null;const k='i'+Date.now().toString(36)+Math.random().toString(36).slice(2,4),n=(f.name||'').replace(/\.[^.]+$/,'').slice(0,20)||'画像';
+  await kv('lpimg|'+k,f);LPU[k]=URL.createObjectURL(f);LPL.push({k,n});await kv('lpimg|list',LPL);return k}
+async function lpDel(k){LPL=LPL.filter(z=>z.k!==k);await kv('lpimg|list',LPL);await kv('lpimg|'+k,null);if(LPU[k]){try{URL.revokeObjectURL(LPU[k])}catch(_){}delete LPU[k]}
+  const o=stAll();o.ord.forEach(id=>{const l=o[id].lp;if(l&&l.img===k){l.ex=0;l.img=''}});stSave(o)}
+(async()=>{const l=await kv('lpimg|list');if(!Array.isArray(l))return;LPL=l;for(const m of l){const b=await kv('lpimg|'+m.k);if(b)LPU[m.k]=URL.createObjectURL(b)}try{showOv(pos)}catch(_){}})();
 /* フィルター: 範囲(全体/文字/文字(スタイル含まず)/動画のみ)・色反転・輝度反転・彩度アップ・コントラスト・ポスタリゼーション */
 const FLR=[['a','全体'],['t','文字'],['t0','文字(スタイル含まず)'],['v','動画のみ']],FLD={on:0,r:'a',iv:0,li:0,sa:100,co:100,pz:0};
 function flPz(n){const id='bkPz'+n;if(!document.getElementById(id)){let sv=document.getElementById('bkPzS');if(!sv){sv=document.createElementNS('http://www.w3.org/2000/svg','svg');sv.id='bkPzS';sv.setAttribute('width','0');sv.setAttribute('height','0');sv.style.cssText='position:absolute;width:0;height:0';document.body.appendChild(sv)}
@@ -7462,10 +7475,24 @@ function subEdit(w,g,k){const P=()=>stAll()[k];if(!P()){subList(w,g);return}stCl
    FLR.forEach(([v,t])=>{const b=stBtn(t,()=>{FL().r=v;pr();up()},'font-size:13px;padding:2px 4px');b.dataset.r=v;rr.appendChild(b)});pr();fb.appendChild(w.row('範囲'));fb.appendChild(rr)}
   {const r2=document.createElement('div');r2.style.cssText='display:flex;gap:6px;margin:6px 0';tg(r2,'色反転','iv','t_sbFlIv');tg(r2,'輝度反転','li','t_sbFlLi');fb.appendChild(r2)}
   rg(fb,'彩度アップ','sa',100,300,'%','t_sbFlSa');rg(fb,'コントラスト','co',50,300,'%','t_sbFlCo');rg(fb,'ポスタリゼーション','pz',0,16,'','t_sbFlPz',v=>v<2?'なし':v+'段階');
-  /* 太字の種類(BIGをここへ移した)。「なし」=普通の字幕(字幕3=太 は今まで通り字幕ごとの種類) */
-  const bb=sec('太字の種類','t_sbBs');{const gr=document.createElement('div');gr.id='t_sbBsL';gr.className='bsl';gr.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px';
-    const pb=()=>[...gr.children].forEach(b=>{const on=(P().bs||'')===b.dataset.s;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('on',on)});
-    [['','なし'],...Object.keys(BIG).map(q=>[q,BIG[q].n])].forEach(([q,t])=>{const b=stBtn(t,()=>{if(q)P().bs=q;else delete P().bs;pb();up()},'font-size:13px;padding:2px');b.dataset.s=q;gr.appendChild(b)});pb();bb.appendChild(gr)}
+  /* v567: □箇条書きパネル▼(「太」の枠と同じ。見出し＋箇条書き)。枠=今の4種類か読み込んだ画像(四隅を保って伸ばす) */
+  const LPo=()=>{const t=P();if(!t.lp||typeof t.lp!=='object')t.lp={...LPD};Object.keys(LPD).forEach(q=>{if(t.lp[q]===undefined)t.lp[q]=LPD[q]});return t.lp};
+  const lb=sec('箇条書きパネル','t_sbLp',()=>LPo().on,v=>{LPo().on=v?1:0;rowsOf(g).forEach(x=>delete x.fr)});
+  {const gr=document.createElement('div');gr.id='t_sbLpL';gr.style.cssText='display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:4px 0';const ib=document.createElement('div');ib.id='t_sbLpI';
+   const fi=document.createElement('input');fi.type='file';fi.accept='image/*';fi.id='t_sbLpF';fi.hidden=true;
+   fi.onchange=async()=>{const f=fi.files&&fi.files[0];fi.value='';if(!f)return;const k=await lpAdd(f);if(!k){showFn('画像を読み込めませんでした');return}const q=LPo();q.ex='i';q.img=k;up();pk();showFn('画像を追加しました')};
+   const pk=()=>{gr.innerHTML='';const q=LPo();
+     EXN.forEach((n,i)=>{const b=stBtn(n,()=>{q.ex=i;up();pk()},'font-size:13px;padding:2px');b.dataset.ex=i;const on=q.ex!=='i'&&(+q.ex|0)===i;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('on',on);gr.appendChild(b)});
+     LPL.forEach(m=>{const b=stBtn('🖼 '+m.n,()=>{q.ex='i';q.img=m.k;up();pk()},'font-size:13px;padding:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');b.dataset.img=m.k;const on=q.ex==='i'&&q.img===m.k;b.setAttribute('aria-pressed',on?'true':'false');b.classList.toggle('on',on);gr.appendChild(b)});
+     const ad=stBtn('＋ 画像を追加',()=>fi.click(),'font-size:13px;padding:2px');ad.id='t_sbLpA';gr.appendChild(ad);
+     ib.hidden=!(q.ex==='i'&&lpUrl(q.img))};
+   lb.append(gr,fi,ib);
+   const rg2=(lb2,key,mn,mx,f,id2)=>{const i=w.rng(mn,mx,Math.round(+LPo()[key]||0),f);i.id=id2;i.oninput=()=>{LPo()[key]=+i.value;live()};i.onchange=sv;ib.appendChild(w.row(lb2,i,i._o))};
+   rg2('角の大きさ','sl',5,45,v=>v+'%','t_sbLpSl');rg2('枠の太さ','bw',2,40,v=>(v/10).toFixed(1),'t_sbLpBw');
+   {const r=w.row('文字の色');r.style.gap='4px';const bs=[];const pc=()=>bs.forEach(b=>b.style.outline=b.dataset.c===LPo().c?'3px solid var(--accent)':'none');
+    COLS.forEach(([n,c])=>{const b=document.createElement('button');b.type='button';b.dataset.c=c;b.setAttribute('aria-label',n);b.style.cssText='width:26px;height:26px;flex:none;padding:0;border-radius:50%;border:2px solid var(--line);background:'+c;b.onclick=()=>{LPo().c=c;pc();up()};bs.push(b);r.appendChild(b)});pc();ib.appendChild(r)}
+   {const x=stBtn('この画像を一覧から削除',()=>{const q=LPo(),m=LPL.find(z=>z.k===q.img);if(!m)return;ask('「'+m.n+'」を削除しますか？（使っている字幕テンプレートは「'+EXN[0]+'」に戻ります）','削除する',async()=>{await lpDel(m.k);up();pk()})},'width:100%;margin-top:4px;font-size:13px');x.id='t_sbLpD';ib.appendChild(x)}
+   pk()}
   const bk=stBtn('一覧へ戻る',()=>subList(w,g),'');bk.id='t_sbBk';w.foot(bk)}
 const stClr=w=>{w.body.innerHTML='';[...w.children].forEach(c=>{if(c!==w.firstChild&&c!==w.body)c.remove()})};
 function styList(w,g){const k0=w.k0;stArOff();stClr(w);const hd=w.querySelector('b');hd.textContent='スタイル（'+stJ(k0)+'）';hd.style.cssText='flex:1';
@@ -7755,7 +7782,7 @@ function inputGap(r,list,g){sheet((b,close)=>{const ta=document.createElement('t
   w.append(n,y);b.append(ta,w);setTimeout(()=>ta.focus(),50)})}
 
 /* ===== 話者ごとの文字の設定 ===== */
-let TPL={m:{c:''},f:{c:'#d6337f'},b:{c:'#d98e00'}};const SPK=g=>{const T=stAll()[STK(g)];return T.bs&&BIG[T.bs]?'b':T.kd==='f'||T.kd==='b'?T.kd:'m'};/* v565: 字幕テンプレートの描き方 */const TDEF={m:'',f:'#d6337f',b:'#d98e00'};
+let TPL={m:{c:''},f:{c:'#d6337f'},b:{c:'#d98e00'}};const SPK=g=>{const T=stAll()[STK(g)];return T.lp&&T.lp.on?'b':T.kd==='f'||T.kd==='b'?T.kd:'m'};/* v565: 字幕テンプレートの描き方。v567: 箇条書きパネルは太の描き方(太字の種類 bs は廃止) */const TDEF={m:'',f:'#d6337f',b:'#d98e00'};
 function tplEdit(k){sheet((b,close)=>{const h=document.createElement('h2');h.textContent={f:'奥さんの字幕',b:'太字の字幕',m:'きんきんの字幕'}[k];
   const pv2=document.createElement('div');pv2.className='tp';pv2.textContent='サンプル字幕';
   const row=document.createElement('label');row.className='tpr';row.textContent='文字の色';const ci=document.createElement('input');ci.type='color';ci.value=TPL[k].c||'#ffffff';row.appendChild(ci);
@@ -8252,6 +8279,8 @@ function tlLayer(x,L,bx,by,bw,bh,cs,li){const lay=v=>{const a=tlSplit(v||'');ret
     const pp=(lay(cs.backgroundPosition)||'50% 50%').split(/\s+/),pv=(v,f)=>v==null?.5*f:v.endsWith('%')?parseFloat(v)/100*f:tpx(v);
     x.drawImage(im,bx+pv(pp[0],bw-w),by+pv(pp[1],bh-h),w,h)}}
 function tlBox(x,el,cs,hr){const r=el.getBoundingClientRect(),X=r.left-hr.left,Y=r.top-hr.top,w=r.width,h=r.height;if(w<=0||h<=0)return;
+  /* v567: 箇条書きパネルの画像の枠(9分割) */if(el._nine){const m=tlImg(el._nine.u);if(m){const iw=m.naturalWidth,ih=m.naturalHeight,sx=iw*el._nine.sl,sy=ih*el._nine.sl,b=tpx(cs.borderTopWidth)||0,mw=iw-2*sx,mh=ih-2*sy,cw=w-2*b,ch=h-2*b,P=[[0,sx,0,b],[sx,mw,b,cw],[iw-sx,sx,w-b,b]],Q=[[0,sy,0,b],[sy,mh,b,ch],[ih-sy,sy,h-b,b]];
+    for(const [ax,aw,dx,dw] of P)for(const [ay,ah,dy,dh] of Q)if(aw>0&&ah>0&&dw>0&&dh>0)x.drawImage(m,ax,ay,aw,ah,X+dx,Y+dy,dw,dh)}return}
   const rad=tpx(cs.borderTopLeftRadius),B=['Top','Right','Bottom','Left'].map(sd=>({w:tpx(cs['border'+sd+'Width']),s:cs['border'+sd+'Style'],c:cs['border'+sd+'Color']}));
   const sh=tlShadows(cs.boxShadow);
   sh.filter(s=>!s.inset).reverse().forEach(s=>{x.save();x.beginPath();x.rect(-OFF,-OFF,OFF*3,OFF*3);rpath(x,X,Y,w,h,rad);x.clip('evenodd');
