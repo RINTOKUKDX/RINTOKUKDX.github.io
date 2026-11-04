@@ -4624,7 +4624,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v560';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v561';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7092,19 +7092,20 @@ async function popSe(g,id0){if(!SE.length){showFn('SEが登録されていませ
   const pl=document.createElement('button');pl.type='button';pl.textContent='▶ 試し聞き';pl.style.cssText='min-height:40px;margin-left:auto';
   {const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px;margin-bottom:6px';r.append(sel,pl);w.appendChild(r)}
   const vol=w.rng(0,500,Math.round(P.v*100),v=>v+'%')/* v560: 500%まで */,ech=w.rng(0,100,Math.round(P.e*100),v=>v+'%');w.row('音量',vol,vol._o);w.row('エコー',ech,ech._o);
-  vol.oninput=()=>{P.v=vol.value/100;vol._o.textContent=vol.value+'%'};ech.oninput=()=>{P.e=ech.value/100;ech._o.textContent=ech.value+'%'};
+  vol.oninput=()=>{P.v=vol.value/100;vol._o.textContent=vol.value+'%';draw()};ech.oninput=()=>{P.e=ech.value/100;ech._o.textContent=ech.value+'%'};
   const cv=document.createElement('canvas');cv.id='t_seWf';cv.style.cssText='display:block;width:100%;height:90px;background:#111;border-radius:8px;touch-action:none;margin:6px 0';w.appendChild(cv);
   const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin-bottom:6px';nt.textContent='薄い所=この字幕の声、濃い所=SE。SEの中をスワイプ=鳴る位置、右の端をスワイプ=鳴る長さ';w.appendChild(nt);
   let buf=await seLoad(id);if(!wfPk)try{await wfData()}catch(e){}
   const Lof=()=>buf?(P.l>0?Math.min(P.l,buf.duration):buf.duration):0;let fix=null;
   const span=()=>{if(fix)return fix;const a=g.a,end=Math.max(g.b,a+P.o+Lof());return{a,d:Math.max(0.2,end-a)}};
   function draw(){const dp=devicePixelRatio||1,W=cv.clientWidth||300,H=90;if(cv.width!==W*dp){cv.width=W*dp;cv.height=H*dp}const x=cv.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
-    const S=span(),X=t=>(t-S.a)/S.d*W,mid=H/2;
+    const S=span(),X=t=>(t-S.a)/S.d*W,mid=H/2,CL=H*.36;/* v561: CL=音が割れる高さ(元の音の最大×音量がここを超えると割れる) */
     /* 字幕の部分(薄く) */x.fillStyle='rgba(255,255,255,.08)';x.fillRect(X(g.a),0,X(g.b)-X(g.a),H);
-    if(wfPk){const bps=SR/160;x.fillStyle='rgba(255,255,255,.28)';for(let px=0;px<W;px++){const t=S.a+px/W*S.d;if(t>g.b)break;const v=wfPk[Math.floor(t*bps)]||0;const h=Math.max(1,v*(H*.45));x.fillRect(px,mid-h,1,h*2)}}
+    if(wfPk){const bps=SR/160;x.fillStyle='rgba(255,255,255,.28)';for(let px=0;px<W;px++){const t=S.a+px/W*S.d;if(t>g.b)break;const v=wfPk[Math.floor(t*bps)]||0;const h=Math.max(1,v*CL);x.fillRect(px,mid-h,1,h*2)}}
     /* SE(濃く) */if(buf){const s0=g.a+P.o,L=Lof(),d=buf.getChannelData(0),sr=buf.sampleRate,x0=X(s0),x1=X(s0+L);x.fillStyle='rgba(255,140,40,.18)';x.fillRect(x0,0,x1-x0,H);
-      x.fillStyle='#ff8c28';for(let px=Math.max(0,Math.floor(x0));px<Math.min(W,x1);px++){const t0=(px-x0)/(x1-x0)*L,t1=(px+1-x0)/(x1-x0)*L;let m=0;for(let i=Math.floor(t0*sr),e=Math.min(d.length,Math.floor(t1*sr));i<e;i+=8){const v=Math.abs(d[i]);if(v>m)m=v}const h=Math.max(1,m*(H*.45));x.fillRect(px,mid-h,1,h*2)}
-      x.fillStyle='#fff';x.fillRect(Math.max(0,x1-2),0,4,H)}}
+      x.fillStyle='#ff8c28';for(let px=Math.max(0,Math.floor(x0));px<Math.min(W,x1);px++){const t0=(px-x0)/(x1-x0)*L,t1=(px+1-x0)/(x1-x0)*L;let m=0;for(let i=Math.floor(t0*sr),e=Math.min(d.length,Math.floor(t1*sr));i<e;i+=8){const v=Math.abs(d[i]);if(v>m)m=v}const a=m*P.v,h=Math.max(1,Math.min(mid,a*CL));/* v561: 音量に合わせて縦も大きく。割れる所は赤 */x.fillStyle=a>1?'#ff3030':'#ff8c28';x.fillRect(px,mid-h,1,h*2)}
+      x.fillStyle='#fff';x.fillRect(Math.max(0,x1-2),0,4,H)}
+    /* v561: これ以上は音が割れる線(赤い横棒) */x.fillStyle='#ff3030';x.fillRect(0,Math.round(mid-CL)-1,W,2);x.fillRect(0,Math.round(mid+CL)-1,W,2);x.font='10px sans-serif';x.fillText('これ以上は音割れ',4,Math.max(10,mid-CL-3))}
   draw();setTimeout(draw,60);
   /* 波形のスワイプ: 右の端=長さ、それ以外=位置 */
   {let dg=null;cv.addEventListener('pointerdown',e=>{if(!buf)return;const r=cv.getBoundingClientRect(),S=span(),x1=(g.a+P.o+Lof()-S.a)/S.d*r.width,px=e.clientX-r.left;fix=S;dg={x:e.clientX,mode:Math.abs(px-x1)<18?'len':'pos',o:P.o,l:Lof(),W:r.width};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
