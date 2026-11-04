@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v570';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v571';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6767,9 +6767,9 @@ function drawResults(){
     else{d.className='row';d.innerHTML='<b class="sp"></b><div><span></span><small></small><em></em></div>';
       const sp=d.querySelector('.sp'),tx=d.querySelector('span'),gm=g.grp?grpOf(list,g):null;
       if(gm){d.classList.add('grp');if(gm[0]===g)d.classList.add('gtop');else sp.classList.add('gh');if(gm[gm.length-1]===g)d.classList.add('gend')}
-      const drawSp=()=>{const k=SPK(g),c=TPL[k].c;const fr=!!g.fr&&k==='b';/* v206: フレームは太だけ */sp.className='sp '+k+(fr?' fr':'');sp.textContent=(fr?'「':'')+stSpL(g)+(fr?'」':'');sp.style.background=c||'';tx.style.color=c||'';tx.style.fontWeight=k==='b'?'800':'';if(g.bl){sp.textContent=g.bl==='h'?'横':'縦';sp.style.background='#444';tx.style.color='#fff';d.classList.add('kuh')}};
+      const drawSp=()=>{const k=SPK(g),c=TPL[k].c;const fr=!!g.fr&&k==='b';/* v206: フレームは太だけ */sp.className='sp '+k+(fr?' fr':'');sp.textContent=(fr?'「':'')+stSpL(g)+(fr?'」':'')+(g.grp&&((gm||[g])[0].gall)?'▤':'');sp.style.background=c||'';tx.style.color=c||'';tx.style.fontWeight=k==='b'?'800':'';if(g.bl){sp.textContent=g.bl==='h'?'横':'縦';sp.style.background='#444';tx.style.color='#fff';d.classList.add('kuh')}};
       tx.textContent=g.t;drawSp();if(g.en){const e=document.createElement('i');e.className='en';e.textContent=g.en;tx.parentNode.appendChild(e)}
-      press(sp,{tap:()=>{if(g.grp){/* v207: グループは太↔「太」だけ切り替え(先頭の行に保存) */const h0=(gm||[g])[0];if(h0.fr)delete h0.fr;else h0.fr=true;drawSp();saveR(view.m,r);showOv();return}/* v206: き→奥→太→「太」(「」=フレーム付き) */stSpNext(g);drawSp();saveR(view.m,r);showOv()},dbl:()=>tplEdit(SPK(g)),
+      press(sp,{tap:()=>{if(g.grp){/* v571: グループ=1行ずつ表示 ⇄ まとめて一気に表示(先頭の行に保存)。太↔「太」は再生画面の真ん中でできる */const h0=(gm||[g])[0];if(h0.gall)delete h0.gall;else h0.gall=true;drawSp();saveR(view.m,r);showOv();showFn(h0.gall?'まとめて一気に表示':'1行ずつ表示');return}/* v206: き→奥→太→「太」(「」=フレーム付き) */stSpNext(g);drawSp();saveR(view.m,r);showOv()},dbl:()=>tplEdit(SPK(g)),
         long:()=>{pick(g);sheet((b,close)=>{/* v570: 白黒反転・太字の種類は廃止。グループ解除と閉じるだけ */
           if(g.grp){const u=document.createElement('button');u.id='t_grpOff';u.textContent='グループを解除';u.onclick=()=>{close();(gm||grpOf(list,g)).forEach(x=>delete x.grp);sel=g;save();drawResults();showOv()};b.appendChild(u)}
           const c=document.createElement('button');c.className='no';c.textContent='閉じる';c.onclick=close;b.appendChild(c);
@@ -6937,7 +6937,7 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
   if(LS){const tt=t!=null?t:(!X&&sel&&!sel.gap?sel.a+0.001:null);
     /* グループ中は前の字幕を消さずに次を足していき、グループの最後でまとめて消す */
     if(tt!=null){const gs=new Set(LS.filter(x=>x.grp).map(x=>x.grp));for(const id of gs){const m=LS.filter(x=>x.grp===id).sort((x,y)=>x.a-y.a);
-      if(tt>=m[0].a&&tt<m[m.length-1].b){const on=m.filter(x=>x.a<=tt);onR=on;g=m[0];txt=on.map(x=>x.t).join('\n');all=m.map(x=>x.t);allR=m;nOn=on.length;break}}}}
+      if(tt>=m[0].a&&tt<m[m.length-1].b){const on=m[0].gall?m:m.filter(x=>x.a<=tt);/* v571: gall=まとめて一気に */onR=on;g=m[0];txt=on.map(x=>x.t).join('\n');all=m.map(x=>x.t);allR=m;nOn=on.length;break}}}}
   if(!g){if(t!=null&&LS)g=LS.find(x=>t>=x.a&&t<x.b)||null;else if(!X&&sel&&!sel.gap)g=sel}
   o._g=null;if(!g){o.textContent='';return}const k=SPK(g);o.textContent=txt!=null?txt:brT(g);
   if(k==='b'){const PB=stFr(g)?null:stP(g);let b=BIG[stBs(g)]||BIG.setsumei_yoko;/* v560: 位置テンプレートの縦文字/横文字で、太字の種類の縦/横を選ぶ */if(PB&&PB.vt){const nm=Object.keys(BIG).find(q=>BIG[q]===b)||'setsumei_yoko',bn=nm.replace(/_(tate|yoko)$/,'')+(PB.vt==='v'?'_tate':'_yoko');if(BIG[bn])b=BIG[bn]}const H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
@@ -6972,7 +6972,7 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
        o.style.cssText='left:'+(((CP?CP.px/100:.74)+(g.ox||0))*W).toFixed(1)+'px;top:'+(((CP?CP.py/100:.58)+(g.oy||0))*H).toFixed(1)+'px;font-size:'+fs.toFixed(1)+'px;line-height:1.3;white-space:nowrap;opacity:.95;transform:translate(-50%,-50%)'}
       const ek=g.a+'|'+n0,nw=o._exK!==ek;o._exK=ek;const inn=document.createElement('div');inn.className='in';o.appendChild(inn);
       /* v567: 箇条書きパネルの画像の枠(四隅を保って伸ばす=9分割。書き出しは tlBox が inn._nine で描く) */if(LI){const sl=Math.max(1,Math.min(49,+LP.sl||30)),bw=Math.max(.1,(+LP.bw||12)/10);inn.style.border=bw+'em solid transparent';inn.style.borderImage='url("'+LI+'") '+sl+'% fill / '+bw+'em stretch';inn._nine={u:LI,sl:sl/100};inn.style.color=LP.c||'#ffffff';if(X)tlImg(LI)}
-      const mk=(c,i)=>{const d=document.createElement('div');d.className=c+(nw&&i===n0-1&&n0>1?' on':'');if(i>=n0)d.style.visibility='hidden';inn.appendChild(d);return d};
+      const mk=(c,i)=>{const d=document.createElement('div');d.className=c+(nw&&i===n0-1&&n0>1&&!g.gall?' on':'');if(i>=n0)d.style.visibility='hidden';inn.appendChild(d);return d};
       const mark=i=>['❖','･','・','●'][xs];
       /* v211: 一番上は枠の大見出し(g.ttl。画面の見出しを長押しで入力)。字幕の行は全部箇条書き。バイクの絵はなし */
       const hd=document.createElement('div');hd.className='hd';hd.textContent=g.ttl||'見出し(長押しで入力)';if(!g.ttl)hd.style.opacity='.45';if(!(X&&!g.ttl))inn.appendChild(hd);/* v227: 書き出しでは見出しが空なら出さない */
