@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v572';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v573';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6499,7 +6499,7 @@ let JOB=[],VD=0,jobSig='';
 let REND=null;const rendOK=()=>false;
 function buildJob(){const SR=window.subRange&&window.trRange?window.subRange:null;const src=(SR?window.trRange(SR,isN()):(isN()&&window.trAll?window.trAll():(window.trSrc&&window.trSrc())))||[];let v=0;
   JOB=src.filter(s=>s.b-s.a>0.01).map(s=>{const r={blank:!!s.blank,key:s.key,name:s.name,url:s.url,file:s.file,a:s.a,b:s.b,cn:s.cn,v0:v,v1:v+(s.b-s.a)};v=r.v1;return r});VD=v;
-  const sig=JSON.stringify(JOB.map(r=>[r.key,+r.a.toFixed(3),+r.b.toFixed(3)]));if(sig!==jobSig){jobSig=sig;audio=null;wfPk=null}
+  const sig=JSON.stringify(JOB.map(r=>[r.key,+r.a.toFixed(3),+r.b.toFixed(3)]));if(sig!==jobSig){jobSig=sig;/* v573: 前の音を取っておき、同じ範囲はそこから切り出す(全部読み直さない) */if(audio&&audio.parts)audPrev=audio;audio=null;wfPk=null}
   const n=new Set(JOB.filter(r=>!r.blank).map(r=>r.key)).size;$('job').textContent=JOB.length?'カットした動画: '+n+'本・'+JOB.length+'範囲・合計 '+fm(VD)+(SR?' ・タイムラインで選んだ範囲だけ':''):'カットページで残す範囲を作ってください'}
 const fromV=v=>{if(!JOB.length)return null;let r=JOB.find(q=>v>=q.v0&&v<q.v1);if(!r)r=v<JOB[0].v0?JOB[0]:JOB[JOB.length-1];return {r,t:r.a+Math.max(0,Math.min(r.b-r.a,v-r.v0))}};
 /* v260: 同じ動画が空白などで分かれている所では、行の頭は後ろの範囲、行の終わりは前の範囲で探す(空白の直後の行が空白の前に来ていた) */
@@ -6580,7 +6580,10 @@ function ready(){const miss=got();const ok=T&&JOB.length&&!miss.length;$('go').d
   if(miss.length&&!$('go').dataset.busy)$('setup').open=true;return ok}
 
 /* ===== 音声(つなげた後の1本。再生と認識で共用) ===== */
-let audio=null;const clipPcm=new Map();
+let audio=null,audPrev=null;const clipPcm=new Map();
+/* v573: 前に作った音(audPrev)に、同じ動画のこの範囲が丸ごと入っていれば、そこから切り出す */
+const audReuse=r=>{const P=audPrev;if(!P||!P.parts)return null;const q=P.parts.find(q=>q.key===r.key&&q.a<=r.a+1e-3&&q.b>=r.b-1e-3);if(!q)return null;
+  const s=q.o+Math.max(0,Math.round((r.a-q.a)*SR)),e=Math.min(q.o+q.n,s+Math.round((r.b-r.a)*SR));return e>s?P.pcm.subarray(s,e):null};
 async function pcmOf(r){if(clipPcm.has(r.key))return clipPcm.get(r.key);
   const ac=new AudioContext({sampleRate:SR});const buf=await ac.decodeAudioData(await r.file.arrayBuffer());ac.close();
   let src=buf.getChannelData(0);
@@ -6590,14 +6593,16 @@ async function getAudio(){if(audio)return audio;
   if(rendOK()){const ac=new AudioContext({sampleRate:SR});const buf=await ac.decodeAudioData(await REND.blob.arrayBuffer());ac.close();
     let src=buf.getChannelData(0);if(buf.numberOfChannels>1){const b=buf.getChannelData(1),m=new Float32Array(src.length);for(let i=0;i<m.length;i++)m[i]=(src[i]+b[i])/2;src=m}
     const N=src.length,pcm=new Float32Array(N+2*SR);pcm.set(src);let pk=0;for(let i=0;i<N;i++){const v=Math.abs(pcm[i]);if(v>pk)pk=v}audio={pcm,dur:N/SR,pk};return audio}
-  const parts=[];let N=0;
+  const parts=[],pi=[];let N=0;
   for(const r of JOB){if(r.blank){const x=new Float32Array(Math.round((r.b-r.a)*SR));parts.push(x);N+=x.length;continue}
+    {const x=audReuse(r);if(x){pi.push({key:r.key,a:r.a,b:r.b,o:N,n:x.length});parts.push(x);N+=x.length;continue}}
+    pi.push({key:r.key,a:r.a,b:r.b,o:N,n:0});
     /* v346: 大きい動画は使う所だけ読む */
-    if(r.file&&r.file.size>150e6){const x=await window.xAudR(r,r.a,r.b,{sr:SR});parts.push(x);N+=x.length;continue}
-    const p=await pcmOf(r),s=Math.max(0,Math.round(r.a*SR)),e=Math.min(p.length,s+Math.round((r.b-r.a)*SR));const x=p.subarray(s,e);parts.push(x);N+=x.length}
-  const pcm=new Float32Array(N+2*SR);let o=0;parts.forEach(x=>{pcm.set(x,o);o+=x.length});
+    if(r.file&&r.file.size>150e6){const x=await window.xAudR(r,r.a,r.b,{sr:SR});pi[pi.length-1].n=x.length;parts.push(x);N+=x.length;continue}
+    const p=await pcmOf(r),s=Math.max(0,Math.round(r.a*SR)),e=Math.min(p.length,s+Math.round((r.b-r.a)*SR));const x=p.subarray(s,e);pi[pi.length-1].n=x.length;parts.push(x);N+=x.length}
+  const pcm=new Float32Array(N+2*SR);let o=0;parts.forEach(x=>{pcm.set(x,o);o+=x.length});audPrev=null;
   let pk=0;for(let i=0;i<N;i++){const v=Math.abs(pcm[i]);if(v>pk)pk=v}
-  audio={pcm,dur:N/SR,pk};return audio}
+  audio={pcm,dur:N/SR,pk,parts:pi};return audio}
 
 /* 処理中は画面をスリープさせない */
 let wake=null,working=false;
