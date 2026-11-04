@@ -789,7 +789,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_ov.exH .it b{color:#d93025;font-size:.85em}
 #t_ov .bk{position:absolute;left:.25em;top:-1.02em;height:1.08em;pointer-events:none}
 #t_sc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
-#t_iB{position:absolute;z-index:3;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font:700 16px serif;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+#t_iB{display:none!important;/* v553: 右上の⚙は削除(テンプレート編集は長タップへ) */position:absolute;z-index:3;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font:700 16px serif;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #t_wf{display:block;width:100%;height:64px;background:var(--panel);touch-action:pan-y}
 /* v373: 波形の下の文字のタイムライン(波形と同じ範囲を表示。ブロックはタイムラインの字幕ブロックと同じ見た目) */
 #t_nw{display:none;width:100%;height:30px;background:var(--panel);border-top:1px solid var(--line);pointer-events:none}#s4.nar #t_nw{display:block}
@@ -4618,7 +4618,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v552';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v553';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7039,7 +7039,7 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
      st=null}};
  pl0.addEventListener('pointerup',up);pl0.addEventListener('pointercancel',up)}
 /* v378: 再生画面のタップは5か所。真ん中(だ円)=き→奥→太→「太」、左上=フォント(今まで通り)、左下=白黒反転、右上=動き、右下=SE */
-function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':'bl';/* v552 */if(y<.5)return y<.25?(x<.75?'ci':'co'):'cf';return x<.75?'ss':'se'}
+function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':'bl';/* v552 */if(y<.5)return y<.25?(x<.75?'ci':'co'):'cf';return 'se'}/* v553: 右下は全部SE(設定は削除) */
 const rowsOf=g=>{const l=cur&&cur.list||[];return g.grp?grpOf(l,g):[g]};
 function tapDone(msg){save();drawResults();showOv(pos);showFn(msg)}
 function tapSp(g){if(g.bl){showFn('空白は切り替えできません');return}
@@ -7122,7 +7122,7 @@ function tzPaint(host,S){let el=host.querySelector('.tzo');if(!el){el=document.c
   el.style.opacity=a;el.style.fontSize=S.size+'px';el.style.fontFamily=S.font&&window.PFAM&&window.PFAM[S.font]||'';
   el.innerHTML=(ln?'<svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="'+w+'" vector-effect="non-scaling-stroke"'+(ds?' stroke-dasharray="'+ds+'"':'')+' stroke-linecap="round">'+
     L(50,0,50,50-R)+L(50,50+R,50,100)+L(0,50,50-R,50)+L(50+R,50,100,50)+L(75,0,75,25)+L(60,25,100,25)+L(75,75,75,100)+'<ellipse cx="50" cy="50" rx="'+R+'" ry="'+R+'"/></g></svg>':'')+
-    [['フォント',14,16],['中色',63,10],['外色',88,10],['外枠',86,37],['反転',14,84],['設定',63,88],['SE',88,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
+    [['フォント',14,16],['中色',63,10],['外色',88,10],['外枠',86,37],['反転',14,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
   el.querySelectorAll('svg *').forEach(e=>e.setAttribute('vector-effect','non-scaling-stroke'))}
 function tzDraw(){const h=$('pl');if(h)tzPaint(h,tzGet())}
 tzDraw();
