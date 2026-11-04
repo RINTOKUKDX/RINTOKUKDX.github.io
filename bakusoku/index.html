@@ -4618,7 +4618,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v553';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v554';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7019,8 +7019,9 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
          sheet((b,close)=>{const ta=document.createElement('textarea');ta.value=g.ttl||'';ta.placeholder='枠の大見出し';const w=document.createElement('div');w.className='two';
            const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='保存';
            y.onclick=()=>{const v=ta.value.trim();close();if(v)g.ttl=v;else delete g.ttl;save();showOv(pos)};w.append(n,y);b.append(ta,w);setTimeout(()=>ta.focus(),50)});return}
+       if(st&&!st.mv&&!CE&&(tapZone(st.zx,st.zy)==='tl'||tapZone(st.zx,st.zy)==='po')){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}(tapZone(st.zx,st.zy)==='tl'?popFont:popPos)(g);return}/* v554: 長タップ=そのボタンのポップアップ */
        if(st&&!st.mv&&tapZone(st.zx,st.zy)==='se'){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}if(g.se){delete g.se;delete g.sev;delete g.see;delete g.seo;delete g.sel;save();showOv(pos);showFn('SEを消しました')}else showFn('SEはありません');return}/* v552 */
-       if(st&&!st.mv){delete g.ox;delete g.oy;delete g.osc;st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}save();showOv(pos)}},550)}
+       if(st&&!st.mv)st.done=true/* v554: ほかの場所の長押しは何もしない(位置を元に戻すは位置のポップアップへ) */},550)}
    else if(P.size===2&&st){clearTimeout(st.tm);const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.sc=g.osc||1;st.mv=true}});
  pl0.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!st||st.done)return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(st.ce){if(!CE)return;if(P.size>=2&&st.z){const [a,b]=[...P.values()],k=Math.hypot(a.x-b.x,a.y-b.y)/st.d0;st.b.forEach(([i,s1])=>CE.cs[i].s=Math.max(.3,Math.min(8,s1*k)))}
@@ -7032,14 +7033,14 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
  const up=e=>{if(!P.has(e.pointerId))return;P.delete(e.pointerId);e.stopPropagation();
    if(st&&st.ce){if(!P.size)st=null;return}
    if(P.size===1&&st){const q=[...P.values()][0];st.x0=q.x;st.y0=q.y;st.ox=st.g.ox||0;st.oy=st.g.oy||0}
-   if(!P.size&&st){clearTimeout(st.tm);if(st.mv)save();
-     else if(!st.done&&!CE&&tapZone(st.zx,st.zy)!=='tl'){const z=tapZone(st.zx,st.zy),g=st.g;if(z==='c')tapSp(g);else if(z==='bl')tapInv(g);else if(z==='ci')tapCol(g,'ci');else if(z==='co')tapCol(g,'co');else if(z==='cf')popOut(g);else if(z==='ss')popSe(g);else tapSe(g)}
+   if(!P.size&&st){clearTimeout(st.tm);if(st.mv){delete st.g.pz;save()}
+     else if(!st.done&&!CE&&tapZone(st.zx,st.zy)!=='tl'){const z=tapZone(st.zx,st.zy),g=st.g;if(z==='c')tapSp(g);else if(z==='bl')tapInv(g);else if(z==='ci')tapCol(g,'ci');else if(z==='co')tapCol(g,'co');else if(z==='cf')popOut(g);else if(z==='po')tapPos(g);else tapSe(g)}
      else if(!st.done&&st.g.fr&&SPK(st.g)==='b'){const g=st.g;g.exs=((g.exs|0)+1)%EXN.length;if(!g.exs)delete g.exs;save();showOv(pos);showFn(EXN[g.exs|0])}
-     else if(!st.done&&!CE){const g=st.g;let i=Math.max(0,FONTS.findIndex(f=>f.k===fkey(g)));do{i=(i+1)%FONTS.length}while(i&&FONTS[i].file&&!fOK[FONTS[i].k]);delete g.fnt;if(i)g.fk=FONTS[i].k;else delete g.fk;save();const f=FONTS[i];showOv(pos);showFn(f.n+(f.file&&!fOK[f.k]?'(未登録)':''));if(f.k&&document.fonts&&window.PFONT)document.fonts.load(window.PFONT(40,f.k),'あ字').then(()=>showOv(pos)).catch(()=>{})}
+     else if(!st.done&&!CE)tapFont(st.g);/* v554: 字幕テンプレートに登録したフォントだけを回す */
      st=null}};
  pl0.addEventListener('pointerup',up);pl0.addEventListener('pointercancel',up)}
 /* v378: 再生画面のタップは5か所。真ん中(だ円)=き→奥→太→「太」、左上=フォント(今まで通り)、左下=白黒反転、右上=動き、右下=SE */
-function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':'bl';/* v552 */if(y<.5)return y<.25?(x<.75?'ci':'co'):'cf';return 'se'}/* v553: 右下は全部SE(設定は削除) */
+function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':(x<.25?'po':'bl');/* v552 *//* v554: 左下を左右2つ=位置/反転 */if(y<.5)return y<.25?(x<.75?'ci':'co'):'cf';return 'se'}/* v553: 右下は全部SE(設定は削除) */
 const rowsOf=g=>{const l=cur&&cur.list||[];return g.grp?grpOf(l,g):[g]};
 function tapDone(msg){save();drawResults();showOv(pos);showFn(msg)}
 function tapSp(g){if(g.bl){showFn('空白は切り替えできません');return}
@@ -7112,6 +7113,78 @@ async function popSe(g){if(!SE.length){showFn('SEが登録されていません�
     b.append(h,ta,ok);setTimeout(()=>{try{ta.focus();ta.select()}catch(_){}},50)})});
   mk('決定',()=>{g.se=id;g.sev=P.v;g.see=P.e;g.seo=P.o;g.sel=P.l;save();showOv(pos);w.remove();showFn('この字幕に反映しました')},'tbig');
   w.appendChild(bt)}
+/* v554: 字幕テンプレート①。字幕1〜3(=き/奥/太 の g.sp)ごとに、タップで回すフォントと位置の一覧を持つ。
+   localStorage 'stpl' = {v:1,m:{n:'字幕1',font:[k…],pos:[{id,n,x,y,s}]},f:{…},b:{…}}。字幕データ側は今まで通り g.fk(フォント)・g.ox/oy/osc(位置と大きさ)、登録位置のidだけ g.pz を足す。
+   ②SE ③スタイル ④字幕 も同じ入れ物(各字幕テンプレートの下)に足していく */
+const STN={m:'字幕1',f:'字幕2',b:'字幕3'};
+function stAll(){let o=null;try{o=JSON.parse(localStorage.getItem('stpl')||'null')}catch(e){}if(!o||typeof o!=='object')o={v:1};
+  for(const k of ['m','f','b']){const t=o[k]=o[k]&&typeof o[k]==='object'?o[k]:{};if(typeof t.n!=='string'||!t.n)t.n=STN[k];
+    if(!Array.isArray(t.font))t.font=FONTS.filter(f=>!f.u).map(f=>f.k);if(!Array.isArray(t.pos))t.pos=[]}return o}
+function stSave(o){try{localStorage.setItem('stpl',JSON.stringify(o))}catch(e){}}
+/* 名前(ボタンと見分けが付くよう下線＋✏️。タップで名前を変える) */
+function stName(txt,onSet){const s=document.createElement('span');s.className='stNm';s.setAttribute('role','button');s.tabIndex=0;
+  s.style.cssText='text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';
+  const put=t=>{s.textContent=t+' ✏️';s.dataset.n=t};put(txt);s.onclick=e=>{e.stopPropagation();stAskName(s.dataset.n,n=>{onSet(n);put(n)})};return s}
+function stAskName(v,fn){sheet((b,close)=>{const h=document.createElement('h2');h.textContent='名前を変える';const i=document.createElement('input');i.type='text';i.id='t_stNm';i.value=v;i.style.cssText='width:100%;font-size:16px;padding:10px;box-sizing:border-box';
+  const w=document.createElement('div');w.className='two';const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='決定';y.onclick=()=>{const t=i.value.trim().slice(0,30);close();if(t)fn(t)};
+  w.append(n,y);b.append(h,i,w);setTimeout(()=>{try{i.focus();i.select()}catch(_){}},50)})}
+/* ポップアップの見出し = 「フォント：字幕1✏️」 */
+function stPop(g,what,top){const k0=SPK(g),w=s4Pop(top,'');const hd=w.querySelector('b');hd.style.cssText='flex:1;display:flex;gap:4px;min-width:0';hd.textContent=what+'：';
+  hd.appendChild(stName(stAll()[k0].n,n=>{const o=stAll();o[k0].n=n;stSave(o)}));w.k0=k0;return w}
+const stBtn=(t,f,css)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='min-height:44px;'+(css||'');b.onclick=f;return b};
+/* フォント */
+const fUse=k=>{const f=FONTS.find(x=>x.k===k);return !!f&&(!f.file||!!fOK[k])};
+const stFk=(g,k)=>{delete g.fnt;if(k===FONTS[0].k)delete g.fk;else g.fk=k};
+const fLoad=k=>{if(k&&document.fonts&&window.PFONT)document.fonts.load(window.PFONT(40,k),'あ字').then(()=>showOv(pos)).catch(()=>{})};
+function tapFont(g){const L=stAll()[SPK(g)].font.filter(fUse);if(!L.length){showFn('フォントが登録されていません（長タップで追加）');return}
+  const k=L[(L.indexOf(fkey(g))+1)%L.length],f=FONTS.find(x=>x.k===k);stFk(g,k);save();showOv(pos);showFn(f.n);fLoad(k)}
+/* スマホのファイルから足したフォント(全体の一覧に入る。kv 'font|ulist'=[{k,n}]・'font|'+k=ファイル) */
+let UFL=[];
+function uFontReg(k,n){FF[k]='BkU_'+k;window.PFAM[k]='"BkU_'+k+'",sans-serif';if(!FONTS.some(f=>f.k===k))FONTS.push({k,n,file:1,u:1})}
+async function uFontAdd(file){const k='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),n=(file.name||'').replace(/\.[^.]+$/,'')||'フォント';
+  uFontReg(k,n);if(!(await addFont(k,file))){const i=FONTS.findIndex(f=>f.k===k);if(i>=0)FONTS.splice(i,1);delete FF[k];return null}
+  await kv('font|'+k,file);UFL.push({k,n});await kv('font|ulist',UFL);return k}
+(async()=>{const l=await kv('font|ulist');if(!Array.isArray(l))return;UFL=l;for(const u of l){uFontReg(u.k,u.n);const b=await kv('font|'+u.k);if(b)await addFont(u.k,b)}try{showOv(pos)}catch(_){}})();
+function popFont(g){const wf=$('wf'),w=stPop(g,'フォント',wf?wf.getBoundingClientRect().top:200),k0=w.k0;w.id='t_pop';w.dataset.kind='font';
+  const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted)';nt.textContent='タップ=この字幕に使う。左上のタップは、この一覧を上から順に回します';w.appendChild(nt);
+  const box=document.createElement('div');box.id='t_stFL';const add=document.createElement('div');add.id='t_stFA';w.append(box,add);
+  const fi=document.createElement('input');fi.type='file';fi.accept='.ttf,.otf,.woff,.woff2,font/*';fi.hidden=true;fi.id='t_stFI';w.appendChild(fi);
+  const ff=k=>window.PFAM&&window.PFAM[k]&&fUse(k)?';font-family:'+window.PFAM[k].replace(/"/g,"'"):'';
+  let showAdd=false;
+  const draw=()=>{const o=stAll(),T=o[k0];box.innerHTML='';add.innerHTML='';
+    if(!T.font.length){const p=document.createElement('div');p.textContent='まだありません。下の「＋」で追加してください';p.style.cssText='padding:8px 0;color:var(--muted)';box.appendChild(p)}
+    T.font.forEach((k,ix)=>{const f=FONTS.find(x=>x.k===k);if(!f)return;const ok=fUse(k),on=fkey(g)===k;const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0';
+      const b=stBtn((on?'✓ ':'')+f.n+(ok?'':'（ファイル未登録）'),()=>{if(!ok){showFn('このフォントはファイルが未登録です（⚙設定）');return}stFk(g,k);save();showOv(pos);fLoad(k);draw()},'flex:1;text-align:left;font-size:16px;min-width:0'+ff(k));b.classList.toggle('on',on);
+      const u=stBtn('▲',()=>{const o2=stAll(),L=o2[k0].font;[L[ix-1],L[ix]]=[L[ix],L[ix-1]];stSave(o2);draw()},'width:44px;padding:0');u.disabled=!ix;u.setAttribute('aria-label','上へ');
+      const x=stBtn('外す',()=>{const o2=stAll();o2[k0].font=o2[k0].font.filter(z=>z!==k);stSave(o2);draw()},'font-size:13px');
+      r.append(b,u,x);box.appendChild(r)});
+    const rest=FONTS.filter(f=>!T.font.includes(f.k));
+    const a1=stBtn((showAdd?'▾':'＋')+' アプリ内の一覧から追加'+(rest.length?'':'（全部入っています）'),()=>{showAdd=!showAdd;draw()},'width:100%;margin-top:6px');a1.disabled=!rest.length;a1.id='t_stFA1';add.appendChild(a1);
+    if(showAdd)rest.forEach(f=>{const b=stBtn('＋ '+f.n+(fUse(f.k)?'':'（ファイル未登録）'),()=>{const o2=stAll();if(!o2[k0].font.includes(f.k))o2[k0].font.push(f.k);stSave(o2);draw()},'width:100%;text-align:left;margin-top:4px;font-size:15px'+ff(f.k));add.appendChild(b)});
+    const a2=stBtn('＋ スマホのファイルから追加',()=>fi.click(),'width:100%;margin-top:6px');a2.id='t_stFA2';add.appendChild(a2)};
+  fi.onchange=async()=>{const fs=[...fi.files];fi.value='';let n=0,bad=0;for(const f of fs){const k=await uFontAdd(f);if(!k){bad++;continue}n++;const o2=stAll();if(!o2[k0].font.includes(k))o2[k0].font.push(k);stSave(o2)}
+    draw();showFn(n?n+'個のフォントを追加しました'+(bad?'（読めないファイル'+bad+'個）':''):'フォントとして読めませんでした')};
+  draw()}
+/* 位置(位置と大きさを覚える) */
+const stPz=(g,p)=>{g.pz=p.id;if(p.x)g.ox=p.x;else delete g.ox;if(p.y)g.oy=p.y;else delete g.oy;if(p.s&&p.s!==1)g.osc=p.s;else delete g.osc};
+const stPosClr=g=>['ox','oy','osc','pz'].forEach(k=>delete g[k]);
+function tapPos(g){const P=stAll()[SPK(g)].pos;if(!P.length){showFn('位置が登録されていません（長タップで登録）');return}
+  const n=P[P.findIndex(p=>p.id===g.pz)+1];if(n)stPz(g,n);else stPosClr(g);save();showOv(pos);showFn(n?n.n:'元の位置')}
+function popPos(g){const wf=$('wf'),w=stPop(g,'位置',wf?wf.getBoundingClientRect().top:200),k0=w.k0;w.dataset.kind='pos';
+  const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted)';nt.textContent='字幕を指で動かす・ピンチで大きさを変えてから「今の位置を登録」。左下(左)のタップは、この一覧を上から順に回します';w.appendChild(nt);
+  const box=document.createElement('div');box.id='t_stPL';w.appendChild(box);
+  const draw=()=>{const T=stAll()[k0];box.innerHTML='';
+    if(!T.pos.length){const p=document.createElement('div');p.textContent='まだありません';p.style.cssText='padding:8px 0;color:var(--muted)';box.appendChild(p)}
+    T.pos.forEach(p=>{const on=g.pz===p.id,r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0';
+      const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}});nm.style.flex='1';
+      const u=stBtn(on?'✓ 使用中':'使う',()=>{stPz(g,p);save();showOv(pos);draw()},'font-size:13px');u.classList.toggle('on',on);
+      const ow=stBtn('上書き',()=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(!q)return;q.x=+(g.ox||0).toFixed(4);q.y=+(g.oy||0).toFixed(4);q.s=+(g.osc||1).toFixed(3);stSave(o);g.pz=p.id;save();draw();showFn('「'+p.n+'」を今の位置で上書きしました')},'font-size:13px');
+      const x=stBtn('削除',()=>ask('「'+p.n+'」を削除しますか？','削除する',()=>{const o=stAll();o[k0].pos=o[k0].pos.filter(z=>z.id!==p.id);stSave(o);draw()}),'font-size:13px');
+      r.append(nm,u,ow,x);box.appendChild(r)})};
+  const bt=document.createElement('div');bt.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px';
+  const reg=stBtn('＋ 今の位置を登録',()=>{const o=stAll(),L=o[k0].pos;let i=L.length+1;while(L.some(z=>z.n==='位置'+i))i++;const p={id:'p'+Date.now().toString(36),n:'位置'+i,x:+(g.ox||0).toFixed(4),y:+(g.oy||0).toFixed(4),s:+(g.osc||1).toFixed(3)};L.push(p);stSave(o);g.pz=p.id;save();draw();showFn('「'+p.n+'」を登録しました')},'');reg.id='t_stPR';reg.className='tbig';
+  const rs=stBtn('元に戻す',()=>{stPosClr(g);save();showOv(pos);draw();showFn('この字幕の位置を元に戻しました')},'');rs.id='t_stP0';
+  bt.append(reg,rs);w.appendChild(bt);draw()}
 /* v379: 再生画面のタップの場所と名前を薄く表示(設定は ⚙設定 > 字幕画面。localStorage 'tzone') */
 const TZD={on:1,font:'',size:12,op:30,line:'dashed',w:1};
 const TZF=[['','標準'],['mplus','丸ゴシック'],['yusei','マジック手書き'],['klee','教科書体風'],['mochiy','ポップ'],['dela','太ゴシック'],['reggae','レゲエ']];
@@ -7122,7 +7195,7 @@ function tzPaint(host,S){let el=host.querySelector('.tzo');if(!el){el=document.c
   el.style.opacity=a;el.style.fontSize=S.size+'px';el.style.fontFamily=S.font&&window.PFAM&&window.PFAM[S.font]||'';
   el.innerHTML=(ln?'<svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="'+w+'" vector-effect="non-scaling-stroke"'+(ds?' stroke-dasharray="'+ds+'"':'')+' stroke-linecap="round">'+
     L(50,0,50,50-R)+L(50,50+R,50,100)+L(0,50,50-R,50)+L(50+R,50,100,50)+L(75,0,75,25)+L(60,25,100,25)+L(75,75,75,100)+'<ellipse cx="50" cy="50" rx="'+R+'" ry="'+R+'"/></g></svg>':'')+
-    [['フォント',14,16],['中色',63,10],['外色',88,10],['外枠',86,37],['反転',14,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
+    [['フォント',14,16],['中色',63,10],['外色',88,10],['外枠',86,37],['位置',11,84],['反転',37,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
   el.querySelectorAll('svg *').forEach(e=>e.setAttribute('vector-effect','non-scaling-stroke'))}
 function tzDraw(){const h=$('pl');if(h)tzPaint(h,tzGet())}
 tzDraw();
@@ -8195,7 +8268,7 @@ sp2:'再生位置でクリップを分ける',iu:'元に戻す',ir:'やり直し
 recLbl:'ナレーションを録音する',recIn:'ナレーションを録音する',audIn:'音声ファイルを選ぶ',exq:'書き出しの画質',save:'書き出した動画をスマホに保存',
 chapCp:'チャプターをコピー',tplEdBtn:'テンプレート（字幕やロゴの見た目）を編集',
 s3back:'前の画面へ戻る',ptDes:'デザインを選ぶ',ptPlay:'動きを確認',ptFull:'全画面で確認',ptReset:'初期値に戻す',ptSave:'見た目を保存',ptFsX:'全画面を閉じる',
-t_bZ:'タップ=再生ヘッドの行から後ろの、声の無い行を合成音声(ずんだもん等)で読む。長押し=声を選ぶ',tzBtn:'字幕・ナレーション画面の設定（再生画面のタップの場所の表示など）',t_pl:'タップする場所で変わります。真ん中=き→奥→太→「太」、左上=フォント、左下=白黒反転、右上=動き、右下=SE（⚙設定のSEで★を付けたものを順番に。★がなければ全部）。1本指=字幕を移動、ピンチ=大きさ、長押し=元に戻す',
+t_bZ:'タップ=再生ヘッドの行から後ろの、声の無い行を合成音声(ずんだもん等)で読む。長押し=声を選ぶ',tzBtn:'字幕・ナレーション画面の設定（再生画面のタップの場所の表示など）',t_pl:'タップする場所で変わります。真ん中=き→奥→太→「太」、左上=フォント、左下の左=位置・右=白黒反転、右上=中色/外色/外枠、右下=SE。フォントと位置は長タップで登録。1本指=字幕を移動、ピンチ=大きさ',
 t_wf:'タップ=その字幕を選ぶ。端の線をタップ→長押しスワイプ=字幕の時間だけ変える。オレンジの所を長押し=動画モード（動かすと動画の長さも変わる）',
 tltBtn:'動画の種類（DIY・旅など）ごとに、コーナー・自動で入るもの・初期値などを決める',tltUndo:'1つ前の状態に戻す',tltRst:'選んでいる種類を最初の状態に戻す',tltSave:'保存する。次に作る動画から使われます（作業中の動画は変わりません）',tltX:'閉じる',t_rA:'今の再生位置を自動生成の範囲の始まりにする',t_rB:'今の再生位置を自動生成の範囲の終わりにする',t_rT:'自動生成の範囲。押すと全体に戻る',t_auto:'範囲の中だけ自動で字幕を作る（範囲の外の字幕は残る）',t_bP:'選んだ字幕だけ再生・停止',t_bA:'続けて再生（SEも鳴る）',t_bN:'次の字幕へ',t_seek:'再生位置を動かす',t_tl:'再生位置を動かす',
 t_ndAll:'ナレーションの行を全部消す(確認あり)',t_ndSel:'消す行をタップで選んでから「削除」',t_azGo:'チェックした行を消す',t_go:'文字起こしを始める',t_txD:'文字起こしのやり直しと、Claude学習（タップで開く・閉じる）',t_setup:'音声認識に使うファイルの準備（タップで開く・閉じる）',seFsX:'SEの登録画面を閉じる',t_lrn:'「学習」にチェックして直した言葉を覚えさせる',t_fx:'Claudeで字幕を仕上げる',
