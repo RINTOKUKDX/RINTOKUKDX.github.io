@@ -4618,7 +4618,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v554';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v555';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7129,8 +7129,9 @@ function stAskName(v,fn){sheet((b,close)=>{const h=document.createElement('h2');
   const w=document.createElement('div');w.className='two';const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='決定';y.onclick=()=>{const t=i.value.trim().slice(0,30);close();if(t)fn(t)};
   w.append(n,y);b.append(h,i,w);setTimeout(()=>{try{i.focus();i.select()}catch(_){}},50)})}
 /* ポップアップの見出し = 「フォント：字幕1✏️」 */
-function stPop(g,what,top){const k0=SPK(g),w=s4Pop(top,'');const hd=w.querySelector('b');hd.style.cssText='flex:1;display:flex;gap:4px;min-width:0';hd.textContent=what+'：';
-  hd.appendChild(stName(stAll()[k0].n,n=>{const o=stAll();o[k0].n=n;stSave(o)}));w.k0=k0;return w}
+function stPop(g,what,top){const k0=SPK(g),w=s4Pop(top,'');const hd=w.querySelector('b');hd.style.cssText='flex:1;display:flex;gap:4px;min-width:0';hd.textContent=what+'（'+({m:'き',f:'奥',b:'太'}[k0])+'）';/* v555: 見出しは今どの字幕を編集しているか(き/奥/太)だけ */w.k0=k0;return w}
+/* v555: 今この字幕で使っている行は枠の色で分かるように */
+const stRow=on=>{const r=document.createElement('div');r.className='stRow'+(on?' on':'');r.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0;padding:4px 6px;border-radius:10px;border:2px solid '+(on?'var(--accent)':'transparent')+(on?';background:color-mix(in srgb,var(--accent) 16%,transparent)':'');return r};
 const stBtn=(t,f,css)=>{const b=document.createElement('button');b.type='button';b.textContent=t;b.style.cssText='min-height:44px;'+(css||'');b.onclick=f;return b};
 /* フォント */
 const fUse=k=>{const f=FONTS.find(x=>x.k===k);return !!f&&(!f.file||!!fOK[k])};
@@ -7153,7 +7154,7 @@ function popFont(g){const wf=$('wf'),w=stPop(g,'フォント',wf?wf.getBoundingC
   let showAdd=false;
   const draw=()=>{const o=stAll(),T=o[k0];box.innerHTML='';add.innerHTML='';
     if(!T.font.length){const p=document.createElement('div');p.textContent='まだありません。下の「＋」で追加してください';p.style.cssText='padding:8px 0;color:var(--muted)';box.appendChild(p)}
-    T.font.forEach((k,ix)=>{const f=FONTS.find(x=>x.k===k);if(!f)return;const ok=fUse(k),on=fkey(g)===k;const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0';
+    T.font.forEach((k,ix)=>{const f=FONTS.find(x=>x.k===k);if(!f)return;const ok=fUse(k),on=fkey(g)===k;const r=stRow(on);
       const b=stBtn((on?'✓ ':'')+f.n+(ok?'':'（ファイル未登録）'),()=>{if(!ok){showFn('このフォントはファイルが未登録です（⚙設定）');return}stFk(g,k);save();showOv(pos);fLoad(k);draw()},'flex:1;text-align:left;font-size:16px;min-width:0'+ff(k));b.classList.toggle('on',on);
       const u=stBtn('▲',()=>{const o2=stAll(),L=o2[k0].font;[L[ix-1],L[ix]]=[L[ix],L[ix-1]];stSave(o2);draw()},'width:44px;padding:0');u.disabled=!ix;u.setAttribute('aria-label','上へ');
       const x=stBtn('外す',()=>{const o2=stAll();o2[k0].font=o2[k0].font.filter(z=>z!==k);stSave(o2);draw()},'font-size:13px');
@@ -7175,7 +7176,7 @@ function popPos(g){const wf=$('wf'),w=stPop(g,'位置',wf?wf.getBoundingClientRe
   const box=document.createElement('div');box.id='t_stPL';w.appendChild(box);
   const draw=()=>{const T=stAll()[k0];box.innerHTML='';
     if(!T.pos.length){const p=document.createElement('div');p.textContent='まだありません';p.style.cssText='padding:8px 0;color:var(--muted)';box.appendChild(p)}
-    T.pos.forEach(p=>{const on=g.pz===p.id,r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px;margin:4px 0';
+    T.pos.forEach(p=>{const on=g.pz===p.id,r=stRow(on);
       const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}});nm.style.flex='1';
       const u=stBtn(on?'✓ 使用中':'使う',()=>{stPz(g,p);save();showOv(pos);draw()},'font-size:13px');u.classList.toggle('on',on);
       const ow=stBtn('上書き',()=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(!q)return;q.x=+(g.ox||0).toFixed(4);q.y=+(g.oy||0).toFixed(4);q.s=+(g.osc||1).toFixed(3);stSave(o);g.pz=p.id;save();draw();showFn('「'+p.n+'」を今の位置で上書きしました')},'font-size:13px');
