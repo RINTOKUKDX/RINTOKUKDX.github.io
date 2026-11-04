@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v576';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v577';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6396,7 +6396,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
     let open=-1;const H=[];
     secs.forEach(([t,els],k)=>{const h=document.createElement('button');h.className='sh';h.innerHTML='<i class="dot"></i><span></span><i class="ar"></i>';h.children[1].textContent=t;
       const box=document.createElement('div');box.className='sb';els.forEach(e=>{if(!e)return;if(e.tagName==='DETAILS'){e.open=true;e.classList.add('inS')}box.appendChild(e)});
-      h.onclick=()=>{open=open===k?-1:k;upd();if(open===k&&(t==='音声認識の準備'||t==='AI')&&window.subInit)window.subInit()};setB.append(h,box);H.push([h,box])});
+      h.onclick=()=>{open=open===k?-1:k;upd();/* v577: 文字起こしの後などで中身(details)が閉じていたら開く(中身が空に見えた) */if(open===k)box.querySelectorAll('details.inS').forEach(d=>d.open=true);if(open===k&&(t==='音声認識の準備'||t==='AI')&&window.subInit)window.subInit()};setB.append(h,box);H.push([h,box])});
     function upd(){H.forEach(([h,b],k)=>{b.hidden=k!==open;h.classList.toggle('op',k===open);h.lastChild.textContent=k===open?'▾':'▸'})}upd()}
    sc.querySelector('#setX').onclick=closeSet;
    /* v489: 一番下にバージョン情報(ページとアプリ)。開く度に書き直す */
