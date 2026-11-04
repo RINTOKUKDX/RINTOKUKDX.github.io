@@ -4697,7 +4697,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v565';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v566';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6901,7 +6901,7 @@ function enRow(t){const L=cur&&cur.list;if(!L)return null;const g=t!=null?L.find
 /* v485: 字幕ページの英語字幕。太(DOM)は別のキャンバス #t_enc に描いて、日本語と同じ動き・反転を付ける。き・奥は日本語と同じキャンバスに描く */
 function encEl(){let c=$('enc');if(!c){c=document.createElement('canvas');c.id='t_enc';c.style.cssText='position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3';$('ov').after(c)}return c}
 /* v565: 字幕のフィルター(その字幕が出ている間だけ)。範囲 a=全体 t=文字＋枠 t0=文字だけ v=動画だけ */
-function stFlShow(g){const F=stFl(g),o=$('ov'),on=(id,y)=>{const el=document.getElementById(id);if(!el)return;const b=id==='t_ov'?(o.style.filter||''):'';el.style.filter=y&&F?(b?b+' ':'')+F.f:b};
+function stFlShow(g){/* v566: 真ん中の「字幕」の文字=今の字幕テンプレートの名前 */{const c=document.querySelector('#t_pl .tzC');if(c)c.textContent=g&&!g.bl?stJ(STK(g)):'字幕'}const F=stFl(g),o=$('ov'),on=(id,y)=>{const el=document.getElementById(id);if(!el)return;const b=id==='t_ov'?(o.style.filter||''):'';el.style.filter=y&&F?(b?b+' ':'')+F.f:b};
   const r=F&&F.r;['t_pv','t_pv2'].forEach(id=>on(id,r==='a'||r==='v'));on('t_sb',r==='a'||r==='t');['t_sc','t_ov','t_enc'].forEach(id=>on(id,r&&r!=='v'))}
 function showOv(t){showOv0(t);const o=$('ov');o.style.filter=o._g&&o._g.inv?INVF:'';
   const sc=$('sc'),enc=encEl();[o,sc,enc].forEach(el=>{if(el._an){el._an=0;el.style.scale=el.style.rotate=el.style.translate=el.style.opacity=el.style.clipPath=''}});
@@ -7222,9 +7222,9 @@ function stAll(){if(STC)return STC;let o=null;try{o=JSON.parse(localStorage.getI
     if(!Array.isArray(t.font))t.font=FONTS.filter(f=>!f.u).map(f=>f.k);if(!Array.isArray(t.pos))t.pos=[];if(!Array.isArray(t.sty))t.sty=[]/* v562 */}return STC=o}
 /* v565: STK=この字幕が使う字幕テンプレートのid(g.sp)。SPK=描き方(m=き f=奥 b=太。太字の種類 bs を選んだテンプレートは太) */
 function STK(g){const o=stAll(),s=g&&g.sp||'m';return o.ord.includes(s)?s:o.ord[0]}
-/* 字幕の一覧の印: 字幕1〜3は き/奥/太、追加したものは名前の頭2文字 */
-const stSpL=g=>{const k=STK(g),n=stJ(k);return STJ[k]===n?n:[...n].slice(0,2).join('')};
-const stJ=k=>{const t=stAll()[k];if(!t)return STJ[k]||'字幕';return STN[k]&&t.n===STN[k]?STJ[k]:t.n};/* 字幕1〜3は名前を変えるまで き/奥/太 */
+/* 字幕の一覧の印: 字幕テンプレートの名前の頭3文字(v566) */
+const stSpL=g=>[...stJ(STK(g))].slice(0,3).join('');
+const stJ=k=>{const t=stAll()[k];return t&&t.n||STN[k]||'字幕'};/* v566: き/奥/太 の呼び名は使わず、字幕テンプレートの名前だけ */
 const stBs=g=>{const T=stAll()[STK(g)];return T&&T.bs&&BIG[T.bs]?T.bs:g.bs};
 function stSave(o){STC=o;try{localStorage.setItem('stpl',JSON.stringify(o))}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key==='stpl')STC=null});
@@ -7546,7 +7546,7 @@ function tzPaint(host,S){let el=host.querySelector('.tzo');if(!el){el=document.c
   el.style.opacity=a;el.style.fontSize=S.size+'px';el.style.fontFamily=S.font&&window.PFAM&&window.PFAM[S.font]||'';
   el.innerHTML=(ln?'<svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="'+w+'" vector-effect="non-scaling-stroke"'+(ds?' stroke-dasharray="'+ds+'"':'')+' stroke-linecap="round">'+
     L(50,0,50,50-R)+L(50,50+R,50,100)+L(0,50,50-R,50)+L(50+R,50,100,50)+L(75,75,75,100)+'<ellipse cx="50" cy="50" rx="'+R+'" ry="'+R+'"/></g></svg>':'')+
-    [['フォント',14,16],['スタイル',76,24],['位置',11,84],['反転',37,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
+    [['フォント',14,16],['スタイル',76,24],['位置',11,84],['反転',37,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b'+(t==='字幕'?' class="tzC"':'')+' style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
   el.querySelectorAll('svg *').forEach(e=>e.setAttribute('vector-effect','non-scaling-stroke'))}
 function tzDraw(){const h=$('pl');if(h)tzPaint(h,tzGet())}
 tzDraw();
