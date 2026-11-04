@@ -4623,7 +4623,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v556';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v557';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7027,7 +7027,7 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
            const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='保存';
            y.onclick=()=>{const v=ta.value.trim();close();if(v)g.ttl=v;else delete g.ttl;save();showOv(pos)};w.append(n,y);b.append(ta,w);setTimeout(()=>ta.focus(),50)});return}
        if(st&&!st.mv&&!CE&&(tapZone(st.zx,st.zy)==='tl'||tapZone(st.zx,st.zy)==='po')){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}(tapZone(st.zx,st.zy)==='tl'?popFont:popPos)(g);return}/* v554: 長タップ=そのボタンのポップアップ */
-       if(st&&!st.mv&&tapZone(st.zx,st.zy)==='se'){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}if(g.se){delete g.se;delete g.sev;delete g.see;delete g.seo;delete g.sel;save();showOv(pos);showFn('SEを消しました')}else showFn('SEはありません');return}/* v552 */
+       if(st&&!st.mv&&!CE&&tapZone(st.zx,st.zy)==='se'){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}popSeT(g);return}/* v557: 長タップ=SEのポップアップ(v552の長押しで消すは廃止。SEなしはタップで回した最後) */
        if(st&&!st.mv)st.done=true/* v554: ほかの場所の長押しは何もしない(位置を元に戻すは位置のポップアップへ) */},550)}
    else if(P.size===2&&st){clearTimeout(st.tm);const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.sc=g.osc||1;st.mv=true}});
  pl0.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!st||st.done)return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
@@ -7057,7 +7057,7 @@ function tapInv(g){const on=!g.inv;rowsOf(g).forEach(x=>{if(on)x.inv=true;else d
 const ANS=['type','pop','slide','zoom','spin'],ANN={'':'動きなし',type:'タイプ',pop:'ポップ',slide:'スライド',zoom:'ズーム',spin:'回転'};
 function tapAn(g){if(g.fr||g.grp||g.bl||SPK(g)==='b'){showFn('太字・枠には動きを付けられません');return}
   const i=g.anU?ANS.indexOf(g.an):-1,n=ANS[i+1];if(n){g.an=n;g.anU=1}else{g.an='';delete g.anU}tapDone(ANN[g.an||'']);if(g.an){const a=g.a;setTimeout(()=>{try{showAt(a+0.01)}catch(_){}},10)}}
-function tapSe(g){const L=SE.filter(x=>x.tap),C=(L.length?L:SE);if(!C.length){showFn('SEが登録されていません（⚙設定のSE）');return}
+function tapSeOld(g){/* v557: 使わない(字幕テンプレートの tapSe へ) */const L=SE.filter(x=>x.tap),C=(L.length?L:SE);if(!C.length){showFn('SEが登録されていません（⚙設定のSE）');return}
   const i=C.findIndex(x=>x.id===g.se),n=C[i+1];if(n){g.se=n.id;sePlay(n.id)}else delete g.se;tapDone(n?'♪ '+n.n:'SEなし')}
 /* v552: 中色・外色(タップごとに 白→黄→赤→青→緑→黒→元の色) */
 const COLS=[['白','#ffffff'],['黄','#ffe14d'],['赤','#ff4040'],['青','#3fa0ff'],['緑','#3ddc6a'],['黒','#000000']];
@@ -7249,6 +7249,46 @@ function stArOn(g,P,up){stArOff();const pl=$('pl');if(!pl)return;const a=documen
     else{if(d.m.l)r.l=Math.min(c01(o.l+dx),r.r-mn);if(d.m.r)r.r=Math.max(c01(o.r+dx),r.l+mn);if(d.m.t)r.t=Math.min(c01(o.t+dy),r.b-mn);if(d.m.b)r.b=Math.max(c01(o.b+dy),r.t+mn)}
     ['l','t','r','b'].forEach(k=>r[k]=+r[k].toFixed(4));put();showOv(pos)});
   const end=e=>{if(!d)return;e.stopPropagation();d=null;up()};a.addEventListener('pointerup',end);a.addEventListener('pointercancel',end);pl.appendChild(a)}
+/* ---- v557: SE(②)。字幕テンプレートごとに SEのテンプレート1〜4。stpl[k].se = {a:今使うテンプレートの番号,t:[{n,ids:[SEのid…]}×4]}。
+   右下のタップ = 使うテンプレートのSEを順に(最後はSEなし)。長タップ = このポップアップ。▼で開いたテンプレートが「使う」になる。
+   まだ無い時は、今まで通り(★のSE、★が無ければ全部)をテンプレート1に入れた形で見せる(何か変えた時に保存) */
+const seTDef=()=>{const L=SE.filter(x=>x.tap),C=L.length?L:SE;return {a:0,t:[0,1,2,3].map(i=>({n:'テンプレート'+(i+1),ids:i?[]:C.map(x=>x.id)}))}};
+const seTOf=k=>{const T=stAll()[k];return T.se&&Array.isArray(T.se.t)?T.se:seTDef()};
+const seTMut=k=>{const o=stAll(),T=o[k];if(!(T.se&&Array.isArray(T.se.t)))T.se=seTDef();return o};
+const seById=id=>SE.find(x=>x.id===id);
+function tapSe(g){const S=seTOf(SPK(g)),C=((S.t[S.a]||{}).ids||[]).map(seById).filter(Boolean);if(!C.length){showFn('SEが登録されていません（長タップで追加）');return}
+  const i=C.findIndex(x=>x.id===g.se),n=C[i+1];if(n){g.se=n.id;sePlay(n.id)}else delete g.se;tapDone(n?'♪ '+n.n:'SEなし')}
+/* SEのポップアップ: 「テンプレート1 ▼」「削除」×4。▼=そのテンプレートのSE一覧(ほかは閉じる): 「SE名✏️」「▶」「削除」 ＋「SEを追加」「❌」 */
+function popSeT(g){const w=stPop(g,'SE'),k0=w.k0;w.dataset.kind='se';
+  const box=document.createElement('div');box.id='t_stSL';w.body.appendChild(box);
+  const fi=document.createElement('input');fi.type='file';fi.accept='audio/*,.mp3,.wav,.m4a,.aac,.ogg';fi.multiple=true;fi.hidden=true;fi.id='t_stSI';w.appendChild(fi);
+  let addOpen=false;
+  const draw=()=>{const S=seTOf(k0);box.innerHTML='';
+    S.t.forEach((t,i)=>{const op=S.a===i,r=stRow(op);r.dataset.i=i;
+      const nm=stName(t.n,n=>{const o=seTMut(k0);o[k0].se.t[i].n=n;stSave(o)});nm.style.flex='1';
+      const tg=stBtn((op?'▲':'▼')+' '+t.ids.filter(seById).length,()=>{const o=seTMut(k0);o[k0].se.a=i;stSave(o);addOpen=false;draw()},'min-width:64px;font-size:14px');tg.className='stTg';tg.setAttribute('aria-label',t.n+'を開く');
+      const x=stBtn('削除',()=>ask('「'+t.n+'」を空にしますか？\n（SEの音そのものは消えません）','空にする',()=>{const o=seTMut(k0);o[k0].se.t[i]={n:'テンプレート'+(i+1),ids:[]};stSave(o);draw()}),'font-size:13px;min-width:64px');
+      r.append(nm,tg,x);box.appendChild(r);
+      if(!op)return;
+      const lst=document.createElement('div');lst.id='t_stSE';lst.style.cssText='margin:2px 0 8px 14px;padding-left:8px;border-left:2px solid var(--accent)';box.appendChild(lst);
+      const ids=t.ids.filter(seById);if(!ids.length)lst.appendChild(stEmpty('まだありません。「SEを追加」で追加してください'));
+      ids.forEach(id=>{const s=seById(id),rr=stRow(g.se===id);
+        const n2=stName(s.n,async n=>{s.n=n;await kv('se|list',SE);try{seDraw()}catch(_){}});n2.style.flex='1';
+        const pl=stBtn('▶',()=>sePlay(id),'width:48px;padding:0');pl.setAttribute('aria-label','試し聞き');
+        const dx=stBtn('削除',()=>{const o=seTMut(k0);o[k0].se.t[i].ids=o[k0].se.t[i].ids.filter(z=>z!==id);stSave(o);if(g.se===id){delete g.se;save();showOv(pos)}draw()},'font-size:13px;min-width:64px');
+        rr.append(n2,pl,dx);lst.appendChild(rr)});
+      if(addOpen){const ad=document.createElement('div');ad.id='t_stSA';const rest=SE.filter(s=>!t.ids.includes(s.id));
+        const l=document.createElement('div');l.style.cssText='font-size:12px;color:var(--muted);margin-top:6px';l.textContent='登録済みのSEから追加（▶=試し聞き）';ad.appendChild(l);
+        if(!rest.length)ad.appendChild(stEmpty('全部入っています'));
+        rest.forEach(s=>{const r3=document.createElement('div');r3.style.cssText='display:flex;gap:6px;margin-top:4px';
+          const b=stBtn('＋ '+s.n,()=>{const o=seTMut(k0);if(!o[k0].se.t[i].ids.includes(s.id))o[k0].se.t[i].ids.push(s.id);stSave(o);draw()},'flex:1;text-align:left;font-size:15px');
+          const p3=stBtn('▶',()=>sePlay(s.id),'width:48px;padding:0');r3.append(b,p3);ad.appendChild(r3)});
+        const b2=stBtn('＋ スマホのファイルから追加',()=>fi.click(),'width:100%;margin-top:6px');b2.id='t_stSA2';ad.appendChild(b2);lst.appendChild(ad)}})};
+  fi.onchange=async()=>{const fs=[...fi.files];fi.value='';if(!fs.length)return;const S=seTOf(k0),gn=(S.t[S.a]||{}).n||'字幕テンプレート',o=seTMut(k0);
+    for(const f of fs){const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);await kv('se|'+id,f);SE.push({id,n:f.name.replace(/\.[^.]+$/,''),g:gn});o[k0].se.t[o[k0].se.a].ids.push(id)}
+    await kv('se|list',SE);stSave(o);try{seDraw()}catch(_){}draw();showFn(fs.length+'個のSEを追加しました')};
+  const ab=stBtn('SEを追加',()=>{addOpen=!addOpen;ab.textContent=addOpen?'追加を閉じる':'SEを追加';draw()},'');ab.id='t_stSA1';
+  draw();w.foot(ab)}
 /* v379: 再生画面のタップの場所と名前を薄く表示(設定は ⚙設定 > 字幕画面。localStorage 'tzone') */
 const TZD={on:1,font:'',size:12,op:30,line:'dashed',w:1};
 const TZF=[['','標準'],['mplus','丸ゴシック'],['yusei','マジック手書き'],['klee','教科書体風'],['mochiy','ポップ'],['dela','太ゴシック'],['reggae','レゲエ']];
