@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v573';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v575';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6594,12 +6594,14 @@ async function getAudio(){if(audio)return audio;
     let src=buf.getChannelData(0);if(buf.numberOfChannels>1){const b=buf.getChannelData(1),m=new Float32Array(src.length);for(let i=0;i<m.length;i++)m[i]=(src[i]+b[i])/2;src=m}
     const N=src.length,pcm=new Float32Array(N+2*SR);pcm.set(src);let pk=0;for(let i=0;i<N;i++){const v=Math.abs(pcm[i]);if(v>pk)pk=v}audio={pcm,dur:N/SR,pk};return audio}
   const parts=[],pi=[];let N=0;
+  /* v574: 音の長さを必ず「残す範囲の長さ」にそろえる(動画より音が短い時など、後ろの字幕が全部ずれるのを防ぐ) */
+  const fit=(r,x)=>{const L=Math.max(0,Math.round((r.b-r.a)*SR));if(x.length===L)return x;if(x.length>L)return x.subarray(0,L);const y=new Float32Array(L);y.set(x);return y};
   for(const r of JOB){if(r.blank){const x=new Float32Array(Math.round((r.b-r.a)*SR));parts.push(x);N+=x.length;continue}
-    {const x=audReuse(r);if(x){pi.push({key:r.key,a:r.a,b:r.b,o:N,n:x.length});parts.push(x);N+=x.length;continue}}
+    {let x=audReuse(r);if(x){x=fit(r,x);pi.push({key:r.key,a:r.a,b:r.b,o:N,n:x.length});parts.push(x);N+=x.length;continue}}
     pi.push({key:r.key,a:r.a,b:r.b,o:N,n:0});
     /* v346: 大きい動画は使う所だけ読む */
-    if(r.file&&r.file.size>150e6){const x=await window.xAudR(r,r.a,r.b,{sr:SR});pi[pi.length-1].n=x.length;parts.push(x);N+=x.length;continue}
-    const p=await pcmOf(r),s=Math.max(0,Math.round(r.a*SR)),e=Math.min(p.length,s+Math.round((r.b-r.a)*SR));const x=p.subarray(s,e);pi[pi.length-1].n=x.length;parts.push(x);N+=x.length}
+    if(r.file&&r.file.size>150e6){const x=fit(r,await window.xAudR(r,r.a,r.b,{sr:SR}));pi[pi.length-1].n=x.length;parts.push(x);N+=x.length;continue}
+    const p=await pcmOf(r),s=Math.max(0,Math.round(r.a*SR)),e=Math.min(p.length,s+Math.round((r.b-r.a)*SR));const x=fit(r,p.subarray(s,e));pi[pi.length-1].n=x.length;parts.push(x);N+=x.length}
   const pcm=new Float32Array(N+2*SR);let o=0;parts.forEach(x=>{pcm.set(x,o);o+=x.length});audPrev=null;
   let pk=0;for(let i=0;i<N;i++){const v=Math.abs(pcm[i]);if(v>pk)pk=v}
   audio={pcm,dur:N/SR,pk,parts:pi};return audio}
@@ -8092,13 +8094,18 @@ function pausesIn(A,B){if(!audio)return [];const P=audio.pcm,f=Math.round(SR*0.0
   for(let k=0;k<n;k++){const s0=Math.round(A*SR)+k*f;let e=0;for(let i=s0;i<s0+f&&i<P.length;i++)e+=P[i]*P[i];E[k]=e;if(e>mx)mx=e}
   const th=mx*0.02,out=[];let st=-1;for(let k=0;k<=n;k++){const q=k<n&&E[k]<=th;if(q&&st<0)st=k;if(!q&&st>=0){if(k-st>=12&&st>0&&k<n)out.push(A+(st+k)/200);st=-1}}return out}
 /* v181: 行の端を波形に吸い付ける(始まり=声が出た所、終わり=声が消えた所、±0.35秒以内) */
+/* v575: 字幕が声より遅れる対策。始まりが声の途中なら、その声の出始め(0.8秒前まで・前の行の終わりより後)まで戻す。
+   終わりは「声が消えた所」まで前から探す(後ろの行の声まで伸ばして、次の行の始まりを遅らせない) */
 function tighten(cs,lo,hi){if(!audio||!cs.length)return;const P=audio.pcm,f=Math.round(SR*0.01);
   const en=t=>{const s0=Math.round(t*SR);let e=0;for(let i=Math.max(0,s0);i<s0+f&&i<P.length;i++)e+=P[i]*P[i];return e};
   let mx=0;for(let t=lo;t<hi;t+=0.01){const e=en(t);if(e>mx)mx=e}const th=mx*0.03;if(!th)return;
-  const on=t=>en(t)>th&&en(t+0.01)>th;
-  cs.forEach(g=>{const a0=Math.max(lo,g.a-0.35),a1=Math.min(g.b,g.a+0.35);for(let t=a0;t<=a1;t+=0.01)if(on(t)){g.a=Math.max(lo,t-0.05);break}
-    const b0=Math.max(g.a+0.2,g.b-0.35),b1=Math.min(hi,g.b+0.35);for(let t=b1;t>=b0;t-=0.01)if(on(t-0.01)){g.b=Math.min(hi,t+0.08);break}});
-  for(let i=1;i<cs.length;i++){const p=cs[i-1],g=cs[i];if(g.a<p.b){const ps=pausesIn(Math.max(p.a,g.a-0.3),Math.min(g.b,p.b+0.3));const m=ps.length?ps[0]:(g.a+p.b)/2;p.b=m;g.a=m}}
+  const on=t=>en(t)>th&&en(t+0.01)>th,O=cs.map(g=>({a:g.a,b:g.b}));
+  cs.forEach((g,i)=>{const pb=i?O[i-1].b:lo,na=i<cs.length-1?O[i+1].a:hi;
+    if(on(g.a)){let t=g.a;const m=Math.max(lo,pb,g.a-0.8);while(t-0.01>=m&&on(t-0.01))t-=0.01;g.a=Math.max(lo,t-0.03)}
+    else{const a1=Math.min(g.b,g.a+0.35);for(let t=g.a;t<=a1;t+=0.01)if(on(t)){g.a=Math.max(lo,t-0.05);break}}
+    if(on(g.b-0.01)){let t=g.b;const m=Math.min(hi,na,g.b+0.35);while(t+0.01<=m&&on(t))t+=0.01;g.b=Math.min(hi,Math.max(g.b,Math.min(na,t+0.08)))}
+    else{const b0=Math.max(g.a+0.2,g.b-0.35);for(let t=g.b;t>=b0;t-=0.01)if(on(t-0.01)){g.b=Math.min(hi,t+0.08);break}}});
+  for(let i=1;i<cs.length;i++){const p=cs[i-1],g=cs[i];if(g.a<p.b){if(g.a-p.a>=0.2)p.b=g.a;else{const ps=pausesIn(Math.max(p.a,g.a-0.3),Math.min(g.b,p.b+0.3));const m=ps.length?ps[0]:(g.a+p.b)/2;p.b=m;g.a=m}}}
   cs.forEach(g=>{if(g.b-g.a<0.2)g.b=g.a+0.2})}
 /* 区切り: 声のある時間の割合で決めた位置の近く(±0.8秒)に息継ぎがあればそこ、なければ近くの一番静かな所 */
 function splitAt(A,B,frac,lo,hi){const t0=Math.max(lo,Math.min(hi,voicedAt(A,B,frac)));
