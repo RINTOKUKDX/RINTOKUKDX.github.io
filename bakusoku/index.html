@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v568';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v569';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6972,7 +6972,7 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
     if(stFr(g)){const LP=stLp(g),CP=LP&&LP.ex==='c'?cpOf(LP.cp):null,LI=LP&&LP.ex==='i'&&lpUrl(LP.img),xs=LP?(LP.ex==='i'?1:(+LP.ex|0)%EXC.length):(g.exs|0)%EXC.length;o.className='big ex '+(CP?'exC':LI?'exI':EXC[xs]);const L=all||[o.textContent],n0=all?nOn:1;o.textContent='';
       /* v210: 画面の右半分(上の固定テロップより下)に余白を取って収める。少し透ける */
       {const W=X?X.W:$('pl').clientWidth||H*16/9,cw=s=>[...s].reduce((a,c)=>a+(/[ -~]/.test(c)?.55:1),0),Lc=Math.max(4,cw(g.ttl||'見出し(長押しで入力)')*.85,...L.map(x=>cw(x)+2.2)),n=L.length+1;
-       const aW=W*.42,aH=H*.66,fs=Math.min(H*.1,aW/(Lc+2.6),aH/(n*1.55+1.6))*(g.osc||1);
+       const aW=W*.42,aH=H*.66,fs=Math.min(H*.1,aW/(Lc+2.6),aH/(n*1.55+1.6))*(g.osc||1)*(CP?(+CP.sz||100)/100:1);
        o.style.cssText='left:'+(((CP?CP.px/100:.74)+(g.ox||0))*W).toFixed(1)+'px;top:'+(((CP?CP.py/100:.58)+(g.oy||0))*H).toFixed(1)+'px;font-size:'+fs.toFixed(1)+'px;line-height:1.3;white-space:nowrap;opacity:.95;transform:translate(-50%,-50%)'}
       const ek=g.a+'|'+n0,nw=o._exK!==ek;o._exK=ek;const inn=document.createElement('div');inn.className='in';o.appendChild(inn);
       /* v567: 箇条書きパネルの画像の枠(四隅を保って伸ばす=9分割。書き出しは tlBox が inn._nine で描く) */if(LI){const sl=Math.max(1,Math.min(49,+LP.sl||30)),bw=Math.max(.1,(+LP.bw||12)/10);inn.style.border=bw+'em solid transparent';inn.style.borderImage='url("'+LI+'") '+sl+'% fill / '+bw+'em stretch';inn._nine={u:LI,sl:sl/100};inn.style.color=LP.c||'#ffffff';if(X)tlImg(LI)}
@@ -7235,7 +7235,7 @@ const LPD={on:0,ex:0,img:'',sl:30,bw:12,c:'#ffffff'};
 /* v568: 自分で作る箇条書きパネル(stpl.cp=[{id,n,…CPD}])。T.lp.ex='c'・T.lp.cp=id。初めからある4種類は「編集」で CPP の写しを作る */
 const CPD={n:'パネル',ot:'c',oc:'#0d0d0d',oo:90,or:12,olw:0,olc:'#ffffff',osho:50,ofr:0,oimg:'',osl:30,obw:12,opd:100,
   hd:1,hc:'#ffffff',hs:112,ha:'c',hl:'u',hlc:'#ffffff',hf:'',ib:0,ic:'#ffffff',io:60,ir:15,ilw:0,ilc:'#ffffff',isho:0,igp:30,ipd:100,
-  mk:'◆',mkc:'#ffffff',tf:'',tc:'#ffffff',ts:100,lh:130,px:74,py:58,op:95};
+  mk:'◆',mkc:'#ffffff',tf:'',tc:'#ffffff',ts:100,lh:130,sz:100,ta:'l',px:74,py:58,op:95};/* v569: 置き方は廃止(位置は指で動かす)。sz=全体の大きさ(自動の大きさを基準に増減)・ta=行の揃え */
 const CPP=[{n:'ウイスキーラベル',oc:'#0d0d0d',oo:100,or:12,olw:6,olc:'#e9e4d8',osho:60,hc:'#f3efe6',hs:112,hl:'u',hlc:'#e9e4d8',hf:'mincho',mk:'❖',mkc:'#e9e4d8',tf:'mincho',tc:'#f3efe6'},
   {n:'アンティーク地図',oc:'#f0dfb8',oo:85,or:4,osho:40,hc:'#2a1a0a',hs:90,hl:'b',hlc:'#6b4a26',hf:'mincho',mk:'･',mkc:'#6b3f17',tf:'mincho',tc:'#2a1a0a'},
   {n:'黒板',oc:'#28402f',oo:100,or:6,olw:34,olc:'#7b4a26',osho:50,hc:'#ffe36e',hs:104,hl:'u',hlc:'#ffe36e',hf:'yusei',mk:'・',mkc:'#ff9fb0',tf:'yusei',tc:'#f6f6f0'},
@@ -7253,7 +7253,7 @@ function cpStyle(o,inn,C){const em=v=>(v/100).toFixed(3)+'em',sh=a=>a>0?'0 .15em
   if(+C.ofr>0){const b=(+C.ofr/10).toFixed(2)+'em';inn.style.backdropFilter=inn.style.webkitBackdropFilter='blur('+b+')';o._cpFr={el:inn,b:+C.ofr/10}}
   const hd=inn.querySelector('.hd');if(hd){hd.style.display=C.hd?'':'none';hd.style.color=C.hc;hd.style.fontSize=em(+C.hs);hd.style.textAlign=C.ha==='l'?'left':C.ha==='r'?'right':'center';hd.style.fontFamily=cpFam(C.hf||C.tf);hd.style.fontWeight='700';hd.style.marginBottom='.35em';
     const ln='.06em solid '+C.hlc;hd.style.borderBottom=C.hl==='u'||C.hl==='b'?ln:'none';hd.style.borderTop=C.hl==='b'?ln:'none';hd.style.padding='.08em .2em .15em'}
-  [...inn.querySelectorAll('.it')].forEach((d,i)=>{d.style.fontSize=em(+C.ts);d.style.lineHeight=String((+C.lh||130)/100);d.style.color=C.tc;d.style.marginTop=i?em(+C.igp):'0';
+  [...inn.querySelectorAll('.it')].forEach((d,i)=>{d.style.fontSize=em(+C.ts);d.style.lineHeight=String((+C.lh||130)/100);d.style.color=C.tc;d.style.marginTop=i?em(+C.igp):'0';d.style.justifyContent=C.ta==='r'?'flex-end':C.ta==='c'?'center':'flex-start';
     if(C.ib){const ip=(+C.ipd||0)/100;d.style.background=syRGBA(C.ic,(+C.io)/100);d.style.borderRadius=em(+C.ir);d.style.border=+C.ilw>0?em(+C.ilw)+' solid '+C.ilc:'none';d.style.boxShadow=sh(+C.isho);d.style.padding=(.25*ip).toFixed(3)+'em '+(.6*ip).toFixed(3)+'em'}
     else{d.style.background='none';d.style.border='none';d.style.boxShadow='none';d.style.padding='0'}
     const b=d.querySelector('b');if(b){b.textContent=C.mk==='n'?(i+1)+'.':C.mk;b.style.color=C.mkc;b.style.fontSize='.7em';b.style.display=C.mk?'':'none'}})}
@@ -7487,7 +7487,7 @@ function cpPage(id,done){const C0=cpOf(id);if(!C0)return;const bak=JSON.stringif
   try{const v=document.getElementById('t_pv');if(v&&v.videoWidth){const c=document.createElement('canvas');c.width=480;c.height=270;c.getContext('2d').drawImage(v,0,0,480,270);pv.style.background='url('+c.toDataURL('image/jpeg',.8)+') center/cover'}}catch(_){}
   const SMP=['今日のテーマ紹介','最近のニュース紹介','視聴者コメント拾い','質問コーナー','おたより紹介','ちょっとした裏話','おすすめ動画紹介','次回予告'];
   const draw=()=>{pv.querySelectorAll('.cpS').forEach(e=>e.remove());const c=C(),o=document.createElement('div');o.className='cpS';const W=pv.clientWidth||320,H=pv.clientHeight||180;
-    const fs=Math.min(H*.1,W*.42/12,H*.66/((nL+1)*1.55+1.6));o.style.cssText='position:absolute;left:'+(c.px/100*W).toFixed(1)+'px;top:'+(c.py/100*H).toFixed(1)+'px;transform:translate(-50%,-50%);font-size:'+fs.toFixed(1)+'px;line-height:1.3;white-space:nowrap;text-align:left;font-weight:600';
+    const fs=Math.min(H*.1,W*.42/12,H*.66/((nL+1)*1.55+1.6))*((+c.sz||100)/100);o.style.cssText='position:absolute;left:'+(c.px/100*W).toFixed(1)+'px;top:'+(c.py/100*H).toFixed(1)+'px;transform:translate(-50%,-50%);font-size:'+fs.toFixed(1)+'px;line-height:1.3;white-space:nowrap;text-align:left;font-weight:600';
     const inn=document.createElement('div');inn.className='in';const hd=document.createElement('div');hd.className='hd';hd.textContent='今日のやること';inn.appendChild(hd);
     for(let i=0;i<nL;i++){const d=document.createElement('div');d.className='it';d.style.cssText='display:flex;align-items:center;gap:.4em';const b=document.createElement('b'),sp=document.createElement('span');sp.textContent=SMP[i%SMP.length];d.append(b,sp);inn.appendChild(d)}
     o.appendChild(inn);pv.appendChild(o);cpStyle(o,inn,c)};
@@ -7519,7 +7519,7 @@ function cpPage(id,done){const C0=cpOf(id);if(!C0)return;const bak=JSON.stringif
   /* 中の枠 */const ib=sec('中の枠（行ごと）','t_cpI','ib');col(ib,'塗りの色','ic','t_cpIc');rg(ib,'不透明度','io',0,100,v=>v+'%','t_cpIo');rg(ib,'角の丸み','ir',0,100,v=>v,'t_cpIr');rg(ib,'枠線の太さ','ilw',0,30,v=>v,'t_cpIlw');col(ib,'枠線の色','ilc','t_cpIlc');rg(ib,'影','isho',0,100,v=>v+'%','t_cpIsh');rg(ib,'内側の余白','ipd',30,250,v=>v+'%','t_cpIpd');
   /* 行の文字 */const tb=sec('行の文字','t_cpT');seg(tb,'頭の印','mk',[['◆','◆'],['●','●'],['・','・'],['❖','❖'],['n','1.'],['','なし']],'t_cpMk');col(tb,'印の色','mkc','t_cpMkc');col(tb,'文字の色','tc','t_cpTc');fsel(tb,'フォント','tf','t_cpTf');
   rg(tb,'大きさ','ts',60,160,v=>v+'%','t_cpTs');rg(tb,'行の間隔','lh',100,200,v=>(v/100).toFixed(2),'t_cpLh');rg(tb,'行と行のすき間','igp',0,120,v=>v,'t_cpIgp');
-  /* 置き方 */const pb=sec('置き方','t_cpP2');rg(pb,'横の位置','px',10,90,v=>v+'%','t_cpPx');rg(pb,'縦の位置','py',10,90,v=>v+'%','t_cpPy');rg(pb,'透明度','op',10,100,v=>v+'%','t_cpOp');
+  /* 大きさ・揃え(v569。大きさは自動で変わる大きさを基準に増減) */const pb=sec('大きさ・揃え','t_cpP2');rg(pb,'全体の大きさ','sz',30,200,v=>v+'%','t_cpSz');seg(pb,'行の揃え','ta',[['l','左寄せ'],['c','中央'],['r','右寄せ']],'t_cpTa');
   const ft=document.createElement('div');ft.className='ft';ft.style.cssText='position:sticky;bottom:0;background:var(--panel);padding:8px 0 calc(8px + env(safe-area-inset-bottom));grid-template-columns:1fr 2fr';
   const no=stBtn('やめる',()=>{const o=stAll(),i=o.cp.findIndex(z=>z.id===id);if(i>=0)o.cp[i]=JSON.parse(bak);stSave(o);pg.remove();done&&done()},'');no.id='t_cpNo';
   const ok=stBtn('保存して戻る',()=>{sv();pg.remove();done&&done()},'');ok.id='t_cpOk';ok.className='tbig';ft.append(no,ok);
