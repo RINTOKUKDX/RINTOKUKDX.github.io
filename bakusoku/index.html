@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v571';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v572';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6787,6 +6787,13 @@ function drawResults(){
   drawAz(r,list);drawGl();
 }
 
+/* v572: 字幕の長さだけ変えた時は、行を作り直さない(並び・無音の欄の数が同じなら無音の欄の時間だけ直す)。形が変わった時は今まで通り drawResults。波形の端を動かして離した時用 */
+function drawLite(){const box=$('rows');if(!cur||!cur.list||!box)return drawResults();const items=withGaps(cur.list),ch=[...box.children];
+  if(ch.length!==items.length||items.some((g,i)=>{const o=ch[i]._g;return g.gap?!(o&&o.gap):o!==g}))return drawResults();
+  items.forEach((g,i)=>{if(g.gap){const o=ch[i]._g;o.a=g.a;o.b=g.b}});
+  if(sel&&sel.gap&&!ch.some(d=>d._g===sel)){let best=null,bo=0;ch.forEach(d=>{const x=d._g;if(!x.gap)return;const o=Math.min(x.b,sel.b)-Math.max(x.a,sel.a);if(o>bo){bo=o;best=x}});sel=best}
+  if(sel&&!sel.gap&&!cur.list.includes(sel))sel=null;if(!sel&&ch.length)sel=ch[0]._g;
+  ch.forEach(d=>d.classList.toggle('sel',d._g===sel));/* 呼ぶ側が後で showAt・drawWf をするので、ここは画面の字幕だけ */stopPlay();posSet=false;showOv()}
 /* ===== 選択・再生 ===== */
 let sel=null,cur=null;
 function withGaps(list){const cov=list.map(g=>[g.a,g.b]).sort((x,y)=>x[0]-y[0]);
@@ -7796,9 +7803,9 @@ addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
      if(g.bl&&g.ka&&window.blankSet){const bk=g.ka,L=g.b-g.a;window.blankSet(bk,L);g.ka=g.kb=bk;g.oa=0;g.ob=L;delete g.ca;delete g.cb;reJob()}
      else if(vidEdge(g,d.k,d.e0,g[d.k]))reJob();
      else{/* 動画を変えられなかった時は字幕の時間だけ(重なる隣の行は押す) */const L=cur.list,i=L.indexOf(g),pv=L[i-1],nx=L[i+1];if(nx&&nx.a<g.b){g.b=Math.min(g.b,nx.b-0.2);nx.a=g.b}if(pv&&pv.b>g.a){g.a=Math.max(g.a,pv.a+0.2);pv.b=g.a}st('ここは伸ばせる映像がないので、字幕の時間だけ変えました');setTimeout(()=>st(''),2500)}
-     save();drawResults();sel=g;vmode=g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',!!r._g&&r._g.a===g.a&&r._g.b===g.b));showAt(d.t0);drawWf(d.t0);return}
+     save();drawLite();sel=g;vmode=g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',!!r._g&&r._g.a===g.a&&r._g.b===g.b));showAt(d.t0);drawWf(d.t0);return}
    if(d.hold){if(!d.moved){drawWf(d.t0);return}let g=sel;
-     save();drawResults();
+     save();drawLite();
      if(g.gap){const n=withGaps(cur.list).find(x=>x.gap&&Math.abs(x.a-g.a)<0.02&&Math.abs(x.b-g.b)<0.02);g=n||null;if(!g)wEdge=null;else wEdge.g=g}
      sel=g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',!!g&&r._g.a===g.a&&r._g.b===g.b));showAt(d.t0);drawWf(d.t0);return}
    if(d.moved){/* 離した所の行を選ぶ(位置はそのまま。▶▶はここから) */posSet=true;if(cur){const g=withGaps(cur.list).find(x=>pos>=x.a&&pos<x.b);if(g){sel=g;[...$('rows').children].forEach(r=>{const on=r._g.a===g.a&&r._g.b===g.b;r.classList.toggle('sel',on)})}}/* v547: 字幕・ナレーションとも、波形を動かして離した時に画面を勝手に動かさない(行を選ぶだけ) */showOv(pos);drawWf(pos);return}
