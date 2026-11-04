@@ -788,6 +788,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_ov.exH .hd{color:#1f4fbf;text-align:center;font-size:1.04em;margin:0 auto .35em;width:max-content;padding:0 .25em;background:linear-gradient(transparent 70%,rgba(255,200,40,.55) 70% 95%,transparent 95%)}
 #t_ov.exH .it b{color:#d93025;font-size:.85em}
 #t_ov .bk{position:absolute;left:.25em;top:-1.02em;height:1.08em;pointer-events:none}
+#t_sb{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #t_sc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #t_iB{display:none!important;/* v553: 右上の⚙は削除(テンプレート編集は長タップへ) */position:absolute;z-index:3;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font:700 16px serif;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 #t_wf{display:block;width:100%;height:64px;background:var(--panel);touch-action:pan-y}
@@ -970,7 +971,7 @@ html.s4open{overflow-anchor:none}/* 行の高さが変わっても勝手に画�
 <main id="s4" hidden>
 <div id="t_root" class="tsec">
   <div id="t_stk">
-    <div id="t_pl"><video id="t_pv" playsinline preload="auto"></video><video id="t_pv2" playsinline preload="auto"></video><canvas id="t_sc"></canvas><div id="t_ov"></div><b id="t_iB">i</b></div>
+    <div id="t_pl"><video id="t_pv" playsinline preload="auto"></video><video id="t_pv2" playsinline preload="auto"></video><canvas id="t_sb"></canvas><canvas id="t_sc"></canvas><div id="t_ov"></div><b id="t_iB">i</b></div>
     <canvas id="t_wf"></canvas><canvas id="t_nw"></canvas><canvas id="t_tx"></canvas>
     <div id="t_ctl"><button id="t_bP" aria-label="選んだ行を再生・停止">▶‖</button><button id="t_bA" aria-label="続けて再生">▶▶</button><button id="t_bN" aria-label="次の字幕へ">次へ</button><button id="t_bR" aria-label="再生位置から録音">🎤</button><button id="t_bZ" aria-label="合成音声で読む">🗣</button><button id="t_bV" aria-label="動画の音を出す・消す">🔊</button><button id="t_bU" aria-label="ひとつ戻る">↺</button><button id="t_bY" aria-label="やり直し">⟳</button></div>
     <div class="r lt" id="t_lt"><span>軽量化</span><input id="t_ltI" type="range" min="0" max="1" step="1" aria-label="軽量化"><span class="v" id="t_ltV"></span></div>
@@ -2128,7 +2129,7 @@ const BIKE=new Image();window.BIKE_URL=BIKE.src='data:image/png;base64,iVBORw0KG
 window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.trim())return;if(o.br&&o.br.length){const a=[...txt];txt=a.map((c,i)=>(o.br.includes(i)&&i?'\n':'')+c).join('')}const u=Math.min(H,W*9/16),k=u/1080,s=o.spk&&PT['sub'+o.spk]?Object.assign({},PT['sub'+o.spk]):Object.assign({},PT.sub,o.color?{color:o.color}:{},o.stColor?{stColor:o.stColor,stW:Math.max(PT.sub.stW||0,6)}:{});
   /* v486: ストロークを大きさに合わせるため、元の大きさを覚えておく */s.sz0=s.size||60;
   /* v552: 字幕ごとの中色(cIn)・外色(cOut)・外の線の太さ(wOut)・影の濃さ(shP)と色(shC) */if(o.cIn)s.color=o.cIn;if(o.cOut){s.stColor=o.cOut;if(!(s.stW>0)&&o.wOut==null)s.stW=6}if(o.wOut!=null)s.stW=o.wOut;if(o.shP!=null){s.shOp=o.shP;if(!(s.shBlur>0))s.shBlur=8}if(o.shC)s.shColor=o.shC;
-  /* v562: スタイルテンプレート(o.sty)。今までの色・線・影の代わりに使う */if(o.sty){const T=o.sty;s.color=T.c||'#ffffff';s.stW=T.st?(+T.sw||0):0;s.stColor=T.sc||'#000000';s.st2W=0;s.shOp=0;s.ty=T}
+  /* v562: スタイルテンプレート(o.sty)。今までの色・線・影の代わりに使う */if(o.sty){const T=o.sty;s.color=T.c||'#ffffff';s.stW=T.st?(+T.sw||0):0;s.stColor=T.sc||'#000000';s.st2W=0;s.shOp=0;s.ty=T;s.bxc=o.bxc||null;s.bxF=o.bxF||null;if(T.bx)s.frame='none'}
   /* v556: 位置テンプレート(o.pp): 縦文字/横文字・揃え・文字と行の間隔・余白(文字が入る範囲 ar)。余白がある時は揃えの辺を基準に置く */
   const PP=o.pp||null;if(PP){if(PP.vt)s.vert=PP.vt==='v'?'1':'';s.pp=PP;/* v560: 自動でサイズを変える(fit)。余白がある時は余白いっぱいに(s.fill)、切ると元の大きさ×指の大きさ */if(PP.fit===false)o.fit=false;else if(PP.ar){s.fill=true;o.fit=false;o.osc=null}const a=PP.ar;if(a){s.x=PP.ha==='l'?a.l:PP.ha==='r'?a.r:(a.l+a.r)/2;s.y=PP.va==='t'?a.t:PP.va==='b'?a.b:(a.t+a.b)/2}}
   /* v264: き・奥は文字が少ないと大きく(v268: 最大4.5倍、幅の9割まで)、多いと小さく。4文字以下は真ん中、その2回に1回は縦書き */
@@ -2169,6 +2170,47 @@ function bigText(g,W,H,u,it,since,until,s){
   styledText(g,W,H,u,raw,o,!!st.v,since,until);
 }
 /* 字幕・太字の共通描画(テンプレート編集の設定を使う) */
+/* v563: 字幕のスタイル「枠・テキストボックス」の形(20種。シンプル/ポップ/シック)。c=描く所、(x,y,w,h)=文字の箱＋余白、u=1080pの1画素の大きさ */
+function bxRR(c,x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));c.moveTo(x+r,y);c.lineTo(x+w-r,y);c.arcTo(x+w,y,x+w,y+r,r);c.lineTo(x+w,y+h-r);c.arcTo(x+w,y+h,x+w-r,y+h,r);c.lineTo(x+r,y+h);c.arcTo(x,y+h,x,y+h-r,r);c.lineTo(x,y+r);c.arcTo(x,y,x+r,y,r);c.closePath()}
+function bxPath(c,S,x,y,w,h,u,W){c.beginPath();const cx=x+w/2,cy=y+h/2,m=Math.min(w,h),P=a=>{a.forEach(([px,py],i)=>i?c.lineTo(px,py):c.moveTo(px,py));c.closePath()};
+  switch(S){
+    case 'rect':case 'double':c.rect(x,y,w,h);return 'fill';
+    case 'ellipse':c.ellipse(cx,cy,w*.62,h*.72,0,0,Math.PI*2);return 'fill';
+    case 'capsule':bxRR(c,x-h*.25,y,w+h*.5,h,h/2);return 'fill';
+    case 'band':c.rect(x-W*4,y,w+W*8,h);return 'fill';
+    case 'uline':c.moveTo(x,y+h*.9);c.lineTo(x+w,y+h*.9);return 'line';
+    case 'quote':c.moveTo(x,y);c.lineTo(x,y+h);return 'line';
+    case 'corner':{const L=m*.35;[[x,y,1,1],[x+w,y,-1,1],[x,y+h,1,-1],[x+w,y+h,-1,-1]].forEach(([a,b,sx,sy])=>{c.moveTo(a+L*sx,b);c.lineTo(a,b);c.lineTo(a,b+L*sy)});return 'line'}
+    case 'bubble':{const R=m*.25,tx=x+w*.28,tw=Math.max(h*.3,w*.07);c.moveTo(x+R,y);c.lineTo(x+w-R,y);c.arcTo(x+w,y,x+w,y+R,R);c.lineTo(x+w,y+h-R);c.arcTo(x+w,y+h,x+w-R,y+h,R);c.lineTo(tx+tw,y+h);c.lineTo(tx-tw*.4,y+h+h*.55);c.lineTo(tx,y+h);c.lineTo(x+R,y+h);c.arcTo(x,y+h,x,y+h-R,R);c.lineTo(x,y+R);c.arcTo(x,y,x+R,y,R);c.closePath();return 'fill'}
+    case 'obubble':c.ellipse(cx,cy,w*.62,h*.72,0,0,Math.PI*2);P([[cx-w*.08,cy+h*.6],[cx-w*.5,cy+h*1.15],[cx-w*.28,cy+h*.45]])/* 楕円と同じ向き(穴にならない) */;return 'union';
+    case 'cloud':{const rx=w*.52,ry=h*.55,n=Math.max(8,Math.min(22,Math.round((w+h)/(h*.42)))),br=Math.max(h*.32,Math.min(w,h*3)*.16);c.ellipse(cx,cy,rx,ry,0,0,Math.PI*2);
+      for(let i=0;i<n;i++){const a=i/n*Math.PI*2,px=cx+rx*Math.cos(a),py=cy+ry*Math.sin(a);c.moveTo(px+br,py);c.arc(px,py,br,0,Math.PI*2)}
+      [[.62,.95,.16],[.78,1.2,.09]].forEach(([fx,fy,fr])=>{const px=cx-rx*fx,py=cy+ry*fy,rr=h*fr*2;c.moveTo(px+rr,py);c.arc(px,py,rr,0,Math.PI*2)});return 'union'}
+    case 'burst':{const n=18,a=[];for(let i=0;i<n*2;i++){const t=i/(n*2)*Math.PI*2,k2=i%2?.78:1;a.push([cx+w*.7*k2*Math.cos(t),cy+h*1.05*k2*Math.sin(t)])}P(a);return 'fill'}
+    case 'star':{const R=Math.max(w*.75,h*1.3),r=R*.5,y0=cy+R*.1,a=[];for(let i=0;i<10;i++){const t=-Math.PI/2+i*Math.PI/5,q=i%2?r:R;a.push([cx+q*Math.cos(t),y0+q*Math.sin(t)])}P(a);return 'fill'}
+    case 'heart':{const A=w*.62,B=h*1.15;c.moveTo(cx,cy+B);c.bezierCurveTo(cx-A*1.35,cy+B*.2,cx-A*1.15,cy-B*1.15,cx,cy-B*.5);c.bezierCurveTo(cx+A*1.15,cy-B*1.15,cx+A*1.35,cy+B*.2,cx,cy+B);c.closePath();return 'fill'}
+    case 'hand':{const j=m*.07,sd=Math.round(w*7+h*3),rn=i=>{const v=Math.sin(sd*.013+i*12.9898)*43758.5453;return (v-Math.floor(v))*2-1},pts=[];
+      const E=[[x,y,x+w,y],[x+w,y,x+w,y+h],[x+w,y+h,x,y+h],[x,y+h,x,y]];let i=0;E.forEach(([a,b,c2,d])=>{for(let s=0;s<4;s++){const t=s/4;pts.push([a+(c2-a)*t+rn(i++)*j,b+(d-b)*t+rn(i++)*j])}});
+      c.moveTo(pts[0][0],pts[0][1]);for(let s=1;s<=pts.length;s++){const p=pts[s%pts.length],q=pts[(s+1)%pts.length];c.quadraticCurveTo(p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2)}c.closePath();return 'fill'}
+    case 'slant':{const o=h*.35;P([[x+o,y],[x+w+o,y],[x+w-o,y+h],[x-o,y+h]]);return 'fill'}
+    case 'ribbon':{const o=h*.45;P([[x-o,y],[x+w+o,y],[x+w+o*.4,y+h/2],[x+w+o,y+h],[x-o,y+h],[x-o*.4,y+h/2]]);return 'fill'}
+    case 'hex':{const o=h*.45;P([[x-o,y+h/2],[x,y],[x+w,y],[x+w+o,y+h/2],[x+w,y+h],[x,y+h]]);return 'fill'}
+    default:bxRR(c,x,y,w,h,m*.25);return 'fill'}}
+/* 枠を描く: 塗り(色・不透明度・グラデーション)・線・ぼかし・影。すりガラスは後ろをぼかす所を F に入れる(画面の座標) */
+function bxDraw(c,T,x,y,w,h,u,F,W){const S=T.bxs||'round',M=c.getTransform(),sc=Math.hypot(M.a,M.b)||1,op=clamp01((T.bxo??60)/100),lw=(+T.bxlw||0)*u;c.save();c.lineJoin='round';
+  if(S==='frost'&&F){const Q=[[x,y],[x+w,y],[x,y+h],[x+w,y+h]].map(([a,b])=>[M.a*a+M.c*b+M.e,M.b*a+M.d*b+M.f]),xs=Q.map(p=>p[0]),ys=Q.map(p=>p[1]),X0=Math.min(...xs),Y0=Math.min(...ys);
+    F.push({x:X0,y:Y0,w:Math.max(...xs)-X0,h:Math.max(...ys)-Y0,r:Math.min(w,h)*.25*sc,b:Math.max(3,(T.bxbl>0?+T.bxbl:12)*u*sc)})}
+  const kind=bxPath(c,S,x,y,w,h,u,W),col=a=>hexA(a,op);
+  const fs=()=>{if(T.bxg){const d=T.bxgd||'v',gr=c.createLinearGradient(x,y,d==='v'?x:x+w,d==='h'?y:y+h);gr.addColorStop(0,col(T.bxc||'#000000'));gr.addColorStop(1,col(T.bxc2||'#ffffff'));return gr}return col(T.bxc||'#000000')};
+  if(T.bxbl>0&&S!=='frost'){const f0=c.filter&&c.filter!=='none'?c.filter+' ':'';c.filter=f0+'blur('+(T.bxbl*u*sc).toFixed(2)+'px)'}
+  if(T.bxsho>0){c.shadowColor=hexA(T.bxshc||'#000000',clamp01(T.bxsho/100));c.shadowBlur=(+T.bxshb||0)*u*sc;const d=(+T.bxshd||0)*u*sc*Math.SQRT1_2;c.shadowOffsetX=d;c.shadowOffsetY=d}
+  if(kind==='line'){c.strokeStyle=lw>0?(T.bxlc||'#ffffff'):fs();c.lineWidth=Math.max(lw>0?lw:8*u,2/sc);c.lineCap='round';c.stroke();c.restore();return}
+  if(kind==='union'&&lw>0){c.lineWidth=lw*2;c.strokeStyle=T.bxlc||'#ffffff';c.stroke();c.shadowColor='transparent'}
+  c.fillStyle=fs();c.fill();c.shadowColor='transparent';
+  if(kind!=='union'&&lw>0){c.lineWidth=lw;c.strokeStyle=T.bxlc||'#ffffff';c.stroke()}
+  if(S==='double'){const L=lw>0?lw:3*u,g2=L*2.4;c.strokeStyle=T.bxlc||'#ffffff';if(!(lw>0)){c.lineWidth=L;c.stroke()}c.beginPath();c.rect(x+g2,y+g2,w-g2*2,h-g2*2);c.lineWidth=Math.max(u,L*.6);c.stroke()}
+  c.restore()}
+window.bxDraw=bxDraw;
 function styledText(g,W,H,u,raw,s,vert,since,until){
   raw=(raw||'').replace(/\r/g,'');if(!raw.trim()||!s)return;
   since=since==null?99:since;until=until==null?99:until;
@@ -2219,6 +2261,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     const sp=fs*1.1,cw=fs*1.3;bw=cw*cols.length;bh=maxn*sp;
     draw=f=>cols.forEach((c,j)=>{const x=bw/2-cw*(j+.5);c.forEach((ch,i)=>f(ch,x,-bh/2+sp*(i+.5)))});
   }
+  /* v563: 枠・テキストボックス(自動サイズ)。枠は別のキャンバス(s.bxc)に、文字と同じ位置で描く */if(s.ty&&s.ty.bx&&s.bxc&&s.ty.bxsz!=='f'){const sk=s.sz0?Math.max(1,fs/(s.sz0*k)):1,p=(s.ty.bxp??20)*k*sk,B=s.bxc;B.save();B.setTransform(g.getTransform());B.globalAlpha=g.globalAlpha;bxDraw(B,s.ty,-bw/2-p,-bh/2-p,bw+p*2,bh+p*2,k*sk,s.bxF,W);B.restore()}
   const fr=s.frame||'none';
   if(fr!=='none'){const pad=(s.fPad??20)*k,x=-bw/2-pad,y=-bh/2-pad,w=bw+pad*2,h=bh+pad*2;
     g.save();g.globalAlpha=alpha*clamp01((s.fOp??60)/100);g.fillStyle=s.fColor||'#000000';
@@ -4632,7 +4675,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v562';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v563';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6865,7 +6908,7 @@ function showOv(t){showOv0(t);const o=$('ov');o.style.filter=o._g&&o._g.inv?INVF
   else[o,enc].forEach(el=>{el.style.scale=P.sc.toFixed(3);if(P.rot)el.style.rotate=((el===enc&&enc.style.rotate?parseFloat(enc.style.rotate):0)+P.rot).toFixed(1)+'deg';if(P.dy)el.style.translate='0 '+(P.dy*60*H/1080).toFixed(1)+'px';el.style.opacity=Math.max(0,Math.min(1,P.a)).toFixed(3)})}
 const b2=o=>o.classList.contains('v');
 /* v227: X={o,sc,W,H,list}を渡すと、書き出し用に別の要素・キャンバスへ描く(fixPaintなし・選択中の行なし) */
-function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=null,nOn=0,onR=null;const LS=X?X.list:cur&&cur.list;const sc=X?X.sc:$('sc'),scx=sc.getContext('2d');scx.setTransform(1,0,0,1,0,0);scx.clearRect(0,0,sc.width,sc.height);
+function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=null,nOn=0,onR=null;const LS=X?X.list:cur&&cur.list;const sc=X?X.sc:$('sc'),scx=sc.getContext('2d');scx.setTransform(1,0,0,1,0,0);scx.clearRect(0,0,sc.width,sc.height);const BX=bxPrep(X);/* v563 */
   const tb=t!=null?t:(!X&&sel&&!sel.gap?sel.a+0.001:pos),inBk=JOB.some(r=>r.blank&&tb>=r.v0&&tb<r.v1);/* v276: 空白の間はロゴ・右上テロップを出さない */
   if(!X&&!inBk){const W=sc.clientWidth,H=sc.clientHeight,dp=devicePixelRatio||1;if(W&&H&&window.fixPaint){if(sc.width!==Math.round(W*dp)||sc.height!==Math.round(H*dp)){sc.width=Math.round(W*dp);sc.height=Math.round(H*dp)}scx.setTransform(dp,0,0,dp,0,0);window.fixPaint(scx,W,H);scx.setTransform(1,0,0,1,0,0)}}
   if(LS){const tt=t!=null?t:(!X&&sel&&!sel.gap?sel.a+0.001:null);
@@ -6918,11 +6961,13 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
       return}
     {const T=stY(g);if(T)bkSty(o,T)}/* v562: 太にもスタイル */
     if(all){o.textContent='';all.forEach((x,i)=>{if(i)o.appendChild(document.createTextNode('\n'));const s=document.createElement('span');s.textContent=x;if(i>=nOn)s.style.visibility='hidden';o.appendChild(s)})}
+    /* v563: 太の枠・テキストボックス(パネルの背景は消す) */{const T=stY(g);if(BX&&T&&T.bx){try{if(o.classList.contains('panel')){o.style.background='transparent';o.style.boxShadow='none'}
+      if(T.bxsz==='f')bxFix(BX,T);else{const fz=parseFloat(o.style.fontSize)||40,u2=fz/60,p=(T.bxp??20)*u2,cx=parseFloat(o.style.left)||0,cy=parseFloat(o.style.top)||0,w=o.offsetWidth,h=o.offsetHeight,c=BX.x;c.save();c.translate(cx,cy);if(!X&&b.rot)c.rotate(b.rot*Math.PI/180);window.bxDraw(c,T,-w/2-p,-h/2-p,w+p*2,h+p*2,u2,BX.F,BX.W);c.restore()}}catch(_){}}bxEnd(BX,T,X)}
     return}
   o.className='';o.style.cssText='';o.style.color=TPL[k].c||'#fff';
   /* v190: テンプレート編集の字幕と同じ見た目(キャンバスで描く) */
   if(window.subPaint){const W=X?X.W:sc.clientWidth,H=X?X.H:sc.clientHeight,dp=X?1:devicePixelRatio||1;if(W&&H){if(!X&&(sc.width!==Math.round(W*dp)||sc.height!==Math.round(H*dp))){sc.width=Math.round(W*dp);sc.height=Math.round(H*dp)}
-    scx.setTransform(dp,0,0,dp,0,0);if(g.inv)scx.filter=INVF;try{const PP=txt==null?stP(g):null;o._sb=window.subPaint(scx,W,H,o.textContent,{...subFit(g,k,txt,LS),pp:PP,spk:g.bl?(g.bl==='h'?'h':'s'):k,color:k==='f'?'#ffffff':(TPL[k].c||null),stColor:k==='f'?(TPL.f.c||'#d6337f'):null,fr:false,fc:'#ffffff',ox:PP?PP.x:g.ox,oy:PP?PP.y:g.oy,osc:PP?PP.s:g.osc,font:fk(g),cIn:g.ci,cOut:g.co,wOut:g.cw,shP:g.chp,shC:g.chc,sty:stY(g),br:txt==null?g.br:null,cs:txt==null?g.cs:(onR&&onR.some(x=>x.cs)?onR.flatMap(x=>x.cs&&x.cs.length===[...x.t].length?x.cs:[...x.t].map(()=>0)):null)});o.textContent='';o._g=g}catch(_){}scx.filter='none'}}}
+    scx.setTransform(dp,0,0,dp,0,0);if(g.inv)scx.filter=INVF;try{const PP=txt==null?stP(g):null;o._sb=window.subPaint(scx,W,H,o.textContent,{...subFit(g,k,txt,LS),pp:PP,spk:g.bl?(g.bl==='h'?'h':'s'):k,color:k==='f'?'#ffffff':(TPL[k].c||null),stColor:k==='f'?(TPL.f.c||'#d6337f'):null,fr:false,fc:'#ffffff',ox:PP?PP.x:g.ox,oy:PP?PP.y:g.oy,osc:PP?PP.s:g.osc,font:fk(g),cIn:g.ci,cOut:g.co,wOut:g.cw,shP:g.chp,shC:g.chc,sty:stY(g),bxc:BX&&stY(g)&&stY(g).bx?BX.x:null,bxF:BX?BX.F:null,br:txt==null?g.br:null,cs:txt==null?g.cs:(onR&&onR.some(x=>x.cs)?onR.flatMap(x=>x.cs&&x.cs.length===[...x.t].length?x.cs:[...x.t].map(()=>0)):null)});o.textContent='';o._g=g}catch(_){}scx.filter='none';{const T=stY(g);try{if(BX&&T&&T.bx&&T.bxsz==='f')bxFix(BX,T)}catch(_){}bxEnd(BX,T,X)}}}}
 const shortR=x=>!x.bl&&!x.grp&&SPK(x)!=='b'&&[...String(x.t||'')].filter(c=>c.trim()).length<=4;
 function subFit(g,k,txt,LS){if(g.bl||(k!=='m'&&k!=='f'))return {};
   /* v556: 位置テンプレートを使っている字幕は、その縦文字/横文字に従う(真ん中に寄せない) */const P=txt==null&&typeof stP==='function'&&stP(g);if(P)return {fit:true,mid:false,vt:P.vt==='v'};
@@ -7299,11 +7344,28 @@ function popSeT(g){const w=stPop(g,'SE'),k0=w.k0;w.dataset.kind='se';
     await kv('se|list',SE);stSave(o);try{seDraw()}catch(_){}draw();drawAdd();showFn(fs.length+'個のSEを追加しました')};
   const ab=stBtn('SEを追加',()=>{add.hidden=!add.hidden;ab.textContent=add.hidden?'SEを追加':'追加を閉じる';drawAdd()},'');ab.id='t_stSA1';
   draw();w.foot(ab)}
+/* ---- v563: ③スタイルの後半「枠・テキストボックス」。字幕の後ろの枠は別のキャンバス(#t_sb。合成モード=mix-blend-mode)に描く。すりガラスは #t_fg(backdrop-filter)。
+   書き出しは tlRender が e.bx(枠のキャンバス)・e.bm(合成モード)・e.fg(後ろをぼかす所)を作り、tlDrawE が 後ろをぼかす→枠→文字 の順に描く */
+function bxPrep(X){const c=X?X.sb:document.getElementById('t_sb');if(!c)return null;let W,H,dp;
+  if(X){W=X.W;H=X.H;dp=1}else{const p=$('pl');W=p.clientWidth;H=p.clientHeight;dp=devicePixelRatio||1;if(c.width!==Math.round(W*dp)||c.height!==Math.round(H*dp)){c.width=Math.round(W*dp);c.height=Math.round(H*dp)}
+    c.style.mixBlendMode='normal';const f=document.getElementById('t_fg');if(f)f.hidden=true}
+  const x=c.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,c.width,c.height);x.setTransform(dp,0,0,dp,0,0);return {c,x,W,H,dp,F:[]}}
+/* 固定サイズの枠(画面の割合 T.bxr) */
+function bxFix(BX,T){const r=T.bxr||{l:.1,t:.7,r:.9,b:.95};window.bxDraw(BX.x,T,r.l*BX.W,r.t*BX.H,(r.r-r.l)*BX.W,(r.b-r.t)*BX.H,BX.H/1080,BX.F,BX.W)}
+function bxEnd(BX,T,X){if(!BX)return;const on=!!(T&&T.bx),m=on&&T.bxm&&T.bxm!=='source-over'?T.bxm:'';
+  if(X){X.bxOn=on;X.bxm=m||'source-over';X.fg=BX.F.length?BX.F:null;return}
+  BX.c.style.mixBlendMode=m||'normal';let f=document.getElementById('t_fg');
+  if(BX.F.length){if(!f){f=document.createElement('div');f.id='t_fg';f.style.cssText='position:absolute;z-index:1;pointer-events:none';BX.c.parentNode.insertBefore(f,BX.c)}
+    const q=BX.F[0],d=BX.dp,bl='blur('+(q.b/d).toFixed(1)+'px)';f.hidden=false;Object.assign(f.style,{left:q.x/d+'px',top:q.y/d+'px',width:q.w/d+'px',height:q.h/d+'px',borderRadius:q.r/d+'px',backdropFilter:bl,webkitBackdropFilter:bl})}
+  else if(f)f.hidden=true}
 /* ---- v562: 字幕テンプレート③スタイル(前半: 文字の太さ・文字の色・ストローク(二重)・シャドウ。枠・テキストボックスは次)。
    stpl[k].sty=[{id,n,wt,c,st,sw,sc,d,dw,dc,sh,shc,sho,shd,sha,shx,shy,shb,shs}]。字幕は g.sy(使うスタイルのid)。数値は1080pの画素(太は文字の大きさ60を基準)。
    右上のタップ=登録したスタイルを順に(最後は元の見た目)。長タップ=このポップアップ。き・奥=キャンバス(styledText の s.ty)、太=DOM(bkSty。書き出しは tlText が写す) */
 function stY(g){if(!g||!g.sy)return null;const T=stAll()[SPK(g)];return T&&Array.isArray(T.sty)&&T.sty.find(p=>p.id===g.sy)||null}
-const STYD={wt:0,c:'#ffffff',st:1,sw:6,sc:'#000000',d:0,dw:6,dc:'#ffffff',sh:0,shc:'#000000',sho:60,shd:6,sha:45,shx:0,shy:0,shb:8,shs:0};
+const STYD={wt:0,c:'#ffffff',st:1,sw:6,sc:'#000000',d:0,dw:6,dc:'#ffffff',sh:0,shc:'#000000',sho:60,shd:6,sha:45,shx:0,shy:0,shb:8,shs:0,
+  /* v563: 枠・テキストボックス */bx:0,bxs:'round',bxc:'#000000',bxo:60,bxg:0,bxc2:'#ffffff',bxgd:'v',bxlw:0,bxlc:'#ffffff',bxbl:0,bxsho:0,bxshd:6,bxshb:10,bxshc:'#000000',bxsz:'a',bxp:20,bxm:'source-over'};
+const BXL=[['rect','四角','s'],['round','角丸','s'],['ellipse','楕円','s'],['capsule','カプセル','s'],['band','帯','s'],['uline','下線だけ','s'],['bubble','吹き出し','p'],['obubble','丸い吹き出し','p'],['cloud','もくもく雲','p'],['burst','ギザギザ','p'],['star','星','p'],['heart','ハート','p'],['hand','手書き風','p'],['slant','斜め','p'],['double','二重線','c'],['corner','四隅のカギ','c'],['ribbon','リボン','c'],['hex','六角形','c'],['quote','左に縦線','c'],['frost','すりガラス','c']];
+const BXM=[['source-over','通常'],['multiply','乗算'],['screen','スクリーン'],['overlay','オーバーレイ'],['darken','比較（暗）'],['lighten','比較（明）'],['color-dodge','覆い焼き'],['color-burn','焼き込み'],['hard-light','ハードライト'],['soft-light','ソフトライト'],['difference','差の絶対値'],['exclusion','除外'],['hue','色相'],['saturation','彩度'],['color','カラー'],['luminosity','輝度']];
 const hx6=c=>{c=String(c||'');if(/^#[0-9a-f]{6}$/i.test(c))return c.toLowerCase();const m=/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(c);return m?('#'+m[1]+m[1]+m[2]+m[2]+m[3]+m[3]).toLowerCase():null};
 /* 登録の時の中身=今の見た目(使っているスタイルがあればその写し) */
 function styBase(g){const T=stY(g);if(T){const o={...T};delete o.id;delete o.n;return o}
@@ -7325,7 +7387,7 @@ function tapSty(g){const L=stAll()[SPK(g)].sty;if(!L.length){showFn('スタイ�
 /* スタイルのポップアップ: 「名前✏️」「編集」「削除」の行 ＋「登録」「❌」 */
 function popSty(g){const w=stPop(g,'スタイル');w.dataset.kind='sty';styList(w,g)}
 const stClr=w=>{w.body.innerHTML='';[...w.children].forEach(c=>{if(c!==w.firstChild&&c!==w.body)c.remove()})};
-function styList(w,g){const k0=w.k0;stClr(w);const hd=w.querySelector('b');hd.textContent='スタイル（'+STJ[k0]+'）';hd.style.cssText='flex:1';
+function styList(w,g){const k0=w.k0;stArOff();stClr(w);const hd=w.querySelector('b');hd.textContent='スタイル（'+STJ[k0]+'）';hd.style.cssText='flex:1';
   const box=document.createElement('div');box.id='t_syL';w.body.appendChild(box);const T=stAll()[k0];
   if(!T.sty.length)box.appendChild(stEmpty('まだありません。「登録」で今の見た目を登録します'));
   T.sty.forEach(p=>{const r=stRow(g.sy===p.id);
@@ -7338,7 +7400,7 @@ function styList(w,g){const k0=w.k0;stClr(w);const hd=w.querySelector('b');hd.te
   w.foot(reg)}
 /* 「編集」: 文字の太さ・文字の色・□ストローク▼(幅・色・二重にする)・□シャドウ▼(色・不透明度・距離・角度・X/Y・ぼかし・拡散) */
 const SYA=[[0,'右'],[45,'右下'],[90,'下'],[135,'左下'],[180,'左'],[225,'左上'],[270,'上'],[315,'右上']];
-function styEdit(w,g,id){const k0=w.k0,P=()=>stAll()[k0].sty.find(z=>z.id===id);if(!P()){styList(w,g);return}stClr(w);
+function styEdit(w,g,id){const k0=w.k0,P=()=>stAll()[k0].sty.find(z=>z.id===id);if(!P()){styList(w,g);return}stClr(w);{const q=P();Object.keys(STYD).forEach(k=>{if(q[k]===undefined)q[k]=STYD[k]})}
   const sv=()=>stSave(stAll()),up=()=>{sv();showOv(pos)},live=()=>showOv(pos);
   const hd=w.querySelector('b');hd.textContent='スタイル（'+STJ[k0]+'）：';hd.appendChild(stName(P().n,n=>{P().n=n;sv()}));hd.style.cssText='flex:1;display:flex;gap:2px;min-width:0;align-items:center';
   const rg=(par,lb,key,mn,mx,unit,id2)=>{const i=w.rng(mn,mx,Math.round(+P()[key]||0),v=>v+unit);i.id=id2;i.oninput=()=>{P()[key]=+i.value;live()};i.onchange=sv;par.appendChild(w.row(lb,i,i._o));return i};
@@ -7367,6 +7429,31 @@ function styEdit(w,g,id){const k0=w.k0,P=()=>stAll()[k0].sty.find(z=>z.id===id);
   {const s2=document.createElement('select');s2.id='t_syShA';s2.style.cssText='min-height:40px;font-size:15px;flex:1';SYA.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s2.appendChild(o)});
    s2.value=String(SYA.some(a=>a[0]===+P().sha)?+P().sha:45);s2.onchange=()=>{P().sha=+s2.value;up()};hb.appendChild(w.row('角度',s2))}
   rg(hb,'X位置','shx',-60,60,'','t_syShX');rg(hb,'Y位置','shy',-60,60,'','t_syShY');rg(hb,'ぼかし','shb',0,40,'','t_syShB');rg(hb,'拡散','shs',0,30,'','t_syShS');
+  /* v563: 枠・テキストボックス(形は シンプル/ポップ/シック の階層で選ぶ) */
+  const xb=sec('枠・テキストボックス','bx','t_syBx');
+  {const cat=document.createElement('div');cat.id='t_syBxK';cat.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:6px 0';
+   const grid=document.createElement('div');grid.id='t_syBxS';grid.style.cssText='display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0 8px';
+   let K=(BXL.find(z=>z[0]===(P().bxs||'round'))||BXL[1])[2];
+   const pk=()=>{[...cat.children].forEach(b=>{const on=b.dataset.k===K;b.style.outline=on?'2px solid var(--accent)':'none';b.style.background=on?'color-mix(in srgb,var(--accent) 30%,transparent)':''});grid.innerHTML='';
+     BXL.filter(z=>z[2]===K).forEach(([v,t])=>{const b=stBtn(t,()=>{P().bxs=v;if(v==='frost'&&!P().bxF){P().bxc='#ffffff';P().bxo=25;P().bxF=1}pk();up()},'font-size:13px;padding:2px');b.dataset.v=v;const on=(P().bxs||'round')===v;b.setAttribute('aria-pressed',on?'true':'false');b.style.outline=on?'2px solid var(--accent)':'none';b.style.background=on?'color-mix(in srgb,var(--accent) 30%,transparent)':'';grid.appendChild(b)})};
+   [['s','シンプル'],['p','ポップ'],['c','シック']].forEach(([k,t])=>{const b=stBtn(t,()=>{K=k;pk()},'');b.dataset.k=k;cat.appendChild(b)});xb.append(cat,grid);pk()}
+  col(xb,'塗りの色','bxc','t_syBxC');rg(xb,'不透明度','bxo',0,100,'%','t_syBxO');
+  {const gb=document.createElement('div');gb.id='t_syBxGB';const gt=stBtn('',()=>{P().bxg=P().bxg?0:1;pg();up()},'width:100%;margin-top:4px');gt.id='t_syBxG';
+   const pg=()=>{const on=!!P().bxg;gt.textContent=on?'グラデーションをやめる':'グラデーションにする';gt.setAttribute('aria-pressed',on?'true':'false');gt.style.outline=on?'2px solid var(--accent)':'none';gb.hidden=!on};
+   xb.append(gt,gb);col(gb,'2色目','bxc2','t_syBxC2');const s3=document.createElement('select');s3.id='t_syBxGD';s3.style.cssText='min-height:40px;font-size:15px;flex:1';
+   [['v','上→下'],['h','左→右'],['d','斜め']].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s3.appendChild(o)});s3.value=P().bxgd||'v';s3.onchange=()=>{P().bxgd=s3.value;up()};gb.appendChild(w.row('向き',s3));pg()}
+  rg(xb,'枠線の太さ','bxlw',0,30,'','t_syBxLW');col(xb,'枠線の色','bxlc','t_syBxLC');
+  rg(xb,'背景ぼかし','bxbl',0,40,'','t_syBxBl');
+  rg(xb,'影の濃さ','bxsho',0,100,'%','t_syBxShO');rg(xb,'影の距離','bxshd',0,60,'','t_syBxShD');rg(xb,'影のぼかし','bxshb',0,60,'','t_syBxShB');col(xb,'影の色','bxshc','t_syBxShC');
+  /* □背景自動サイズ / □背景固定サイズ(どちらか一方。固定は再生画面で枠を動かす) */
+  {const r=document.createElement('div');r.id='t_syBxZ';r.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0 4px';const ab=document.createElement('div'),fb=document.createElement('div');
+   const fx=stBtn('',()=>{if(document.getElementById('t_stAr')){stArOff();pf()}else{if(!P().bxr)P().bxr={l:.1,t:.7,r:.9,b:.95};stArOn(g,()=>({ar:P().bxr}),up);const a=document.getElementById('t_stAr'),l=a&&a.children[1];if(l)l.textContent='辺をスワイプ=大きさ・中をスワイプ=移動';pf()}},'width:100%');fx.id='t_syBxFB';
+   const pf=()=>{const on=!!document.getElementById('t_stAr');fx.textContent=on?'大きさを決め終える':'大きさを画面で決める';fx.style.outline=on?'2px solid var(--accent)':'none'};
+   const ps=()=>{const f=P().bxsz==='f';[...r.children].forEach(b=>{const on=(b.dataset.v==='f')===f;b.style.outline=on?'2px solid var(--accent)':'none';b.style.background=on?'color-mix(in srgb,var(--accent) 30%,transparent)':'';b.setAttribute('aria-pressed',on?'true':'false');b.textContent=(on?'☑ ':'□ ')+b.dataset.t});ab.hidden=f;fb.hidden=!f;if(!f)stArOff();pf()};
+   [['a','自動サイズ'],['f','固定サイズ']].forEach(([v,t])=>{const b=stBtn('',()=>{P().bxsz=v;if(v==='f'&&!P().bxr)P().bxr={l:.1,t:.7,r:.9,b:.95};ps();up()},'');b.dataset.v=v;b.dataset.t=t;r.appendChild(b)});
+   xb.appendChild(r);xb.append(ab,fb);rg(ab,'余白','bxp',0,100,'','t_syBxP');fb.appendChild(fx);ps()}
+  {const s4=document.createElement('select');s4.id='t_syBxM';s4.style.cssText='min-height:40px;font-size:15px;flex:1';BXM.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s4.appendChild(o)});
+   s4.value=P().bxm||'source-over';s4.onchange=()=>{P().bxm=s4.value;up()};xb.appendChild(w.row('合成モード',s4))}
   const bk=stBtn('一覧へ戻る',()=>styList(w,g),'');bk.id='t_syBk';w.foot(bk)}
 /* v379: 再生画面のタップの場所と名前を薄く表示(設定は ⚙設定 > 字幕画面。localStorage 'tzone') */
 const TZD={on:1,font:'',size:12,op:30,line:'dashed',w:1};
@@ -7994,8 +8081,9 @@ window.enDraw=enDraw;window.enRedraw=()=>{try{window.ptDrawEn&&ptDrawEn()}catch(
 /* 1つの状態を W×H のキャンバスに描く */
 function tlRender(W,H,t){const h=tlHost(W,H),o=h.firstChild;o.removeAttribute('style');o.className='';o.textContent='';o._g=null;
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;
-  showOv0(t,{o,sc:cv,W,H,list:TL.list});
-  const e={cv,rot:0,cx:0,cy:0,op:1,inv:false};
+  const cvB=document.createElement('canvas');cvB.width=W;cvB.height=H;const XX={o,sc:cv,W,H,list:TL.list,sb:cvB};
+  showOv0(t,XX);
+  const e={cv,rot:0,cx:0,cy:0,op:1,inv:false,bx:XX.bxOn?cvB:null,bm:XX.bxm,fg:XX.fg||null};/* v563: 枠・テキストボックス */
   if(o._g&&o.classList.contains('big')&&o.textContent){
     const tf=o.style.transform||'',rm=/rotate\(([-\d.]+)deg\)/.exec(tf);if(rm){e.rot=+rm[1];o.style.transform=tf.replace(/rotate\([^)]*\)/,'')}
     tlPseudo(o);const hr=h.getBoundingClientRect(),r=o.getBoundingClientRect();e.cx=r.left-hr.left+r.width/2;e.cy=r.top-hr.top+r.height/2;
@@ -8008,7 +8096,11 @@ function tlRender(W,H,t){const h=tlHost(W,H),o=h.firstChild;o.removeAttribute('s
   if(!window._tlKeep)o.textContent='';return e}
 function tlDrawE(g,e,cl){g.save();if(e.rot){g.translate(e.cx,e.cy);g.rotate(e.rot*Math.PI/180);g.translate(-e.cx,-e.cy)}
   if(cl){g.beginPath();g.rect(cl[0],cl[1],cl[2],cl[3]);g.clip()}
-  if(e.op<1)g.globalAlpha*=e.op;if(e.inv)g.filter=INVF;g.drawImage(e.cv,0,0);g.restore()}
+  if(e.op<1)g.globalAlpha*=e.op;
+  /* v563: すりガラス(後ろの動画をぼかす)→枠(合成モード)→文字 */if(e.fg&&g.canvas){const C=g.canvas;let t2=tlDrawE._t;if(!t2)t2=tlDrawE._t=document.createElement('canvas');if(t2.width!==C.width||t2.height!==C.height){t2.width=C.width;t2.height=C.height}const tx=t2.getContext('2d');tx.setTransform(1,0,0,1,0,0);tx.clearRect(0,0,t2.width,t2.height);tx.drawImage(C,0,0);
+    for(const f of e.fg){g.save();g.beginPath();if(g.roundRect)g.roundRect(f.x,f.y,f.w,f.h,f.r);else g.rect(f.x,f.y,f.w,f.h);g.clip();g.setTransform(1,0,0,1,0,0);g.filter='blur('+f.b.toFixed(1)+'px)';g.drawImage(t2,0,0);g.restore()}}
+  if(e.bx){g.save();g.globalCompositeOperation=e.bm||'source-over';g.drawImage(e.bx,0,0);g.restore()}
+  if(e.inv)g.filter=INVF;g.drawImage(e.cv,0,0);g.restore()}
 /* v262: 字幕ページの字幕の3割に、ランダム(行ごとに決まる)で出る動きを付ける。7割は普通に出す */
 const TLAN=['type','pop','slide'],TLAD={type:0,don:.7,zoom:.5,spin:.6,pop:.4,slide:.4};
 /* v266: 自動の動きは「き・奥」の字幕だけ(太・空白には付けない)。回転・ズーム・ドンはやめた */
