@@ -2128,6 +2128,7 @@ const BIKE=new Image();window.BIKE_URL=BIKE.src='data:image/png;base64,iVBORw0KG
 window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.trim())return;if(o.br&&o.br.length){const a=[...txt];txt=a.map((c,i)=>(o.br.includes(i)&&i?'\n':'')+c).join('')}const u=Math.min(H,W*9/16),k=u/1080,s=o.spk&&PT['sub'+o.spk]?Object.assign({},PT['sub'+o.spk]):Object.assign({},PT.sub,o.color?{color:o.color}:{},o.stColor?{stColor:o.stColor,stW:Math.max(PT.sub.stW||0,6)}:{});
   /* v486: ストロークを大きさに合わせるため、元の大きさを覚えておく */s.sz0=s.size||60;
   /* v552: 字幕ごとの中色(cIn)・外色(cOut)・外の線の太さ(wOut)・影の濃さ(shP)と色(shC) */if(o.cIn)s.color=o.cIn;if(o.cOut){s.stColor=o.cOut;if(!(s.stW>0)&&o.wOut==null)s.stW=6}if(o.wOut!=null)s.stW=o.wOut;if(o.shP!=null){s.shOp=o.shP;if(!(s.shBlur>0))s.shBlur=8}if(o.shC)s.shColor=o.shC;
+  /* v562: スタイルテンプレート(o.sty)。今までの色・線・影の代わりに使う */if(o.sty){const T=o.sty;s.color=T.c||'#ffffff';s.stW=T.st?(+T.sw||0):0;s.stColor=T.sc||'#000000';s.st2W=0;s.shOp=0;s.ty=T}
   /* v556: 位置テンプレート(o.pp): 縦文字/横文字・揃え・文字と行の間隔・余白(文字が入る範囲 ar)。余白がある時は揃えの辺を基準に置く */
   const PP=o.pp||null;if(PP){if(PP.vt)s.vert=PP.vt==='v'?'1':'';s.pp=PP;/* v560: 自動でサイズを変える(fit)。余白がある時は余白いっぱいに(s.fill)、切ると元の大きさ×指の大きさ */if(PP.fit===false)o.fit=false;else if(PP.ar){s.fill=true;o.fit=false;o.osc=null}const a=PP.ar;if(a){s.x=PP.ha==='l'?a.l:PP.ha==='r'?a.r:(a.l+a.r)/2;s.y=PP.va==='t'?a.t:PP.va==='b'?a.b:(a.t+a.b)/2}}
   /* v264: き・奥は文字が少ないと大きく(v268: 最大4.5倍、幅の9割まで)、多いと小さく。4文字以下は真ん中、その2回に1回は縦書き */
@@ -2227,9 +2228,16 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
   /* v486: 字幕を大きくした時(自動の拡大・指で拡大)はストロークも同じ割合で太く */const skw=s.sz0?Math.max(1,fs/(s.sz0*k)):1;const sw=(s.stW||0)*k*skw,s2=(s.st2W||0)*k*skw;
   const shOn=()=>{if((s.shOp||0)>0){g.shadowColor=hexA(s.shColor||'#000000',clamp01(s.shOp/100));g.shadowBlur=(s.shBlur??8)*k;g.shadowOffsetX=0;g.shadowOffsetY=(s.shDist??2)*k}};
   const shOff=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0};
+  /* v562: スタイルテンプレート(s.ty): 文字の太さ(wt=文字の色の線)・二重の線(外側)・シャドウ(色・不透明度・距離・角度・X/Y・ぼかし・拡散) */
+  const ty=s.ty||null,th=ty?(+ty.wt||0)*k*skw:0,dw=ty&&ty.st&&ty.d?(+ty.dw||0)*k*skw:0;
+  if(ty&&ty.sh){const a=(+ty.sha||0)*Math.PI/180,D=+ty.shd||0,dx=(D*Math.cos(a)+(+ty.shx||0))*k*skw,dy=(D*Math.sin(a)+(+ty.shy||0))*k*skw,R=th+sw+dw+(+ty.shs||0)*k*skw,M=g.getTransform(),sc=Math.hypot(M.a,M.b)||1;
+    g.save();if(ty.shb>0){const f0=g.filter&&g.filter!=='none'?g.filter+' ':'';g.filter=f0+'blur('+(ty.shb*k*skw*sc).toFixed(2)+'px)'}g.fillStyle=g.strokeStyle=hexA(ty.shc||'#000000',clamp01((ty.sho??60)/100));g.lineWidth=R*2;
+    draw((t,x,y)=>{g.fillText(t,x+dx,y+dy);if(R>0)g.strokeText(t,x+dx,y+dy)});g.restore()}
   shOn();
+  if(dw>0){g.lineWidth=(th+sw+dw)*2;g.strokeStyle=ty.dc||'#ffffff';draw((t,x,y)=>g.strokeText(t,x,y));shOff()}
   if(s2>0){g.lineWidth=s2*2;g.strokeStyle=s.st2Color||'#ff4f9a';draw((t,x,y)=>g.strokeText(t,x+fs*.06,y+fs*.09));shOff()}
-  if(sw>0){g.lineWidth=sw*2;g.strokeStyle=s.stColor||'#000000';draw((t,x,y)=>g.strokeText(t,x,y));shOff()}
+  if(sw>0){g.lineWidth=(sw+th)*2;g.strokeStyle=s.stColor||'#000000';draw((t,x,y)=>g.strokeText(t,x,y));shOff()}
+  if(th>0){g.lineWidth=th*2;g.strokeStyle=s.color||'#ffffff';draw((t,x,y)=>g.strokeText(t,x,y));shOff()}
   g.fillStyle=s.color||'#ffffff';draw((t,x,y)=>g.fillText(t,x,y));
   g.restore();
 }
@@ -4624,7 +4632,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v561';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v562';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6908,12 +6916,13 @@ function showOv0(t,X){const o=X?X.o:$('ov');let allR=null,g=null,txt=null,all=nu
           if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(c.r){st+='transform:rotate('+c.r+'deg);';q.dataset.r=c.r}if(c.f&&window.PFAM)st+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){st+='filter:'+INVF;q.dataset.v=1}
           q.style.cssText=st;s.appendChild(q)})}else s.textContent=x;d.append(bb,s)});
       return}
+    {const T=stY(g);if(T)bkSty(o,T)}/* v562: 太にもスタイル */
     if(all){o.textContent='';all.forEach((x,i)=>{if(i)o.appendChild(document.createTextNode('\n'));const s=document.createElement('span');s.textContent=x;if(i>=nOn)s.style.visibility='hidden';o.appendChild(s)})}
     return}
   o.className='';o.style.cssText='';o.style.color=TPL[k].c||'#fff';
   /* v190: テンプレート編集の字幕と同じ見た目(キャンバスで描く) */
   if(window.subPaint){const W=X?X.W:sc.clientWidth,H=X?X.H:sc.clientHeight,dp=X?1:devicePixelRatio||1;if(W&&H){if(!X&&(sc.width!==Math.round(W*dp)||sc.height!==Math.round(H*dp))){sc.width=Math.round(W*dp);sc.height=Math.round(H*dp)}
-    scx.setTransform(dp,0,0,dp,0,0);if(g.inv)scx.filter=INVF;try{const PP=txt==null?stP(g):null;o._sb=window.subPaint(scx,W,H,o.textContent,{...subFit(g,k,txt,LS),pp:PP,spk:g.bl?(g.bl==='h'?'h':'s'):k,color:k==='f'?'#ffffff':(TPL[k].c||null),stColor:k==='f'?(TPL.f.c||'#d6337f'):null,fr:false,fc:'#ffffff',ox:PP?PP.x:g.ox,oy:PP?PP.y:g.oy,osc:PP?PP.s:g.osc,font:fk(g),cIn:g.ci,cOut:g.co,wOut:g.cw,shP:g.chp,shC:g.chc,br:txt==null?g.br:null,cs:txt==null?g.cs:(onR&&onR.some(x=>x.cs)?onR.flatMap(x=>x.cs&&x.cs.length===[...x.t].length?x.cs:[...x.t].map(()=>0)):null)});o.textContent='';o._g=g}catch(_){}scx.filter='none'}}}
+    scx.setTransform(dp,0,0,dp,0,0);if(g.inv)scx.filter=INVF;try{const PP=txt==null?stP(g):null;o._sb=window.subPaint(scx,W,H,o.textContent,{...subFit(g,k,txt,LS),pp:PP,spk:g.bl?(g.bl==='h'?'h':'s'):k,color:k==='f'?'#ffffff':(TPL[k].c||null),stColor:k==='f'?(TPL.f.c||'#d6337f'):null,fr:false,fc:'#ffffff',ox:PP?PP.x:g.ox,oy:PP?PP.y:g.oy,osc:PP?PP.s:g.osc,font:fk(g),cIn:g.ci,cOut:g.co,wOut:g.cw,shP:g.chp,shC:g.chc,sty:stY(g),br:txt==null?g.br:null,cs:txt==null?g.cs:(onR&&onR.some(x=>x.cs)?onR.flatMap(x=>x.cs&&x.cs.length===[...x.t].length?x.cs:[...x.t].map(()=>0)):null)});o.textContent='';o._g=g}catch(_){}scx.filter='none'}}}
 const shortR=x=>!x.bl&&!x.grp&&SPK(x)!=='b'&&[...String(x.t||'')].filter(c=>c.trim()).length<=4;
 function subFit(g,k,txt,LS){if(g.bl||(k!=='m'&&k!=='f'))return {};
   /* v556: 位置テンプレートを使っている字幕は、その縦文字/横文字に従う(真ん中に寄せない) */const P=txt==null&&typeof stP==='function'&&stP(g);if(P)return {fit:true,mid:false,vt:P.vt==='v'};
@@ -7030,6 +7039,7 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
            const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='保存';
            y.onclick=()=>{const v=ta.value.trim();close();if(v)g.ttl=v;else delete g.ttl;save();showOv(pos)};w.append(n,y);b.append(ta,w);setTimeout(()=>ta.focus(),50)});return}
        if(st&&!st.mv&&!CE&&(tapZone(st.zx,st.zy)==='tl'||tapZone(st.zx,st.zy)==='po')){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}(tapZone(st.zx,st.zy)==='tl'?popFont:popPos)(g);return}/* v554: 長タップ=そのボタンのポップアップ */
+       if(st&&!st.mv&&!CE&&tapZone(st.zx,st.zy)==='sy'){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}popSty(g);return}/* v562: 長タップ=スタイルのポップアップ */
        if(st&&!st.mv&&!CE&&tapZone(st.zx,st.zy)==='se'){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}popSeT(g);return}/* v557: 長タップ=SEのポップアップ(v552の長押しで消すは廃止。SEなしはタップで回した最後) */
        if(st&&!st.mv)st.done=true/* v554: ほかの場所の長押しは何もしない(位置を元に戻すは位置のポップアップへ) */},550)}
    else if(P.size===2&&st){clearTimeout(st.tm);const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.sc=g.osc||1;st.mv=true}});
@@ -7044,13 +7054,13 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
    if(st&&st.ce){if(!P.size)st=null;return}
    if(P.size===1&&st){const q=[...P.values()][0];st.x0=q.x;st.y0=q.y;st.ox=st.g.ox||0;st.oy=st.g.oy||0}
    if(!P.size&&st){clearTimeout(st.tm);if(st.mv){if(stEditing(st.g))stSave(stAll());save()}
-     else if(!st.done&&!CE&&tapZone(st.zx,st.zy)!=='tl'){const z=tapZone(st.zx,st.zy),g=st.g;if(z==='c')tapSp(g);else if(z==='bl')tapInv(g);else if(z==='ci')tapCol(g,'ci');else if(z==='co')tapCol(g,'co');else if(z==='cf')popOut(g);else if(z==='po')tapPos(g);else tapSe(g)}
+     else if(!st.done&&!CE&&tapZone(st.zx,st.zy)!=='tl'){const z=tapZone(st.zx,st.zy),g=st.g;if(z==='c')tapSp(g);else if(z==='bl')tapInv(g);else if(z==='sy')tapSty(g);else if(z==='po')tapPos(g);else tapSe(g)}
      else if(!st.done&&st.g.fr&&SPK(st.g)==='b'){const g=st.g;g.exs=((g.exs|0)+1)%EXN.length;if(!g.exs)delete g.exs;save();showOv(pos);showFn(EXN[g.exs|0])}
      else if(!st.done&&!CE)tapFont(st.g);/* v554: 字幕テンプレートに登録したフォントだけを回す */
      st=null}};
  pl0.addEventListener('pointerup',up);pl0.addEventListener('pointercancel',up)}
 /* v378: 再生画面のタップは5か所。真ん中(だ円)=き→奥→太→「太」、左上=フォント(今まで通り)、左下=白黒反転、右上=動き、右下=SE */
-function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':(x<.25?'po':'bl');/* v552 *//* v554: 左下を左右2つ=位置/反転 */if(y<.5)return y<.25?(x<.75?'ci':'co'):'cf';return 'se'}/* v553: 右下は全部SE(設定は削除) */
+function tapZone(x,y){if(x==null)return 'tl';const dx=(x-.5)/.252,dy=(y-.5)/.252;if(dx*dx+dy*dy<=1)return 'c';if(x<.5)return y<.5?'tl':(x<.25?'po':'bl');/* v552 *//* v554: 左下を左右2つ=位置/反転 */if(y<.5)return 'sy'/* v562: 右上は全部スタイル(中色・外色・外枠をまとめた) */;return 'se'}/* v553: 右下は全部SE(設定は削除) */
 const rowsOf=g=>{const l=cur&&cur.list||[];return g.grp?grpOf(l,g):[g]};
 function tapDone(msg){save();drawResults();showOv(pos);showFn(msg)}
 function tapSp(g){if(g.bl){showFn('空白は切り替えできません');return}
@@ -7133,7 +7143,7 @@ const STN={m:'字幕1',f:'字幕2',b:'字幕3'},STJ={m:'き',f:'奥',b:'太'};va
 function stAll(){if(STC)return STC;let o=null;try{o=JSON.parse(localStorage.getItem('stpl')||'null')}catch(e){}if(!o||typeof o!=='object')o={v:1};
   if(!o.fn||typeof o.fn!=='object')o.fn={};
   for(const k of ['m','f','b']){const t=o[k]=o[k]&&typeof o[k]==='object'?o[k]:{};if(typeof t.n!=='string'||!t.n)t.n=STN[k];
-    if(!Array.isArray(t.font))t.font=FONTS.filter(f=>!f.u).map(f=>f.k);if(!Array.isArray(t.pos))t.pos=[]}return STC=o}
+    if(!Array.isArray(t.font))t.font=FONTS.filter(f=>!f.u).map(f=>f.k);if(!Array.isArray(t.pos))t.pos=[];if(!Array.isArray(t.sty))t.sty=[]/* v562 */}return STC=o}
 function stSave(o){STC=o;try{localStorage.setItem('stpl',JSON.stringify(o))}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key==='stpl')STC=null});
 /* この字幕が使っている位置テンプレート(無ければ null) */
@@ -7289,6 +7299,75 @@ function popSeT(g){const w=stPop(g,'SE'),k0=w.k0;w.dataset.kind='se';
     await kv('se|list',SE);stSave(o);try{seDraw()}catch(_){}draw();drawAdd();showFn(fs.length+'個のSEを追加しました')};
   const ab=stBtn('SEを追加',()=>{add.hidden=!add.hidden;ab.textContent=add.hidden?'SEを追加':'追加を閉じる';drawAdd()},'');ab.id='t_stSA1';
   draw();w.foot(ab)}
+/* ---- v562: 字幕テンプレート③スタイル(前半: 文字の太さ・文字の色・ストローク(二重)・シャドウ。枠・テキストボックスは次)。
+   stpl[k].sty=[{id,n,wt,c,st,sw,sc,d,dw,dc,sh,shc,sho,shd,sha,shx,shy,shb,shs}]。字幕は g.sy(使うスタイルのid)。数値は1080pの画素(太は文字の大きさ60を基準)。
+   右上のタップ=登録したスタイルを順に(最後は元の見た目)。長タップ=このポップアップ。き・奥=キャンバス(styledText の s.ty)、太=DOM(bkSty。書き出しは tlText が写す) */
+function stY(g){if(!g||!g.sy)return null;const T=stAll()[SPK(g)];return T&&Array.isArray(T.sty)&&T.sty.find(p=>p.id===g.sy)||null}
+const STYD={wt:0,c:'#ffffff',st:1,sw:6,sc:'#000000',d:0,dw:6,dc:'#ffffff',sh:0,shc:'#000000',sho:60,shd:6,sha:45,shx:0,shy:0,shb:8,shs:0};
+const hx6=c=>{c=String(c||'');if(/^#[0-9a-f]{6}$/i.test(c))return c.toLowerCase();const m=/^#([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(c);return m?('#'+m[1]+m[1]+m[2]+m[2]+m[3]+m[3]).toLowerCase():null};
+/* 登録の時の中身=今の見た目(使っているスタイルがあればその写し) */
+function styBase(g){const T=stY(g);if(T){const o={...T};delete o.id;delete o.n;return o}
+  const k=SPK(g),o={...STYD};if(k==='b'){o.sw=8;return o}const P=(window.PT_get&&(window.PT_get('sub'+k)||window.PT_get('sub')))||{};
+  o.c=hx6(k==='f'?'#ffffff':(TPL[k].c||P.color))||'#ffffff';const sc=hx6(k==='f'?(TPL.f.c||'#d6337f'):P.stColor);if(sc)o.sc=sc;
+  if(P.stW>0||k==='f')o.sw=Math.round(P.stW||6);else o.st=0;
+  if(P.shOp>0){o.sh=1;o.sho=Math.round(P.shOp);o.shd=Math.round(P.shDist??2);o.sha=90;o.shb=Math.round(P.shBlur??8);o.shc=hx6(P.shColor)||'#000000'}
+  if(hx6(g.ci))o.c=hx6(g.ci);if(hx6(g.co)){o.sc=hx6(g.co);o.st=1}if(g.cw!=null){o.sw=g.cw;o.st=g.cw>0?1:0}if(g.chp>0){o.sh=1;o.sho=g.chp;o.shd=2;o.sha=90;if(hx6(g.chc))o.shc=hx6(g.chc)}return o}
+const syRGBA=(c,a)=>{const n=parseInt((hx6(c)||'#000000').slice(1),16);return 'rgba('+(n>>16&255)+','+(n>>8&255)+','+(n&255)+','+Math.max(0,Math.min(1,a))+')'};
+/* 太(DOM): 太さ=文字の色の線、ストローク・二重=文字の影を輪にして並べる、シャドウ=ずらしてぼかした輪 */
+function bkSty(o,T){const fz=parseFloat(o.style.fontSize)||40,u=fz/60,th=(+T.wt||0)*u,sw=T.st?(+T.sw||0)*u:0,dw=T.st&&T.d?(+T.dw||0)*u:0,c=T.c||'#ffffff';
+  o.style.color=c;o.style.setProperty('-webkit-text-fill-color',c);o.style.setProperty('-webkit-text-stroke',th>0?(th*2).toFixed(2)+'px '+c:'0px transparent');o.style.paintOrder='stroke fill';
+  const ring=(r,col,b,dx,dy)=>{const n=r<.5?1:Math.min(36,Math.max(8,Math.ceil(Math.PI*r))),a=[];for(let i=0;i<n;i++){const t=i/n*2*Math.PI,R=n===1?0:r;a.push((dx+R*Math.cos(t)).toFixed(2)+'px '+(dy+R*Math.sin(t)).toFixed(2)+'px '+b.toFixed(1)+'px '+col)}return a};
+  const L=[];if(sw>0)L.push(...ring(sw,T.sc||'#000000',0,0,0));if(dw>0)L.push(...ring(sw+dw,T.dc||'#ffffff',0,0,0));
+  if(T.sh){const a=(+T.sha||0)*Math.PI/180,D=+T.shd||0;L.push(...ring(sw+dw+(+T.shs||0)*u,syRGBA(T.shc,(T.sho??60)/100),(+T.shb||0)*u,(D*Math.cos(a)+(+T.shx||0))*u,(D*Math.sin(a)+(+T.shy||0))*u))}
+  o.style.textShadow=L.length?L.join(','):'none'}
+function tapSty(g){const L=stAll()[SPK(g)].sty;if(!L.length){showFn('スタイルが登録されていません（長タップで登録）');return}
+  const n=L[L.findIndex(p=>p.id===g.sy)+1];if(n)g.sy=n.id;else delete g.sy;save();showOv(pos);showFn(n?n.n:'元のスタイル')}
+/* スタイルのポップアップ: 「名前✏️」「編集」「削除」の行 ＋「登録」「❌」 */
+function popSty(g){const w=stPop(g,'スタイル');w.dataset.kind='sty';styList(w,g)}
+const stClr=w=>{w.body.innerHTML='';[...w.children].forEach(c=>{if(c!==w.firstChild&&c!==w.body)c.remove()})};
+function styList(w,g){const k0=w.k0;stClr(w);const hd=w.querySelector('b');hd.textContent='スタイル（'+STJ[k0]+'）';hd.style.cssText='flex:1';
+  const box=document.createElement('div');box.id='t_syL';w.body.appendChild(box);const T=stAll()[k0];
+  if(!T.sty.length)box.appendChild(stEmpty('まだありません。「登録」で今の見た目を登録します'));
+  T.sty.forEach(p=>{const r=stRow(g.sy===p.id);
+    const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].sty.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}});nm.style.flex='1';
+    const e=stBtn('編集',()=>{g.sy=p.id;save();showOv(pos);styEdit(w,g,p.id)},'font-size:13px;min-width:64px');
+    const x=stBtn('削除',()=>ask('「'+p.n+'」を削除しますか？','削除する',()=>{const o=stAll();o[k0].sty=o[k0].sty.filter(z=>z.id!==p.id);stSave(o);if(g.sy===p.id)delete g.sy;save();showOv(pos);styList(w,g)}),'font-size:13px;min-width:64px');
+    r.append(nm,e,x);box.appendChild(r)});
+  const reg=stBtn('登録',()=>{const o=stAll(),L=o[k0].sty;let i=L.length+1;while(L.some(z=>z.n==='スタイル'+i))i++;
+    const p={id:'y'+Date.now().toString(36),n:'スタイル'+i,...styBase(g)};L.push(p);stSave(o);g.sy=p.id;save();showOv(pos);styList(w,g);showFn('「'+p.n+'」を登録しました')},'');reg.id='t_syR';reg.className='tbig';
+  w.foot(reg)}
+/* 「編集」: 文字の太さ・文字の色・□ストローク▼(幅・色・二重にする)・□シャドウ▼(色・不透明度・距離・角度・X/Y・ぼかし・拡散) */
+const SYA=[[0,'右'],[45,'右下'],[90,'下'],[135,'左下'],[180,'左'],[225,'左上'],[270,'上'],[315,'右上']];
+function styEdit(w,g,id){const k0=w.k0,P=()=>stAll()[k0].sty.find(z=>z.id===id);if(!P()){styList(w,g);return}stClr(w);
+  const sv=()=>stSave(stAll()),up=()=>{sv();showOv(pos)},live=()=>showOv(pos);
+  const hd=w.querySelector('b');hd.textContent='スタイル（'+STJ[k0]+'）：';hd.appendChild(stName(P().n,n=>{P().n=n;sv()}));hd.style.cssText='flex:1;display:flex;gap:2px;min-width:0;align-items:center';
+  const rg=(par,lb,key,mn,mx,unit,id2)=>{const i=w.rng(mn,mx,Math.round(+P()[key]||0),v=>v+unit);i.id=id2;i.oninput=()=>{P()[key]=+i.value;live()};i.onchange=sv;par.appendChild(w.row(lb,i,i._o));return i};
+  /* 色: よく使う色＋🎨(色の設定画面) */
+  const col=(par,lb,key,id2)=>{const r=w.row(lb);r.style.flexWrap='wrap';const bs=[];
+    const paint=()=>{const v=hx6(P()[key]);bs.forEach(b=>{const on=b.dataset.c===v;b.style.outline=on?'3px solid var(--accent)':'none'});pk.value=v||'#ffffff'};
+    COLS.forEach(([n,c])=>{const b=document.createElement('button');b.type='button';b.dataset.c=c;b.setAttribute('aria-label',n);b.style.cssText='width:30px;height:30px;min-height:30px;padding:0;border-radius:50%;border:2px solid var(--line);background:'+c;
+      b.onclick=()=>{P()[key]=c;paint();up()};bs.push(b);r.appendChild(b)});
+    const lab=document.createElement('label');lab.style.cssText='display:flex;align-items:center;gap:2px;font-size:18px';const pk=document.createElement('input');pk.type='color';pk.id=id2;pk.style.cssText='width:40px;height:34px;padding:0;border:0;background:none';
+    pk.oninput=()=>{P()[key]=pk.value;paint();live()};pk.onchange=()=>{P()[key]=pk.value;up()};lab.append('🎨',pk);r.appendChild(lab);paint();par.appendChild(r)};
+  /* □見出し▼: チェック=使う/使わない、▼=開く/閉じる */
+  const sec=(lb,key,id2)=>{const wr=document.createElement('div');wr.style.cssText='border-top:1px solid var(--line);margin-top:6px;padding-top:4px';
+    const h=document.createElement('div');h.style.cssText='display:flex;align-items:center;gap:8px';const l=document.createElement('label');l.style.cssText='display:flex;align-items:center;gap:8px;flex:1;min-height:40px';
+    const c=document.createElement('input');c.type='checkbox';c.id=id2;c.checked=!!P()[key];c.style.cssText='width:22px;height:22px';l.append(c,document.createTextNode(lb));
+    const tg=stBtn('',()=>{bd.hidden=!bd.hidden;tg.textContent=bd.hidden?'▼':'▲'},'min-width:48px');tg.id=id2+'T';tg.setAttribute('aria-label',lb+'を開く');
+    const bd=document.createElement('div');bd.id=id2+'B';bd.hidden=!P()[key];tg.textContent=bd.hidden?'▼':'▲';
+    c.onchange=()=>{P()[key]=c.checked?1:0;if(c.checked&&bd.hidden){bd.hidden=false;tg.textContent='▲'}up()};h.append(l,tg);wr.append(h,bd);w.body.appendChild(wr);return bd};
+  rg(w.body,'文字の太さ','wt',0,20,'','t_syWt');
+  col(w.body,'文字の色','c','t_syC');
+  const sb=sec('ストローク','st','t_sySt');rg(sb,'幅','sw',0,40,'','t_syStW');col(sb,'色','sc','t_syStC');
+  const db=document.createElement('div');db.id='t_syDbB';
+  const dbt=stBtn('',()=>{P().d=P().d?0:1;pd();up()},'width:100%;margin-top:4px');dbt.id='t_syDb';
+  const pd=()=>{const on=!!P().d;dbt.textContent=on?'二重をやめる':'二重にする（外側にもう1つ）';dbt.setAttribute('aria-pressed',on?'true':'false');dbt.style.outline=on?'2px solid var(--accent)':'none';db.hidden=!on};
+  sb.append(dbt,db);rg(db,'外側の幅','dw',0,40,'','t_syDbW');col(db,'外側の色','dc','t_syDbC');pd();
+  const hb=sec('シャドウ','sh','t_sySh');col(hb,'色','shc','t_syShC');rg(hb,'不透明度','sho',0,100,'%','t_syShO');rg(hb,'距離','shd',0,60,'','t_syShD');
+  {const s2=document.createElement('select');s2.id='t_syShA';s2.style.cssText='min-height:40px;font-size:15px;flex:1';SYA.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s2.appendChild(o)});
+   s2.value=String(SYA.some(a=>a[0]===+P().sha)?+P().sha:45);s2.onchange=()=>{P().sha=+s2.value;up()};hb.appendChild(w.row('角度',s2))}
+  rg(hb,'X位置','shx',-60,60,'','t_syShX');rg(hb,'Y位置','shy',-60,60,'','t_syShY');rg(hb,'ぼかし','shb',0,40,'','t_syShB');rg(hb,'拡散','shs',0,30,'','t_syShS');
+  const bk=stBtn('一覧へ戻る',()=>styList(w,g),'');bk.id='t_syBk';w.foot(bk)}
 /* v379: 再生画面のタップの場所と名前を薄く表示(設定は ⚙設定 > 字幕画面。localStorage 'tzone') */
 const TZD={on:1,font:'',size:12,op:30,line:'dashed',w:1};
 const TZF=[['','標準'],['mplus','丸ゴシック'],['yusei','マジック手書き'],['klee','教科書体風'],['mochiy','ポップ'],['dela','太ゴシック'],['reggae','レゲエ']];
@@ -7298,8 +7377,8 @@ function tzPaint(host,S){let el=host.querySelector('.tzo');if(!el){el=document.c
   const L=(x1,y1,x2,y2)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'"/>';
   el.style.opacity=a;el.style.fontSize=S.size+'px';el.style.fontFamily=S.font&&window.PFAM&&window.PFAM[S.font]||'';
   el.innerHTML=(ln?'<svg viewBox="0 0 100 100" preserveAspectRatio="none"><g fill="none" stroke="#fff" stroke-width="'+w+'" vector-effect="non-scaling-stroke"'+(ds?' stroke-dasharray="'+ds+'"':'')+' stroke-linecap="round">'+
-    L(50,0,50,50-R)+L(50,50+R,50,100)+L(0,50,50-R,50)+L(50+R,50,100,50)+L(75,0,75,25)+L(60,25,100,25)+L(75,75,75,100)+'<ellipse cx="50" cy="50" rx="'+R+'" ry="'+R+'"/></g></svg>':'')+
-    [['フォント',14,16],['中色',63,10],['外色',88,10],['外枠',86,37],['位置',11,84],['反転',37,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
+    L(50,0,50,50-R)+L(50,50+R,50,100)+L(0,50,50-R,50)+L(50+R,50,100,50)+L(75,75,75,100)+'<ellipse cx="50" cy="50" rx="'+R+'" ry="'+R+'"/></g></svg>':'')+
+    [['フォント',14,16],['スタイル',76,24],['位置',11,84],['反転',37,84],['SE',75,88],['字幕',50,50]].map(([t,x,y])=>'<b style="left:'+x+'%;top:'+y+'%">'+t+'</b>').join('');
   el.querySelectorAll('svg *').forEach(e=>e.setAttribute('vector-effect','non-scaling-stroke'))}
 function tzDraw(){const h=$('pl');if(h)tzPaint(h,tzGet())}
 tzDraw();
@@ -8372,7 +8451,7 @@ sp2:'再生位置でクリップを分ける',iu:'元に戻す',ir:'やり直し
 recLbl:'ナレーションを録音する',recIn:'ナレーションを録音する',audIn:'音声ファイルを選ぶ',exq:'書き出しの画質',save:'書き出した動画をスマホに保存',
 chapCp:'チャプターをコピー',tplEdBtn:'テンプレート（字幕やロゴの見た目）を編集',
 s3back:'前の画面へ戻る',ptDes:'デザインを選ぶ',ptPlay:'動きを確認',ptFull:'全画面で確認',ptReset:'初期値に戻す',ptSave:'見た目を保存',ptFsX:'全画面を閉じる',
-t_bZ:'タップ=再生ヘッドの行から後ろの、声の無い行を合成音声(ずんだもん等)で読む。長押し=声を選ぶ',tzBtn:'字幕・ナレーション画面の設定（再生画面のタップの場所の表示など）',t_pl:'タップする場所で変わります。真ん中=き→奥→太→「太」、左上=フォント、左下の左=位置・右=白黒反転、右上=中色/外色/外枠、右下=SE。フォントと位置は長タップで登録。1本指=字幕を移動、ピンチ=大きさ',
+t_bZ:'タップ=再生ヘッドの行から後ろの、声の無い行を合成音声(ずんだもん等)で読む。長押し=声を選ぶ',tzBtn:'字幕・ナレーション画面の設定（再生画面のタップの場所の表示など）',t_pl:'タップする場所で変わります。真ん中=き→奥→太→「太」、左上=フォント、左下の左=位置・右=白黒反転、右上=スタイル、右下=SE。フォント・位置・スタイル・SEは長タップで登録。1本指=字幕を移動、ピンチ=大きさ',
 t_wf:'タップ=その字幕を選ぶ。端の線をタップ→長押しスワイプ=字幕の時間だけ変える。オレンジの所を長押し=動画モード（動かすと動画の長さも変わる）',
 tltBtn:'動画の種類（DIY・旅など）ごとに、コーナー・自動で入るもの・初期値などを決める',tltUndo:'1つ前の状態に戻す',tltRst:'選んでいる種類を最初の状態に戻す',tltSave:'保存する。次に作る動画から使われます（作業中の動画は変わりません）',tltX:'閉じる',t_rA:'今の再生位置を自動生成の範囲の始まりにする',t_rB:'今の再生位置を自動生成の範囲の終わりにする',t_rT:'自動生成の範囲。押すと全体に戻る',t_auto:'範囲の中だけ自動で字幕を作る（範囲の外の字幕は残る）',t_bP:'選んだ字幕だけ再生・停止',t_bA:'続けて再生（SEも鳴る）',t_bN:'次の字幕へ',t_seek:'再生位置を動かす',t_tl:'再生位置を動かす',
 t_ndAll:'ナレーションの行を全部消す(確認あり)',t_ndSel:'消す行をタップで選んでから「削除」',t_azGo:'チェックした行を消す',t_go:'文字起こしを始める',t_txD:'文字起こしのやり直しと、Claude学習（タップで開く・閉じる）',t_setup:'音声認識に使うファイルの準備（タップで開く・閉じる）',seFsX:'SEの登録画面を閉じる',t_lrn:'「学習」にチェックして直した言葉を覚えさせる',t_fx:'Claudeで字幕を仕上げる',
