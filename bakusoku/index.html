@@ -4841,7 +4841,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v600';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v601';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5879,18 +5879,21 @@ function cutEdit(s){const c=s.clip;if(!c||!clips.includes(c)||segs.indexOf(s)<0)
   if(cur!==c)select(c);else{reIn(c);renderSegs();renderCut();insUpd()}
   const t0=(L.find(q=>q.clip===c)||{}).start||0;const sk=()=>{try{pv.currentTime=t0+0.001}catch(e){}};if(pv.readyState>=1)sk();else pv.addEventListener('loadedmetadata',sk,{once:true});cutMsg('カット編集中：直したら「再挿入」で入れ替わります')}
 function segAt(s){let a=0;for(const q of segs){if(q===s)return a;a+=segD(q)}return -1}
+/* v601: クリップを消して後ろ(動画・字幕・ナレーション等)を詰める / 空白を残す */
+function segDelClose(L){const ga=segAt(L[0]),D=L.reduce((a,q)=>a+segD(q),0),gb=ga+D,cn=L[0].cn;segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();
+  segs.splice(segs.indexOf(L[0]),L.length);if(corners.length)itemCn();
+  items=items.filter(o=>{if(o.full||o.lane===6)return true;if(corners.length&&o.cn!==cn)return true;const s0=o.start,e0=o.end;
+    if(s0>=ga-1e-6&&e0<=gb+1e-6&&e0>s0)return false;const f=t=>t<=ga?t:t>=gb?t-D:ga;
+    o.start=f(s0);o.end=Math.max(o.start+0.05,f(e0));if((o.lane===5||o.lane===8)&&s0>ga&&s0<gb)o.off=(o.off||0)+(gb-s0);return true});
+  if(selItem&&!items.includes(selItem))selItem=null;
+  cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(gt>=gb?gt-D:Math.min(gt,ga));tlDelToast()}
+function segDelGap(L){const D=L.reduce((a,q)=>a+segD(q),0);segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();segs.splice(segs.indexOf(L[0]),L.length,{clip:null,start:0,end:D,cn:L[0].cn});
+  cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(gt)}
 function segDlg(s){
   if(segs.indexOf(s)<0)return;const d=segD(s);
   if(s.clip&&roAll()){return}
-  if(s.clip){const R=segRun(s);/* v479 */const CE=['カット編集する',()=>cutEdit(s)];if(R[1]>R[0]){const L=segs.slice(R[0],R[1]+1),D=L.reduce((a,q)=>a+segD(q),0);
-    /* v470: まとまり(無音カットで分かれた同じ動画)ごと削除 */cdlg('動画クリップ('+num(s.clip)+'・'+L.length+'つの部分)\nカット編集しますか？',[CE,
-    ['削除する(空白になります)',()=>{segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();const k=segs.indexOf(L[0]);segs.splice(k,L.length,{clip:null,start:0,end:D,cn:L[0].cn});
-      cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(gt)},'warn'],
-    ['この部分だけ削除',()=>{segHist();segU[segU.length-1].rb=true;const k=segs.indexOf(s);segU[segU.length-1].items=cloneItems();segs.splice(k,1,{clip:null,start:0,end:d,cn:s.cn});
-      cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(gt)}],['閉じる']]);return}
-    cdlg('動画クリップ('+num(s.clip)+')\nカット編集しますか？',[CE,
-    ['削除する(空白になります)',()=>{segHist();segU[segU.length-1].rb=true;const k=segs.indexOf(s);segU[segU.length-1].items=cloneItems();segs.splice(k,1,{clip:null,start:0,end:d,cn:s.cn});
-      cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(gt)},'warn'],['閉じる']]);return}
+  if(s.clip){const R=segRun(s),L=segs.slice(R[0],R[1]+1);/* v601: 3つのボタン。まとまり(無音カットで分かれた同じ動画)は全部まとめて */
+    cdlg('動画クリップ('+num(s.clip)+(L.length>1?'・'+L.length+'つの部分':'')+')',[['カット編集に移動',()=>cutEdit(s)],['削除',()=>segDelClose(L),'warn'],['削除(空白挿入)',()=>segDelGap(L),'warn'],['閉じる']]);return}
   cdlg('空白('+d.toFixed(1)+'秒)',[
     ['詰める',()=>{segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();segs.splice(segs.indexOf(s),1);
       cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(Math.min(gt,Math.max(0,total()-0.001)));flashSel('動画のレーンだけ詰めました')}],
