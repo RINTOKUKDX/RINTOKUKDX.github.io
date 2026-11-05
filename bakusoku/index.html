@@ -817,7 +817,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_wf{display:block;width:100%;height:64px;background:var(--panel);touch-action:pan-y}
 /* v373: 波形の下の文字のタイムライン(波形と同じ範囲を表示。ブロックはタイムラインの字幕ブロックと同じ見た目) */
 #t_nw{display:none;width:100%;height:30px;background:var(--panel);border-top:1px solid var(--line);pointer-events:none}#s4.nar #t_nw{display:block}
-#t_tx{touch-action:pan-y;display:block;width:100%;height:34px;background:var(--bg);border-top:1px solid var(--line)}
+#t_tx{touch-action:pan-y;display:block;width:100%;height:68px;background:var(--bg);border-top:1px solid var(--line)}
 /* v373: 文章の入力の範囲を折りたたむ(インスペクタの見出しと同じ見た目) */
 .nfh{display:flex!important;align-items:center;width:100%;min-height:38px!important;height:38px;margin:6px 0;background:var(--sec)!important;border:1px solid var(--btnl)!important;border-radius:6px!important;font-size:14px!important;font-weight:700;justify-content:space-between!important;padding:0 10px!important;color:var(--fg)!important}
 .nfh i{font-style:normal;color:var(--muted);font-weight:400}
@@ -4698,7 +4698,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v577';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v578';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6792,7 +6792,7 @@ function drawResults(){
   if(sel&&sel.gap){let best=null,bo=0;items.forEach(x=>{if(!x.gap)return;const o=Math.min(x.b,sel.b)-Math.max(x.a,sel.a);if(o>bo){bo=o;best=x}});sel=best}
   if(sel&&!sel.gap&&!list.includes(sel))sel=null;
   if(!sel&&items.length)sel=items[0];
-  const box=$('rows');box.innerHTML='';
+  const box=$('rows');box.innerHTML='';/* v578: 字幕ページは下の一覧を隠し、字幕クリップで操作する(ナレーションは今まで通り) */box.style.display=isN()?'':'none';
   items.forEach(g=>{const d=document.createElement('div');d._g=g;
     if(g.gap){d.className='row gap';d.innerHTML='<b></b><div><i></i></div>';d.querySelector('i').textContent=' ';/* v187: 無音の欄は空白表示 */
       press(d,{key:g,tap:()=>pick(g),dbl:()=>{pick(g);inputGap(r,list,g)}})}
@@ -7759,27 +7759,54 @@ function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clie
   const sx=v=>(v-A)/(B-A)*W;txMap={A,B,W,rects:[]};
   (cur&&cur.list||[]).forEach(g=>{if(g.gap||typeof g.t!=='string'||g.b<=A||g.a>=B)return;const X0=sx(g.a)+1,X1=sx(g.b)-1,w=Math.max(4,X1-X0);
     x.fillStyle=c3;x.beginPath();x.roundRect?x.roundRect(X0,4,w,H-8,6):x.rect(X0,4,w,H-8);x.fill();
-    if(g===sel){x.strokeStyle=fg;x.lineWidth=2.5;x.stroke()}
-    x.save();x.beginPath();x.rect(X0+4,4,Math.max(0,w-8),H-8);x.clip();x.fillStyle='#fff';x.font='12px '+(cs.getPropertyValue('--font').trim()||'sans-serif');x.textBaseline='middle';x.fillText(g.t,X0+6,H/2);x.restore();
+    if(g===sel||(txHi&&txHi.has(g))){x.strokeStyle=txHi&&txHi.has(g)?'#ffd23a':fg;x.lineWidth=txHi&&txHi.has(g)?3.5:2.5;x.stroke()}
+    /* v578: グループは上に黄色の線(つながって見える) */
+    if(g.grp){x.fillStyle='#ffd23a';x.fillRect(X0-1,0,w+2,3)}
+    /* v578: 文字は2段(入りきらない分は…) */
+    x.save();x.beginPath();x.rect(X0+4,4,Math.max(0,w-8),H-8);x.clip();x.fillStyle='#fff';x.font='13px '+(cs.getPropertyValue('--font').trim()||'sans-serif');x.textBaseline='middle';
+    {const mw=Math.max(0,w-12),ch=[...g.t],ln=[''];for(const c of ch){const k=ln.length-1;if(x.measureText(ln[k]+c).width>mw&&ln[k]){if(ln.length===2){ln[1]=ln[1].slice(0,-1)+'…';break}ln.push(c)}else ln[k]+=c}
+     const lh=17,y0=H/2-(ln.length-1)*lh/2;ln.forEach((l,i)=>x.fillText(l,X0+6,y0+i*lh))}x.restore();
     txMap.rects.push([X0,X0+w,g])});
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H)}
-let txMap=null;
+let txMap=null,txHi=null;
 /* v383: 文字のタイムラインのボックスの端(±16px)をなぞる=その字幕の長さを変える(隣には重ならない)。端を長押し→なぞる=隣のボックスの端も一緒に動く */
 {const tc=$('tx');if(tc){let D=null;
  tc.addEventListener('touchmove',e=>{if(D&&(D.mv||D.lk))e.preventDefault()},{passive:false});
  tc.addEventListener('pointerdown',e=>{D=null;if(!txMap||!cur)return;const r=tc.getBoundingClientRect(),X=e.clientX-r.left,m=txMap,sx=v=>(v-m.A)/(m.B-m.A)*m.W;
+   /* v578: 字幕クリップの真ん中=下の一覧と同じ操作(ダブルタップ=修正、長押しして離す=1文字ずつ編集、長押しして横にスワイプ=隣に重ねる) */
+   {const h=m.rects.find(q=>X>=q[0]&&X<=q[1]);const ez=h?Math.min(16,(h[1]-h[0])/4):0;
+    const ne=Math.min(99,...cur.list.filter(q=>!q.gap&&typeof q.t==='string').flatMap(q=>[Math.abs(sx(q.a)-X),Math.abs(sx(q.b)-X)]));
+    if(h?Math.min(X-h[0],h[1]-X)>ez:ne>=17){const t=m.A+(m.B-m.A)*X/m.W,g=h?h[2]:withGaps(cur.list).find(q=>q.gap&&t>=q.a&&t<=q.b);if(!g)return;
+      try{tc.setPointerCapture(e.pointerId)}catch(_){}const b={g,x0:e.clientX,y0:e.clientY,lp:false,dr:false,nt:null,nr:null};b.tm=setTimeout(()=>{b.tm=null;if(!b.g.gap){b.lp=true;stopPlay();txHi=new Set([b.g]);drawWf();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}}},480);D={body:b};return}}
    let best=null,bd=17;cur.list.forEach(g=>{if(g.gap||typeof g.t!=='string')return;['a','b'].forEach(k=>{const d=Math.abs(sx(g[k])-X);if(d<bd||(d===bd&&g===sel)){bd=d;best={g,k}}})});
    if(!best)return;try{tc.setPointerCapture(e.pointerId)}catch(_){}
    D={g:best.g,k:best.k,x0:e.clientX,e0:best.g[best.k],sc:(m.B-m.A)/m.W,mv:false,lk:false,ct:pos};
    const L=cur.list,i=L.indexOf(D.g),nb=D.k==='a'?L[i-1]:L[i+1];D.nb=nb&&!nb.gap?nb:null;
    const d0=D;D.tm=setTimeout(()=>{if(D===d0&&!d0.mv&&d0.nb){d0.lk=true;try{navigator.vibrate&&navigator.vibrate(20)}catch(_){}stopPlay();st('隣の字幕も一緒に動きます')}},400)});
- tc.addEventListener('pointermove',e=>{const d=D;if(!d)return;const dx=e.clientX-d.x0;
+ tc.addEventListener('pointermove',e=>{const d=D;if(!d)return;
+   if(d.body){const b=d.body,dx=e.clientX-b.x0;if(b.tm&&(Math.abs(dx)>14||Math.abs(e.clientY-b.y0)>14)){clearTimeout(b.tm);b.tm=null}
+     if(b.lp){if(!b.dr&&Math.abs(dx)>10)b.dr=true;if(b.dr){const r=tc.getBoundingClientRect(),X=e.clientX-r.left,m=txMap,t=m.A+(m.B-m.A)*X/m.W;
+       const cand=cur.list.find(q=>!q.gap&&typeof q.t==='string'&&t>=q.a&&t<=q.b)||withGaps(cur.list).find(q=>q.gap&&t>=q.a&&t<=q.b);const T=mergeTarget(cur.list,b.g,cand,dx>0?1:-1);
+       const nt=T?T.nt:null;if(nt!==b.nt&&nt){try{navigator.vibrate&&navigator.vibrate(15)}catch(_){}}b.nt=nt;b.nr=T?T.nr:null;b.cand=cand;txHi=new Set([b.g,...(nt?[nt]:[]),...(b.nr||[])]);drawWf()}}
+     return}
+   const dx=e.clientX-d.x0;
    if(!d.mv){if(Math.abs(dx)<5)return;d.mv=true;clearTimeout(d.tm);stopPlay()}
    const g=d.g,nb=d.nb;let t=d.e0+dx*d.sc;
    if(d.k==='b'){t=Math.max(g.a+0.2,Math.min(nb?(d.lk?nb.b-0.2:nb.a):VD,t));g.b=t;if(d.lk&&nb)nb.a=t}
    else{t=Math.min(g.b-0.2,Math.max(nb?(d.lk?nb.a+0.2:nb.b):0,t));g.a=t;if(d.lk&&nb)nb.b=t}
    sel=g;showAt(Math.max(0,t-(d.k==='b'?0.04:0)));drawWf()});
- const up=()=>{const d=D;D=null;if(!d)return;clearTimeout(d.tm);if(!d.mv){if(d.lk)st('');return}tc._eat=1;setTimeout(()=>tc._eat=0,400);
+ const up=e=>{const d=D;D=null;if(!d)return;
+   if(d.body){const b=d.body,g=b.g;clearTimeout(b.tm);txHi=null;const L=cur.list;
+     if(b.dr){tc._eat=1;setTimeout(()=>tc._eat=0,400);if(e&&e.type==='pointerup'){
+         if(b.nt){mergeApply(g,b.nt,b.nr,L);return}
+         /* グループの字幕をグループの外へ出して離したら、その字幕から後ろをグループから外す(一覧と同じ) */
+         if(g.grp&&!(b.cand&&b.cand.grp===g.grp)){const gm=grpOf(L,g),i=gm.indexOf(g);delete g.grp;gm.slice(i+1).forEach(x=>delete x.grp);sel=g;save();drawResults();return}}
+       drawWf();return}
+     if(b.lp){tc._eat=1;setTimeout(()=>tc._eat=0,400);drawWf();eatClick();pick(g);charEdit(cur.r,L,g);return}
+     if(!e||e.type!=='pointerup')return;
+     const now=Date.now(),S=tc._tap||{},k=g.gap?'gap'+g.a.toFixed(2):g;if(S.k===k&&now-S.t<420){tc._tap=null;tc._eat=1;setTimeout(()=>tc._eat=0,400);eatClick();pick(g);if(g.gap)inputGap(cur.r,L,g);else editRow(cur.r,L,g);return}
+     tc._tap={k,t:now};return}
+   clearTimeout(d.tm);if(!d.mv){if(d.lk)st('');return}tc._eat=1;setTimeout(()=>tc._eat=0,400);
    save();drawResults();sel=d.g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',r._g===d.g));drawWf();st('')};
  tc.addEventListener('pointerup',up);tc.addEventListener('pointercancel',up)}}
 {const tc=$('tx');if(tc)tc.addEventListener('click',e=>{if(!txMap||tc._eat){tc._eat=0;return}const r=tc.getBoundingClientRect(),X=e.clientX-r.left;const h=txMap.rects.find(q=>X>=q[0]&&X<=q[1]);if(h){pick(h[2]);showAt(h[2].a+0.01)}})}
@@ -7929,13 +7956,24 @@ function mergeDrag(d,g,r,list){let tgt=null,rng=null;
       d.style.transform='';d.classList.remove('drg');clr();
       if(out){const gm=grpOf(list,g),i=gm.indexOf(g),nid='g'+Date.now().toString(36);delete g.grp;gm.slice(i+1).forEach(x=>delete x.grp);/* v197: 途中で外したら下は全部解除 */sel=g;save();drawResults();return}
       if(!e||!tgt){tgt=null;return}
+      const t2=tgt;tgt=null;mergeApply(g,t2,rng,list)}}}
+/* v578: 重ねた時の処理(下の一覧と、字幕クリップの長押しスワイプで共通) */
+function mergeApply(g,tgt,rng,list){
       /* 太を重ねた時は文字をまとめずにグループにする */
       if(SPK(g)==='b'){const R2=rng||[g,tgt],id=g.grp||tgt.grp||('g'+Date.now().toString(36)),old=R2.map(x=>x.grp).filter(x=>x&&x!==id),oh=grpOf(list,{grp:id})[0]||null;
         list.forEach(x=>{if(old.includes(x.grp))x.grp=id});R2.forEach(x=>x.grp=id);const gm=grpOf(list,g);/* v229: 先頭が変わったら、前の先頭の枠・見出しなどを新しい先頭へ移す */if(oh&&gm[0]!==oh&&gm.includes(oh)){GHK.forEach(k=>{if(oh[k]!==undefined){gm[0][k]=oh[k];delete oh[k]}})}gm.forEach(x=>{x.sp='b';x.bs=gm[0].bs});
-        sel=g;tgt=null;save();drawResults();return}
+        sel=g;save();drawResults();return}
       const A=g.a<tgt.a?g:tgt,B=A===g?tgt:g;A.a=Math.min(A.a,B.a);A.b=Math.max(A.b,B.b);A.t=A.t+B.t;if(A.en||B.en)A.en=[A.en,B.en].filter(Boolean).join(' ');
       if(B.o)A.o=(A.o||'')+(A.o?' ':'')+B.o;if(B.chk)A.chk=(A.chk?A.chk+' / ':'')+B.chk;
-      list.splice(list.indexOf(B),1);sel=A;tgt=null;save();drawResults()}}}
+      list.splice(list.indexOf(B),1);sel=A;save();drawResults()}
+/* v578: 重ねる相手を決める(下の一覧と同じ決まり)。dir=+1 右(後ろ)/-1 左(前)。cand=指の下の字幕(無音ならgap) */
+function mergeTarget(list,g,cand,dir){let nt=null,nr=null;
+  if(cand&&!cand.gap&&cand!==g&&!(g.grp&&cand.grp===g.grp)&&(cand===nbr(list,g,1)||cand===nbr(list,g,-1)))nt=cand;
+  if(cand&&cand.gap){const n2=nbr(list,g,dir);if(n2&&!(g.grp&&n2.grp===g.grp)&&(dir>0?cand.a>=g.b-0.02&&n2.a>=cand.b-0.02:cand.b<=g.a+0.02&&n2.b<=cand.a+0.02))nt=n2}
+  if(SPK(g)==='b'){nt=null;let c=cand;
+    if(c&&c.gap){const L=list.filter(x=>dir>0?x.a>=g.a&&x.b<=c.a+0.02:x.b<=g.b&&x.a>=c.b-0.02);c=dir>0?L[L.length-1]:L[0]}
+    if(c&&c!==g&&!c.gap){const i=list.indexOf(g),j=list.indexOf(c);if(i>=0&&j>=0){nr=list.slice(Math.min(i,j),Math.max(i,j)+1);if(nr.some(x=>x.grp!==g.grp||!g.grp))nt=c;else nr=null}}}
+  return nt?{nt,nr}:null}
 /* ===== 操作(タップ/ダブル/長タップ) ===== */
 /* v257: ダブルタップの記録は行のデータ(h.key)ごとに持つ(1回目のタップの後に行が描き直されても2回目を受け取れる) */
 const _pk=new WeakMap();
