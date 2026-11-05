@@ -4724,7 +4724,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v584';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v585';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6506,6 +6506,8 @@ restore().finally(()=>{restored=true;window.fineReset&&fineReset();if(tpl){corne
 const $=id=>document.getElementById('t_'+id);
 /* v175: 進み具合は動画の下(いつも見える所)とボタンにも出す */
 const st=t=>{$('st').textContent=t;if($('go').dataset.busy){const l=(t||'').split('\n')[0];$('go').textContent=l||'処理中…';$('rSt').textContent=l}};
+/* v585: アプリに戻った時(画面が見えた時)に描き直す(処理中に戻ると真っ黒のままになることがあった) */
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;const b=document.body;requestAnimationFrame(()=>{b.style.opacity='0.999';try{drawWf()}catch(e){}requestAnimationFrame(()=>{b.style.opacity=''})})});
 /* v584: 自動生成・再生成・英語字幕など、字幕ページが処理中(working)の間はバイクの読み込みアニメ。文字は状態の1行目、棒は進み具合 */
 {let wid=0;setInterval(()=>{const on=working&&!document.getElementById('s4').hidden;if(!on){if(wid){ldO.hide(wid);wid=0}return}
   const t=(($('st').textContent||'').split('\n')[0]||'処理中…'),b=$('bar'),w=b&&!b.hidden?parseFloat($('barI').style.width):NaN,pp=isFinite(w)?w/100:null;
@@ -6769,7 +6771,7 @@ $('go').onclick=async()=>{if(!JOB.length)return;
       bi.style.width=(done/D*100).toFixed(1)+'%';
       st('文字起こし中 '+fms(done)+' / '+fms(D)+'('+Math.round(done/D*100)+'%)'+(done>0?' 残り約'+fm(el/done*(D-done)):'')+''+BGTIP+''+(first?'\n最初の部分: '+first:''));
       /* v176: まず「言葉ごとの時間」で起こす(モデルが対応していなければ今まで通りの大きなまとまり) */
-      let o=null,wd=false;
+      let o=null,wd=false;const c0=performance.now();
       if(wordOK!==false){try{o=await asr(pcm.slice(a0,a1),{language:'japanese',task:'transcribe',return_timestamps:'word'});wordOK=true;wd=true}catch(e){wordOK=false;wordErr=String(e&&e.message||e).slice(0,80)}}
       if(!o)o=await asr(pcm.slice(a0,a1),{language:'japanese',task:'transcribe',return_timestamps:true});
       /* v576: 言葉の時間が出ない版は、時間付き(軽い)で言葉の時間を測って、文字に当てはめる(文字はそのまま) */
@@ -6788,6 +6790,8 @@ $('go').onclick=async()=>{if(!JOB.length)return;
         const s0=off+(c.timestamp[0]??0),e0=c.timestamp[1]==null?segEnd:off+c.timestamp[1];cs.push({a:s0,b:Math.max(s0+0.2,Math.min(segEnd,e0)),t,sp:'m',spv:3})});
       /* v490: 言葉1つが長い場合・言葉の時間に非対応の場合も、生成した字幕は必ず文字数制限で分ける */
       fix18(cs);all.push(...cs);done=Math.min(D,done+(a1-a0)/SR);
+      /* v585: 9割の力で動かす。1区切りごとにかかった時間の1割強だけ休む(画面の描き直し・アプリに戻った時の表示に余裕を残す。画面が隠れている間は少し長めに休む) */
+      {const ct=performance.now()-c0;await new Promise(z=>setTimeout(z,Math.min(4000,ct*(document.hidden?0.25:0.12))))}
       if(sample&&cs.length&&!cs.every(g=>/^[!！,，、。.\s]+$/.test(g.t))){const ki=nFix++;chain=chain.then(()=>fixSegs(sample,cs)).then(x=>{fixed[ki]=x;doneFix++},e=>{fixed[ki]=cs.map(g=>({...g}));fixErr=e;doneFix++})}
     }
     bi.style.width='100%';
