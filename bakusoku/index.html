@@ -1400,7 +1400,7 @@ function thumb(clip,t,pri){
 /* v387: 読み込み中のくるくる＋「3/10本」 */
 /* v583: 読み込み待ちの表示はバイクが でこぼこ道を走るアニメ(背景を少し暗く)。ldO.show(文字,{delay:ms}) は id を返し、ldO.hide(id) はその表示の時だけ消す。文字の「3/10」は下の棒にも出す */
 const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.createElement('style');
-  st.textContent='#ldO{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}#ldO .bl-box{width:min(260px,80%);padding:14px 14px 16px;border-radius:18px;background:rgba(20,22,26,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);text-align:center;color:#f2f0eb;font:14px/1.5 sans-serif}#ldO canvas{display:block;width:200px;height:96px;margin:0 auto 6px;max-width:100%}#ldO b{display:block;font-size:15px;margin-bottom:10px}#ldO .bl-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}#ldO .bl-bar i{display:block;height:100%;width:0;background:#f2f0eb;transition:width .3s}';document.head.appendChild(st);
+  st.textContent='#ldO{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}#ldO .bl-box{width:min(260px,80%);padding:14px 14px 16px;border-radius:18px;background:rgba(20,22,26,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);text-align:center;color:#f2f0eb;font:14px/1.5 sans-serif}#ldO canvas{display:block;width:200px;height:96px;margin:0 auto 6px;max-width:100%}#ldO b{display:block;font-size:15px;margin-bottom:10px}#ldO .bl-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}#ldO .bl-bar i{display:block;height:100%;width:0;background:#f2f0eb;transition:width .3s}#ldO .bl-stop{margin-top:12px;min-height:40px;padding:0 18px;border-radius:20px;background:rgba(255,255,255,.12);color:#f2f0eb;border:1px solid rgba(255,255,255,.35);font-size:14px}';document.head.appendChild(st);
   const COLOR='#ffb020',INK='#1c1c1e',SIZE=11.25;
   const bike=c=>{c.lineWidth=2;c.strokeStyle=INK;c.lineCap='round';c.lineJoin='round';c.beginPath();c.arc(5.8,15.6,3.4,0,Math.PI*2);c.stroke();c.beginPath();c.arc(18.2,15.6,3.4,0,Math.PI*2);c.stroke();
     c.beginPath();c.moveTo(5.8,15.6);c.lineTo(9.6,15.6);c.lineTo(12.8,11.2);c.lineTo(8.2,11.2);c.closePath();c.stroke();c.beginPath();c.moveTo(7.2,10.2);c.lineTo(14.8,10.2);c.stroke();
@@ -1409,7 +1409,7 @@ const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.c
     g.save();const sc=(R*1.5)/24;g.scale(sc,sc);g.translate(-12,-12.6);bike(g);g.restore()};
   const bump=x=>{const k=((x%46)+46)%46;return k<16?-Math.sin(k/16*Math.PI)*6:k>30&&k<36?-Math.sin((k-30)/6*Math.PI)*2.5:0};
   const setT=(t,pp)=>{o.querySelector('b').textContent=t;const m=/(\d+)\s*\/\s*(\d+)/.exec(t||''),bar=o.querySelector('.bl-bar'),f=pp!=null?pp:m&&+m[2]?m[1]/m[2]:null;bar.style.visibility=f!=null?'visible':'hidden';o.querySelector('.bl-bar i').style.width=f!=null?(Math.max(0,Math.min(1,f))*100).toFixed(1)+'%':'0%'};
-  const start=()=>{if(o)return;o=document.createElement('div');o.id='ldO';o.innerHTML='<div class="bl-box"><canvas></canvas><b></b><div class="bl-bar"><i></i></div></div>';document.body.appendChild(o);
+  const start=()=>{if(o)return;o=document.createElement('div');o.id='ldO';o.innerHTML='<div class="bl-box"><canvas></canvas><b></b><div class="bl-bar"><i></i></div><button class="bl-stop" hidden>読み込みを止める</button></div>';document.body.appendChild(o);
     const cv=o.querySelector('canvas'),t0=performance.now(),dpr=Math.min(3,devicePixelRatio||1),W=200,H=96,gy=72;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');
     const loop=now=>{if(!o||!o.isConnected){raf=0;return}const t=(now-t0)/1000,off=t*70;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
       g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2.5;g.lineCap='round';g.beginPath();for(let x=0;x<=W;x+=2){const y=gy+bump(x+off);x?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();
@@ -1417,7 +1417,7 @@ const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.c
       const cx=W/2,y0=bump(cx+off),y1=bump(cx+8+off),ym=bump(cx-8+off),ang=Math.atan2(y1-ym,16),jig=Math.sin(t*22)*0.6;
       g.save();g.translate(cx,gy+Math.min(y0,(y1+ym)/2)-15+jig);g.rotate(ang);marker(g);g.restore();raf=requestAnimationFrame(loop)};
     raf=requestAnimationFrame(loop)};
-  return {show(t,opt){const id=++seq;cur=id;clearTimeout(tm);clearTimeout(dt);t=t||'読み込み中…';const go=()=>{if(cur!==id)return;start();setT(t,opt&&opt.p);tm=setTimeout(()=>this.hide(),90000)};
+  return {show(t,opt){const id=++seq;cur=id;clearTimeout(tm);clearTimeout(dt);t=t||'読み込み中…';const go=()=>{if(cur!==id)return;start();setT(t,opt&&opt.p);/* v611: opt.stop=「読み込みを止める」ボタン(押すとこの表示を消して stop を呼ぶ) */{const b=o.querySelector('.bl-stop'),f=opt&&opt.stop;b.hidden=!f;b.onclick=f?()=>{this.hide();try{f()}catch(e){}}:null}tm=setTimeout(()=>this.hide(),90000)};
       if(opt&&opt.delay&&!o)dt=setTimeout(go,opt.delay);else go();return id},
     /* 表示中の文字と進み具合だけ変える */set(id,t,pp){if(id!==cur||!o)return false;setT(t,pp);return true},
     hide(id){if(id!=null&&id!==cur)return;clearTimeout(tm);clearTimeout(dt);cur=0;if(o){o.remove();o=null}}}})();
@@ -4956,7 +4956,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v610';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v611';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6874,6 +6874,7 @@ function ready(){const miss=got();const ok=T&&JOB.length&&!miss.length;$('go').d
 
 /* ===== 音声(つなげた後の1本。再生と認識で共用) ===== */
 let audio=null,audPrev=null;const clipPcm=new Map();
+/* v611: 波形の読み込みを止める(audStop=今の読み込みを途中でやめる／wfOff=ページを開き直すまで波形を読み込まない) */let audStop=false,wfOff=false;const wfStop=()=>{audStop=true;wfOff=true;try{drawWf()}catch(e){}};
 /* v573: 前に作った音(audPrev)に、同じ動画のこの範囲が丸ごと入っていれば、そこから切り出す */
 const audReuse=r=>{const P=audPrev;if(!P||!P.parts)return null;const q=P.parts.find(q=>q.key===r.key&&q.a<=r.a+1e-3&&q.b>=r.b-1e-3);if(!q)return null;
   const s=q.o+Math.max(0,Math.round((r.a-q.a)*SR)),e=Math.min(q.o+q.n,s+Math.round((r.b-r.a)*SR));return e>s?P.pcm.subarray(s,e):null};
@@ -6889,12 +6890,13 @@ async function getAudio(){if(audio)return audio;
   const parts=[],pi=[];let N=0;
   /* v574: 音の長さを必ず「残す範囲の長さ」にそろえる(動画より音が短い時など、後ろの字幕が全部ずれるのを防ぐ) */
   const fit=(r,x)=>{const L=Math.max(0,Math.round((r.b-r.a)*SR));if(x.length===L)return x;if(x.length>L)return x.subarray(0,L);const y=new Float32Array(L);y.set(x);return y};
-  for(const r of JOB){if(r.blank){const x=new Float32Array(Math.round((r.b-r.a)*SR));parts.push(x);N+=x.length;continue}
+  for(const r of JOB){if(audStop)throw new Error('stopped');if(r.blank){const x=new Float32Array(Math.round((r.b-r.a)*SR));parts.push(x);N+=x.length;continue}
     {let x=audReuse(r);if(x){x=fit(r,x);pi.push({key:r.key,a:r.a,b:r.b,o:N,n:x.length});parts.push(x);N+=x.length;continue}}
     pi.push({key:r.key,a:r.a,b:r.b,o:N,n:0});
     /* v346: 大きい動画は使う所だけ読む */
     if(r.file&&r.file.size>150e6){const x=fit(r,await window.xAudR(r,r.a,r.b,{sr:SR}));pi[pi.length-1].n=x.length;parts.push(x);N+=x.length;continue}
     const p=await pcmOf(r),s=Math.max(0,Math.round(r.a*SR)),e=Math.min(p.length,s+Math.round((r.b-r.a)*SR));const x=fit(r,p.subarray(s,e));pi[pi.length-1].n=x.length;parts.push(x);N+=x.length}
+  if(audStop)throw new Error('stopped');
   const pcm=new Float32Array(N+2*SR);let o=0;parts.forEach(x=>{pcm.set(x,o);o+=x.length});audPrev=null;
   let pk=0;for(let i=0;i<N;i++){const v=Math.abs(pcm[i]);if(v>pk)pk=v}
   audio={pcm,dur:N/SR,pk,parts:pi};return audio}
@@ -7987,14 +7989,15 @@ window.tzOpen=()=>{let sc=$('tzSc');if(sc)sc.remove();sc=document.createElement(
   draw()};
 /* 音声波形(選んだ所の前後も表示)。タップ=そこから再生 */
 let wfPk=null,wfBusy=false;
-async function wfData(){if(wfPk||!JOB.length||wfBusy)return wfPk;wfBusy=true;const lid=ldO.show('波形を読み込み中…',{delay:300});try{const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
+async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;const lid=ldO.show('波形を読み込み中…',{delay:300,stop:wfStop});try{const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
-  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}ldO.hide(lid);wfBusy=false;return wfPk}
+  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}ldO.hide(lid);wfBusy=false;audStop=false;return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
 let wfMap=null,zw=6,wEdge=null,vmode=null;const ptrs=new Map();let wdrag=null,pinch=null;
 function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
   if(c.width!==W*dp){c.width=W*dp;c.height=H*dp}const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
-  if(!JOB.length)return;if(!wfPk){wfData().then(d=>{if(d)drawWf(t)});return}
+  if(!JOB.length)return;if(!wfPk&&wfOff){x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='13px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('波形の読み込みを止めました（ページを開き直すと読み込みます）',W/2,H/2);return}
+  if(!wfPk){wfData().then(d=>{if(d)drawWf(t)});return}
   const cs=getComputedStyle(document.documentElement),acc=cs.getPropertyValue('--accent').trim(),mut=cs.getPropertyValue('--line').trim(),warn=cs.getPropertyValue('--warn').trim()||'#d33';
   const ct=t!=null?t:pos,A=ct-zw/2,B=ct+zw/2,sx=v=>(v-A)/(B-A)*W;wfMap={A,B,W};
   if(sel){x.globalAlpha=.12;x.fillStyle=acc;x.fillRect(sx(sel.a),0,sx(sel.b)-sx(sel.a),H);x.globalAlpha=1}
@@ -9121,8 +9124,8 @@ window.subOpen=async(auto,render,fresh,mode)=>{MODE=mode==='nar'?'nar':'sub';{co
     delete $('go').dataset.busy;working=false;$('go').disabled=false;showAt(0);$('go').click();return}
   if(auto&&ok&&!Object.keys(R).some(k=>R[k].raw.length))$('go').click()};
 /* v538: 開いてから字幕の波形・画像ができるまで、再生画面の真ん中に「読み込み中」を出す */
-{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');const lid=ldO.show('読み込み中…');try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
-  try{const r=await o(...a);if(JOB.length&&!wfPk)await Promise.race([wfData(),new Promise(z=>setTimeout(z,30000))]);return r}finally{ldO.hide(lid)}}}
+{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');wfOff=false;audStop=false;let cz;const cp=new Promise(z=>{cz=z});const lid=ldO.show('読み込み中…',{stop:()=>{wfStop();cz()}});try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
+  try{const r=await o(...a);if(JOB.length&&!wfPk&&!wfOff)await Promise.race([wfData(),cp,new Promise(z=>setTimeout(z,30000))]);return r}finally{ldO.hide(lid)}}}
 window.subClose=()=>{window.subRange=null;stopPlay();document.getElementById('s4').hidden=true;document.getElementById('s1').hidden=false;scrollTo(0,0)};
 </script>
 
