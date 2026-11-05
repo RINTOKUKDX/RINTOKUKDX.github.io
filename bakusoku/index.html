@@ -1396,8 +1396,29 @@ function thumb(clip,t,pri){
 
 /* v356: 選ぶアプリ(ギャラリー・Googleフォト・ファイルなど)は箱が一覧で出す */
 /* v387: 読み込み中のくるくる＋「3/10本」 */
-const ldO=(()=>{let o=null,tm=null;const st=document.createElement('style');st.textContent='#ldO{position:fixed;inset:0;z-index:2147482000;background:#0008;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;font:700 18px sans-serif;gap:14px}#ldO i{width:46px;height:46px;border:5px solid #fff4;border-top-color:#fff;border-radius:50%;animation:ldR .8s linear infinite}@keyframes ldR{to{transform:rotate(360deg)}}';document.head.appendChild(st);
-  return {show(t){clearTimeout(tm);if(!o){o=document.createElement('div');o.id='ldO';o.innerHTML='<i></i><span></span>';document.body.appendChild(o)}o.lastChild.textContent=t;tm=setTimeout(()=>this.hide(),90000)},hide(){clearTimeout(tm);if(o){o.remove();o=null}}}})();
+/* v583: 読み込み待ちの表示はバイクが でこぼこ道を走るアニメ(背景を少し暗く)。ldO.show(文字,{delay:ms}) は id を返し、ldO.hide(id) はその表示の時だけ消す。文字の「3/10」は下の棒にも出す */
+const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.createElement('style');
+  st.textContent='#ldO{position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.5)}#ldO .bl-box{width:min(260px,80%);padding:14px 14px 16px;border-radius:18px;background:rgba(20,22,26,.85);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.14);text-align:center;color:#f2f0eb;font:14px/1.5 sans-serif}#ldO canvas{display:block;width:200px;height:96px;margin:0 auto 6px;max-width:100%}#ldO b{display:block;font-size:15px;margin-bottom:10px}#ldO .bl-bar{height:5px;border-radius:3px;background:rgba(255,255,255,.14);overflow:hidden}#ldO .bl-bar i{display:block;height:100%;width:0;background:#f2f0eb;transition:width .3s}';document.head.appendChild(st);
+  const COLOR='#ffb020',INK='#1c1c1e',SIZE=11.25;
+  const bike=c=>{c.lineWidth=2;c.strokeStyle=INK;c.lineCap='round';c.lineJoin='round';c.beginPath();c.arc(5.8,15.6,3.4,0,Math.PI*2);c.stroke();c.beginPath();c.arc(18.2,15.6,3.4,0,Math.PI*2);c.stroke();
+    c.beginPath();c.moveTo(5.8,15.6);c.lineTo(9.6,15.6);c.lineTo(12.8,11.2);c.lineTo(8.2,11.2);c.closePath();c.stroke();c.beginPath();c.moveTo(7.2,10.2);c.lineTo(14.8,10.2);c.stroke();
+    c.beginPath();c.moveTo(18.2,15.6);c.lineTo(15.6,7.6);c.lineTo(17.8,7);c.stroke();c.beginPath();c.moveTo(14.8,10.2);c.lineTo(16.4,10.2);c.stroke()};
+  const marker=g=>{const R=SIZE;g.beginPath();g.arc(0,0,R*1.45,0,Math.PI*2);g.fillStyle='rgba(255,176,32,.22)';g.fill();g.beginPath();g.arc(0,0,R,0,Math.PI*2);g.fillStyle=COLOR;g.fill();g.strokeStyle=INK;g.lineWidth=2.2;g.stroke();
+    g.save();const sc=(R*1.5)/24;g.scale(sc,sc);g.translate(-12,-12.6);bike(g);g.restore()};
+  const bump=x=>{const k=((x%46)+46)%46;return k<16?-Math.sin(k/16*Math.PI)*6:k>30&&k<36?-Math.sin((k-30)/6*Math.PI)*2.5:0};
+  const setT=t=>{o.querySelector('b').textContent=t;const m=/(\d+)\s*\/\s*(\d+)/.exec(t||''),bar=o.querySelector('.bl-bar');bar.style.visibility=m&&+m[2]?'visible':'hidden';o.querySelector('.bl-bar i').style.width=m&&+m[2]?(Math.min(1,m[1]/m[2])*100).toFixed(1)+'%':'0%'};
+  const start=()=>{if(o)return;o=document.createElement('div');o.id='ldO';o.innerHTML='<div class="bl-box"><canvas></canvas><b></b><div class="bl-bar"><i></i></div></div>';document.body.appendChild(o);
+    const cv=o.querySelector('canvas'),t0=performance.now(),dpr=Math.min(3,devicePixelRatio||1),W=200,H=96,gy=72;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');
+    const loop=now=>{if(!o||!o.isConnected){raf=0;return}const t=(now-t0)/1000,off=t*70;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
+      g.strokeStyle='rgba(255,255,255,.55)';g.lineWidth=2.5;g.lineCap='round';g.beginPath();for(let x=0;x<=W;x+=2){const y=gy+bump(x+off);x?g.lineTo(x,y):g.moveTo(x,y)}g.stroke();
+      g.fillStyle='rgba(255,255,255,.25)';for(let k=0;k<6;k++){const x=((k*41-off)%246+246)%246-23;g.fillRect(x,gy+10,10,2)}
+      const cx=W/2,y0=bump(cx+off),y1=bump(cx+8+off),ym=bump(cx-8+off),ang=Math.atan2(y1-ym,16),jig=Math.sin(t*22)*0.6;
+      g.save();g.translate(cx,gy+Math.min(y0,(y1+ym)/2)-15+jig);g.rotate(ang);marker(g);g.restore();raf=requestAnimationFrame(loop)};
+    raf=requestAnimationFrame(loop)};
+  return {show(t,opt){const id=++seq;cur=id;clearTimeout(tm);clearTimeout(dt);t=t||'読み込み中…';const go=()=>{if(cur!==id)return;start();setT(t);tm=setTimeout(()=>this.hide(),90000)};
+      if(opt&&opt.delay&&!o)dt=setTimeout(go,opt.delay);else go();return id},
+    hide(id){if(id!=null&&id!==cur)return;clearTimeout(tm);clearTimeout(dt);cur=0;if(o){o.remove();o=null}}}})();
+window.ldO=ldO;
 {const fi=$('file');let wait=false;fi.addEventListener('click',()=>{wait=true});
  addEventListener('focus',()=>{if(wait){wait=false;ldO.show('動画を受け取っています…');setTimeout(()=>{if(!fi.files||!fi.files.length)ldO.hide()},2500)}});
  fi.addEventListener('cancel',()=>{wait=false;ldO.hide()})}
@@ -1772,7 +1793,7 @@ function silOpen(){if(!cur)return;let P=$('silP');if(P){window.silApStop&&silApS
   const bt=document.createElement('div');bt.className='bt';P.appendChild(bt);
   const mk=(t,f,cls)=>{const b=document.createElement('button');b.textContent=t;if(cls)b.className=cls;b.onclick=f;bt.appendChild(b);return b};
   const PK=new Map();let busy=false;
-  const calc=async()=>{const c=cur;if(!c)return;let p=PK.get(c);if(!p){info.textContent='音声を読み込み中…';p=await clipPeaks(c);if(!p){info.textContent='この動画の音声が読めません';return}PK.set(c,p)}
+  const calc=async()=>{const c=cur;if(!c)return;let p=PK.get(c);if(!p){info.textContent='音声を読み込み中…';const lid=ldO.show('波形を読み込み中…',{delay:300});try{p=await clipPeaks(c)}finally{ldO.hide(lid)}if(!p){info.textContent='この動画の音声が読めません';return}PK.set(c,p)}
     if(!$('silP')||c!==cur)return;const iv=silFind(p,c.d);
     const keep=segs.filter(q=>q.clip===c);const cut=iv.reduce((t,[a,b])=>t+keep.reduce((u,q)=>u+Math.max(0,Math.min(b,q.end)-Math.max(a,q.start)),0),0);
     window.silLv=SIL.lv;silMarks.clear();silMarks.set(c,iv);renderTL();window.cwfDraw&&cwfDraw();
@@ -4702,7 +4723,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v582';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v583';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7733,9 +7754,9 @@ window.tzOpen=()=>{let sc=$('tzSc');if(sc)sc.remove();sc=document.createElement(
   draw()};
 /* 音声波形(選んだ所の前後も表示)。タップ=そこから再生 */
 let wfPk=null,wfBusy=false;
-async function wfData(){if(wfPk||!JOB.length||wfBusy)return wfPk;wfBusy=true;try{const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
+async function wfData(){if(wfPk||!JOB.length||wfBusy)return wfPk;wfBusy=true;const lid=ldO.show('波形を読み込み中…',{delay:300});try{const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
-  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}wfBusy=false;return wfPk}
+  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}ldO.hide(lid);wfBusy=false;return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
 let wfMap=null,zw=6,wEdge=null,vmode=null;const ptrs=new Map();let wdrag=null,pinch=null;
 function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
@@ -8867,8 +8888,8 @@ window.subOpen=async(auto,render,fresh,mode)=>{MODE=mode==='nar'?'nar':'sub';{co
     delete $('go').dataset.busy;working=false;$('go').disabled=false;showAt(0);$('go').click();return}
   if(auto&&ok&&!Object.keys(R).some(k=>R[k].raw.length))$('go').click()};
 /* v538: 開いてから字幕の波形・画像ができるまで、再生画面の真ん中に「読み込み中」を出す */
-{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');let ld=document.getElementById('t_ld');if(!ld){ld=document.createElement('div');ld.id='t_ld';ld.innerHTML='読み込み中 <i>𖦹</i>';pl.appendChild(ld)}ld.hidden=false;try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
-  try{const r=await o(...a);if(JOB.length&&!wfPk)await Promise.race([wfData(),new Promise(z=>setTimeout(z,30000))]);return r}finally{ld.hidden=true}}}
+{const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');const lid=ldO.show('読み込み中…');try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
+  try{const r=await o(...a);if(JOB.length&&!wfPk)await Promise.race([wfData(),new Promise(z=>setTimeout(z,30000))]);return r}finally{ldO.hide(lid)}}}
 window.subClose=()=>{window.subRange=null;stopPlay();document.getElementById('s4').hidden=true;document.getElementById('s1').hidden=false;scrollTo(0,0)};
 </script>
 
