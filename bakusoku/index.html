@@ -573,7 +573,7 @@ body.editing .pgnav{display:none!important}
       <button id="rngCut" class="sm cmode" aria-pressed="true">範囲を削除</button>
       <button id="fixB" class="sm cmode" aria-pressed="false">修正</button>
     </div>
-    <div class="autorow" id="insRow"><button id="skipClip" class="sm" disabled>次へ</button><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>再挿入</button></div>
+    <div class="autorow" id="insRow"><button id="skipClip" class="sm" disabled>次へ</button><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>更新</button></div>
     <div id="cutCn"></div>
     <div id="cutDeleteRow"><button id="delCur" class="sm" disabled>動画を削除</button></div>
     <div class="autorow" id="cRow2">
@@ -1856,7 +1856,7 @@ $('reIns').onclick=()=>{const c=cur;if(!c)return;const T=reTarget();if(!T)return
   const N=R.map(r=>({clip:c,start:r.start,end:r.end,cn:corners.length?gcn:r.cn,spd:K0!==1?K0:undefined,fx:fxC(r.fx)}));segs.splice(k,n,...N);
   if(c.pend){draft.delete(c);c.pend=false;const o=T.find(q=>q.clip);c.ord=o?sOrd(o.clip):c.ord}else reEd.delete(c);
   tlShift(t0+D0,D1-D0,gcn);if(corners.length)cornerSync();else cornerRebase();resetOut();
-  reIn(c,N[0]);renderSegs();renderChips();renderCut();window.cwfDraw&&cwfDraw();cutMsg('再挿入しました')};
+  reIn(c,N[0]);renderSegs();renderChips();renderCut();window.cwfDraw&&cwfDraw();cutMsg('更新しました')};
 /* v479: 隙間に挿入 = タイムラインでクリップとクリップの間をタップして入れる */
 let gapC=null;
 {const bar=document.createElement('div');bar.id='gapBar';bar.hidden=true;
@@ -3305,6 +3305,7 @@ const segKey=q=>q.clip?q.clip.key:q.bk?q.bo:null;
 function segRun(s){let k=segs.indexOf(s);if(k<0)return[k,k];const kk=segKey(s);if(kk==null)return[k,k];let e=k;
   while(k>0&&!segs[k].sp&&segKey(segs[k-1])===kk)k--;while(e+1<segs.length&&!segs[e+1].sp&&segKey(segs[e+1])===kk)e++;return[k,e]}
 window.segRun=segRun;
+/* v610: 同じまとまり(タイムラインで1つに見えるクリップ)か */const sameRun=(a,b)=>{if(!a||!b)return false;if(a===b)return true;const R=segRun(b),k=segs.indexOf(a);return k>=R[0]&&k<=R[1]};
 function bindSeg(b,s){
   const grab=(h,side)=>h.addEventListener('pointerdown',e=>{
     e.stopPropagation();e.preventDefault();
@@ -3395,10 +3396,10 @@ function renderLanes(){
     const ln=document.createElement('div');ln.className='lane'+(i===3?' g3':i===4?' g4':'')+(i?' empty':'')+(i===0?' vlane':'')+(actLane===i?' act':'');
     ln.onclick=e=>laneTap(i,e);ln.oncontextmenu=e=>e.preventDefault();if(i>=2&&i<=4)bindLaneLP(ln,i);if(i===6)bgmLaneLP(ln);ln.style.position='relative';ln.style.height=laneH(i)+'px';
     
-    if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});
+    if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});/* v610: タップで選んだ動画は、まとまり(同じ動画の続き)全体を選んだ表示にする */const XR=selVid&&actLane===0&&segs.includes(selVid)?segRun(selVid):null;
       segs.forEach((s,k)=>{
       const d=segD(s);if(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3)){videoBlks.push(null);x+=d;return}
-      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'')+(selVid===s&&actLane===0?' xsel':'')+(multiMode&&mselV.has(s)?' vmsel':'');
+      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'')+(XR&&k>=XR[0]&&k<=XR[1]?' xsel':'')+(multiMode&&mselV.has(s)?' vmsel':'');
       b.style.left=(x*pps)+'px';bW(b,d*pps);
       if(s.clip&&inRun[k]){b.style.background='transparent';b.style.zIndex='1';const sp=document.createElement('span');sp.textContent=num(s.clip)+spdTx(s);b.appendChild(sp)}
       else if(s.clip){/* v367: 動画レーンは波形ではなくサムネイルを並べる(フィルムストリップ) */
@@ -3409,7 +3410,7 @@ function renderLanes(){
       else{b.classList.add('gap');const sp=document.createElement('span');sp.textContent='空白';b.appendChild(sp)}
       if(actLane===0){['l','r'].forEach(c=>{const h=document.createElement('i');h.className='hd '+c;b.appendChild(h)});bindSeg(b,s);
         /* v541: 動画レーンがアクティブな間も、ブロックのタップで 選び直し/解除 できる */{let sx=null,sy=0,mvd=false;b.addEventListener('pointerdown',e=>{if(e.target.closest('.hd'))return;sx=e.clientX;sy=e.clientY;mvd=false});b.addEventListener('pointermove',e=>{if(sx!=null&&Math.hypot(e.clientX-sx,e.clientY-sy)>8)mvd=true});
-          b.addEventListener('pointerup',e=>{if(sx==null||mvd||pinchUsed||!s.clip){sx=null;return}sx=null;const was=selVid===s;selVid=was?null:s;actLane=was?null:0;selItem=null;setTimeout(()=>{const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x},30)})}}else bindSegLP(b,s);
+          b.addEventListener('pointerup',e=>{if(sx==null||mvd||pinchUsed||!s.clip){sx=null;return}sx=null;const was=sameRun(selVid,s);selVid=was?null:s;actLane=was?null:0;selItem=null;setTimeout(()=>{const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x},30)})}}else bindSegLP(b,s);
       videoBlks.push(b);ln.appendChild(b);x+=d});if(gapC)gapMarks(ln);
       /* v288: 同じ動画(とその動画の字幕ページで入れた空白)が続く所は1つのブロックに見せる */
       {const key=q=>q.clip?q.clip.key:q.bk?q.bo:null;let k=0;while(k<segs.length){let e=k;const kk=key(segs[k]);if(kk!=null)while(e+1<segs.length&&key(segs[e+1])===kk&&!segs[e+1].sp)e++;
@@ -3419,7 +3420,7 @@ function renderLanes(){
             lzAdd(fs,x0,D,()=>{for(let j=0;j<n;j++){const im=document.createElement('img');im.style.left=(j*tw)+'px';im.style.width=tw+'px';fs.appendChild(im);
               let o=(j*tw+tw/2)/pps,q=L[L.length-1];for(const z of L){const d=segD(z);if(o<=d){q=z;break}o-=d}if(!q.clip){im.remove();continue}const c=q.clip;
               const tt=Math.min(q.end-0.05,Math.round(q.start+Math.min(o*spdOf(q),q.end-q.start)));thumb(c,Math.max(q.start,tt)).then(u=>{if(u)im.src=u})}});ln.appendChild(fs)}}
-        if(e>k)for(let m=k;m<=e;m++){const b=videoBlks[m];if(!b)continue;b.style.borderColor='var(--ok)';
+        if(e>k)for(let m=k;m<=e;m++){const b=videoBlks[m];if(!b)continue;b.style.borderColor='var(--ok)';if(b.classList.contains('xsel')){const A='var(--accent)',sh=['inset 0 3px 0 '+A,'inset 0 -3px 0 '+A];if(m===k)sh.push('inset 3px 0 0 '+A);if(m===e)sh.push('inset -3px 0 0 '+A);b.style.outline='none';b.style.boxShadow=sh.join(',')}
           /* v470: 中の切れ目には端のつまみを出さない(まとまりの外側だけ) */if(m>k){const h=b.querySelector(':scope>.hd.l');if(h)h.remove()}if(m<e){const h=b.querySelector(':scope>.hd.r');if(h)h.remove()}
           if(m>k){b.style.borderLeftWidth='0';b.style.borderTopLeftRadius=b.style.borderBottomLeftRadius='0';const sp=b.querySelector(':scope>span');if(sp)sp.style.display='none'}
           if(m<e){b.style.borderRightWidth='0';b.style.borderTopRightRadius=b.style.borderBottomRightRadius='0'}}
@@ -4955,7 +4956,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v609';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v610';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5986,7 +5987,7 @@ function bindSegLP(b,s){
     if(multiMode||(roAll()&&!s.clip))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
     const R=segRun(s),RB=()=>videoBlks.slice(R[0],R[1]+1).filter(Boolean).concat(videoBlks.includes(b)?[]:[b]);const tm=setTimeout(()=>{fired=true;buzz();RB().forEach(e=>{e.style.opacity='.7'})},450);
     let mvd=false;const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){mvd=true;fin(false)}};
-    const up=ev=>{if(ev.pointerId===id){/* v541: タップ=この動画ブロックをアクティブに(もう一度でやめる) */if(!fired&&!mvd&&!pinchUsed&&s.clip){const was=selVid===s&&actLane===0;selVid=was?null:s;actLane=was?null:0;selItem=null;setTimeout(()=>{const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x},30)}fin(fired)}};
+    const up=ev=>{if(ev.pointerId===id){/* v541: タップ=この動画ブロックをアクティブに(もう一度でやめる) */if(!fired&&!mvd&&!pinchUsed&&s.clip){const was=sameRun(selVid,s)&&actLane===0;selVid=was?null:s;actLane=was?null:0;selItem=null;setTimeout(()=>{const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x},30)}fin(fired)}};
     const cc=ev=>{if(ev.pointerId===id)fin(fired)};
     function fin(ok){clearTimeout(tm);RB().forEach(e=>{e.style.opacity=''});removeEventListener('pointermove',mv,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',cc,true);
       if(ok&&!pinchUsed){pausePreview();segDlg(s)}}
@@ -5999,7 +6000,7 @@ async function fixOpen(c){pausePreview();await select(c);try{pv.pause()}catch(e)
 function cutEdit(s){const c=s.clip;if(!c||!clips.includes(c)||segs.indexOf(s)<0)return;const k=segs.indexOf(s),L=runOf(segs,k);
   reEd.set(c,{r:rgOf(L.filter(q=>q.clip===c)),tgt:L});pausePreview();closeEd();if(multiMode)setMulti(false);$('back').click();
   if(cur!==c)select(c);else{reIn(c);renderSegs();renderCut();insUpd()}
-  const t0=(L.find(q=>q.clip===c)||{}).start||0;const sk=()=>{try{pv.currentTime=t0+0.001}catch(e){}};if(pv.readyState>=1)sk();else pv.addEventListener('loadedmetadata',sk,{once:true});cutMsg('カット編集中：直したら「再挿入」で入れ替わります')}
+  const t0=(L.find(q=>q.clip===c)||{}).start||0;const sk=()=>{try{pv.currentTime=t0+0.001}catch(e){}};if(pv.readyState>=1)sk();else pv.addEventListener('loadedmetadata',sk,{once:true});cutMsg('カット編集中：直したら「更新」で入れ替わります')}
 function segAt(s){let a=0;for(const q of segs){if(q===s)return a;a+=segD(q)}return -1}
 /* v601: クリップを消して後ろ(動画・字幕・ナレーション等)を詰める / 空白を残す */
 function segDelClose(L){const ga=segAt(L[0]),D=L.reduce((a,q)=>a+segD(q),0),gb=ga+D,cn=L[0].cn;segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();
