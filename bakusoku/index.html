@@ -2969,7 +2969,7 @@ function drawTW(t){
     const mk=(label,items)=>{const w=document.createElement('div');w.className='dd';const bt=document.createElement('button');bt.textContent=label+' ▾';bt.style.cssText='min-height:36px;min-width:52px;padding:0 6px';const m=document.createElement('div');m.className='ddm';
       items.forEach(([t,f])=>{const b=document.createElement('button');b.textContent=t;b.onclick=e=>{e.stopPropagation();m.classList.remove('on');f()};m.appendChild(b)});
       bt.onclick=e=>{e.stopPropagation();const o=m.classList.contains('on');document.querySelectorAll('.ddm.on').forEach(x=>x.classList.remove('on'));if(!o)m.classList.add('on')};w.append(bt,m);return w};
-    z.insertBefore(mk('選択',[['複数選択',()=>$('msel').click()],['範囲選択',()=>$('selB').click()],['全選択',()=>$('selAll').click()],['クリップ',()=>selClip()]]),$('sp2'));
+    z.insertBefore(mk('選択',[['複数選択',()=>$('msel').click()],['範囲選択',()=>$('selB').click()],['全選択',()=>$('selAll').click()],['クリップ',()=>selClip()],['選択解除',()=>selClear()]]),$('sp2'));
     z.insertBefore(mk('空白',[['空白を挿入',()=>$('gapB').click()],['文字入り空白',()=>$('txtGapB').click()]]),$('sp2'));
     document.addEventListener('click',()=>document.querySelectorAll('.ddm.on').forEach(x=>x.classList.remove('on')))}
     /* v525: ↺↻は✂の列の一番右に出す(以前の隠すやり方は廃止) */}
@@ -4161,6 +4161,9 @@ function setCutMode(on){cutMode=!!on;const b=$('sp2');b.setAttribute('aria-press
   tw.style.outline=cutMode?'2px solid #e0453a':'';tw.style.outlineOffset='-2px';if(cutMode)flashSel('カットモード: 波形をスワイプして合わせ、タップで分割／長押し→左右スワイプで削除')}
 $('sp2').onclick=()=>{if(!cutMode&&selMode)setSelMode(false);setCutMode(!cutMode)};
 /* v603: 「入れ替え」= タイムラインに見えているクリップ(無音カットで分かれた同じ動画は1つ)をサムネで並べ、長押しスワイプで順番を変える。空白は作らない(詰めて並べ直す) */
+/* v609: 「選択▾」→「選択解除」=複数選択・範囲選択・クリップ選択をすべて外す */
+function selClear(){msel.clear();mselV.clear();selA=null;selB=null;if(selMode)setSelMode(false);if(multiMode)setMulti(false);selDraw();renderLanes();flashSel('選択を解除しました')}
+window.selClear=selClear;
 /* v605: 「選択▾」→「クリップ」=再生ヘッドのクリップ(同じ動画のまとまりは全部)を範囲選択にする */
 function selClip(){const L=locate(gt),q=L&&segs[L.i];if(!q||!q.clip){flashSel('ここにはクリップがありません');return}
   const R=segRun(q),a=segAt(segs[R[0]]),d=segs.slice(R[0],R[1]+1).reduce((x,y)=>x+segD(y),0);selA=a;selB=a+d;selDraw();flashSel('クリップを選択 '+fmt(selA)+' 〜 '+fmt(selB))}
@@ -4952,7 +4955,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v608';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v609';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
