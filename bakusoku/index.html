@@ -1384,7 +1384,7 @@ function makeThumb(clip,t){
 /* v408: 再生中は、裏でサムネや波形を作らない(動画の読み込みがぶつかって映像が止まるため) */
 /* v425: 指でスクロール・ピンチ・ドラッグしている間も作らない(v427: タイムライン画面の時だけ。カット画面の動画一覧のサムネは待たない。動画を開いて描く処理で引っかかるため。指を離して0.6秒後に作る) */
 let uiBusyT=0;{const bz=()=>{uiBusyT=performance.now()};['pointermove','touchmove','scroll','wheel'].forEach(t=>addEventListener(t,bz,{passive:true,capture:true}))}
-const idleWait=()=>new Promise(r=>{const f=()=>playing?setTimeout(f,700):performance.now()-uiBusyT<600&&!$('s2').hidden?setTimeout(f,250):r();f()});
+/* v612: 書き出し中(busy)・字幕の生成中(t_go が処理中)も待つ */const idleWait=()=>new Promise(r=>{const f=()=>playing||busy||(document.getElementById('t_go')||{dataset:{}}).dataset.busy?setTimeout(f,700):performance.now()-uiBusyT<600&&!$('s2').hidden?setTimeout(f,250):r();f()});
 /* v428: サムネ作りの順番待ち。pri(カット画面の動画一覧)は先に作る */
 const thJobs=[];let thRun=false;
 function thPump(){if(thRun)return;const j=thJobs.find(x=>x.pri)||thJobs[0];if(!j)return;thJobs.splice(thJobs.indexOf(j),1);thRun=true;j.go().finally(()=>{thRun=false;thPump()})}
@@ -1443,7 +1443,7 @@ $('file').addEventListener('change',async e=>{
   e.target.value='';
   {let k=0;if(added.length)ldO.show('撮影情報を読み込み中… 0/'+added.length+'本');
    await Promise.all(added.map(async c=>{try{c.meta=await readMeta(c.file)}finally{ldO.show('撮影情報を読み込み中… '+(++k)+'/'+added.length+'本')}}))}
-  ldO.hide();
+  ldO.hide();setTimeout(()=>wfPrefetch(),1500);
   /* v353: 撮った順。ファイル名の日時(20260925_094612 / DJI_20260925094612 など) → 動画の中の撮影日時 → ファイルの更新日時 の順に使う */
   const nameT=n=>{const m=/(20\d{2})(\d{2})(\d{2})[_\-T ]?(\d{2})(\d{2})(\d{2})?/.exec(n||'');if(!m)return 0;const t=new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0)).getTime();return isNaN(t)?0:t};
   /* v354: ファイル名の日時を一番に(DJIは中の日時が9時間ずれる、Insta360の書き出しは中の日時が書き出した日時になるため) */
@@ -4478,8 +4478,8 @@ async function xAudR(c,a,b,o){o=o||{};
   const sr=o.peaks?50:o.st?rate:(o.sr||rate),N=Math.max(1,Math.ceil((b-a)*sr)),out=new Float32Array(N),outR=o.st?new Float32Array(N):null;let nch=1;
   /* 出力: 波形=各区間の最大、音=各区間の平均(順番に届くので合計しながら書く) */
   let cj=-1,acc=0,cn=0;const put=()=>{if(cj>=0&&cj<N)out[cj]=o.peaks?Math.max(out[cj],acc):acc/cn};
-  let err=null;
-  const dec=new AudioDecoder({output:d=>{try{const n=d.numberOfFrames,ch=d.numberOfChannels,t=d.timestamp/1e6,r=d.sampleRate||rate;
+  let err=null;const tsQ=[];/* v612: 間引き読みの時は、出てきた音の時刻を入れた順(tsQ)で決める(デコーダーが時刻を詰めて返すため) */
+  const dec=new AudioDecoder({output:d=>{try{const n=d.numberOfFrames,ch=d.numberOfChannels,t=o.skip>1&&tsQ.length?tsQ.shift():d.timestamp/1e6,r=d.sampleRate||rate;
       const x=new Float32Array(n);d.copyTo(x,{planeIndex:0,format:'f32-planar'});
       if(o.st){/* v456: 試し再生用。左右そのまま・元の細かさで(混ぜたり間引くと音が小さく・こもる) */const y=new Float32Array(n);if(ch>1){nch=2;d.copyTo(y,{planeIndex:1,format:'f32-planar'})}else y.set(x);const b0=Math.round((t-a)*sr);for(let k=0;k<n;k++){const j=b0+k;if(j>=0&&j<N){out[j]=x[k];outR[j]=y[k]}}d.close();return}
       if(ch>1){const y=new Float32Array(n);d.copyTo(y,{planeIndex:1,format:'f32-planar'});for(let k=0;k<n;k++)x[k]=(x[k]+y[k])/2}
@@ -4491,12 +4491,13 @@ async function xAudR(c,a,b,o){o=o||{};
   for(let i=i0;i<i1&&!err;){let j=i,end=Sm[i].offset+Sm[i].size;
     while(j+1<i1&&Sm[j+1].offset>=Sm[i].offset&&Sm[j+1].offset-end<(1<<20)&&Sm[j+1].offset+Sm[j+1].size-Sm[i].offset<(8<<20)){j++;end=Math.max(end,Sm[j].offset+Sm[j].size)}
     const buf=new Uint8Array(await h.file.slice(Sm[i].offset,end).arrayBuffer());
-    for(let k=i;k<=j;k++){const s=Sm[k];dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(T(k)*1e6),duration:Math.round(s.duration/ts*1e6),data:buf.subarray(s.offset-Sm[i].offset,s.offset-Sm[i].offset+s.size)}))}
+    for(let k=i;k<=j;k++){/* v612: 間引き読み(o.skip 個に1つだけほどく) */if(o.skip>1){if(k%o.skip)continue;tsQ.push(T(k))}const s=Sm[k];dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(T(k)*1e6),duration:Math.round(s.duration/ts*1e6),data:buf.subarray(s.offset-Sm[i].offset,s.offset-Sm[i].offset+s.size)}))}
     i=j+1;if(o.prog)o.prog((i-i0)/Math.max(1,i1-i0));
     while(dec.decodeQueueSize>64&&!err)await new Promise(r=>setTimeout(r,4))}
   if(!err)await dec.flush().catch(e=>{err=e});put();try{dec.close()}catch(_){}
   if(err)throw err;
   if(o.st)return{L:out,R:outR,sr,ch:nch};
+  /* v612: 間引きで空いた所は直前の値でうめる */if(o.peaks&&o.skip>1){let last=0,gap=0;for(let i=0;i<N;i++){if(out[i]>0){last=out[i];gap=0}else if(gap++<o.skip*4)out[i]=last}}
   if(o.peaks){const p=new Uint8Array(N);for(let i=0;i<N;i++)p[i]=Math.min(255,Math.round(Math.sqrt(out[i])*255));return p}
   return out}
 window.xAudR=xAudR;
@@ -4710,11 +4711,17 @@ async function ensureNar(key){
 window.narApi={ensure:ensureNar,buf:k=>narBuf[k],pk:k=>narPeaks[k],get micOK(){return micOK},
   put:async blob=>{let buf;try{buf=await dctx().decodeAudioData(await blob.arrayBuffer())}catch(e){return null}
     const akey='nar|'+Date.now()+'|'+Math.random().toString(36).slice(2,6);narBuf[akey]=buf;narPeaks[akey]=peaksFromBuffer(buf);idbPut('files',akey,{blob}).catch(()=>{});return{akey,dur:buf.duration}}};
+/* v612: パフォーマンス設定。wfQ=波形の細かさ(1=フル/2=半分/4=4分の1。音のかたまりを wfQ 個に1つだけほどく)、wfPre=動画を選んだ後に裏で波形を先に作る */
+let wfQ=1,wfPre=true;try{wfQ=[1,2,4].includes(+localStorage.getItem('wfQ'))?+localStorage.getItem('wfQ'):1;wfPre=localStorage.getItem('wfPre')!=='0'}catch(e){}
+function wfPrefetch(){if(!wfPre)return;clips.forEach(c=>{if(!c.peaksP)clipPeaks(c)})}
+window.wfPrefetch=wfPrefetch;window.clipByKey=k=>clips.find(c=>c.key===k);window.clipPeaks=c=>clipPeaks(c);
 function clipPeaks(c){
-  if(c.peaksP)return c.peaksP;
+  if(c.peaksP)return c.peaksP;if(!clips.includes(c))return Promise.resolve(null);
   c.peaksP=peakQ=peakQ.then(async()=>{
     try{
-      const cached=await idbGet('state','pk|'+c.key);if(cached)return cached;await idleWait();
+      const cached=await idbGet('state','pk|'+c.key)||(wfQ>1?await idbGet('state','pk'+wfQ+'|'+c.key):null);if(cached)return cached;await idleWait();
+      /* v612: 外した動画は作らない(間違えて沢山選んだ時など) */if(!clips.includes(c)){c.peaksP=null;return null}
+      if(wfQ>1){let q=null;try{q=await xAudR(c,0,c.d,{peaks:true,skip:wfQ})}catch(e){}if(q){idbPut('state','pk'+wfQ+'|'+c.key,q).catch(()=>{});return q}}
       /* v346: 大きい動画は少しずつ読んで波形を作る */
       let p;if(c.file.size>15e6)p=await xAudR(c,0,c.d,{peaks:true});/* v423: 60MB→15MB(丸ごと読むと一瞬メモリを大きく使い、再生中に固まるため) *//* v402: 150MB→60MB(丸ごと読むとスマホのメモリが足りず固まるため) */
       else{const buf=await dctx().decodeAudioData(await c.file.arrayBuffer());p=peaksFromBuffer(buf)}idbPut('state','pk|'+c.key,p).catch(()=>{});return p;
@@ -4956,7 +4963,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v611';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v612';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6676,7 +6683,15 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
    setB.append(pt,seD,$('t_setup'),$('t_txD'));
    /* v366: 設定ページをインスペクタ風の折りたたみ(アコーディオン: 初期は全部閉じる・開くのは1つだけ) */
    {const fs=setB.querySelector('label'),col=$('setCol');
-    const secs=[['表示・色',[col,fs]],['テンプレート',[pt,tlb]],['字幕画面',[(()=>{const b=document.createElement('button');b.id='tzBtn';b.textContent='字幕画面の設定';b.style.cssText=pt.style.cssText;b.onclick=()=>{window.tzOpen&&window.tzOpen()};return b})()]],['SE（効果音）',[seD]],['音声認識の準備',[$('t_setup')]],['フォント',[(()=>{const t=$('t_fIn').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='字幕のフォントを追加';return t})()]],['AI',[window.apiBox(),(()=>{const t=$('t_fx').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='結果をくらべる（Claude仕上げ）';return t})(),$('t_txD')]]];
+    const perf=(()=>{const w=document.createElement('div');w.id='perfBox';w.style.cssText='display:flex;flex-direction:column;gap:10px;padding:4px 2px';
+      const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px';const lb=document.createElement('span');lb.textContent='波形';lb.style.cssText='flex:none;width:3em;font-size:15px';r.appendChild(lb);
+      const bs=[[1,'フル'],[2,'半分'],[4,'4分の1']].map(([q,t])=>{const b=document.createElement('button');b.textContent=t;b.dataset.q=q;b.style.cssText='flex:1;min-height:40px;padding:0 6px';b.onclick=()=>{wfQ=q;try{localStorage.setItem('wfQ',q)}catch(e){}clips.forEach(c=>{delete c.peaksP});sh()};r.appendChild(b);return b});
+      const sh=()=>bs.forEach(b=>{const on=+b.dataset.q===wfQ;b.setAttribute('aria-pressed',String(on));b.style.background=on?'var(--accent)':'';b.style.color=on?'var(--accent-fg)':''});sh();
+      const nt=document.createElement('div');nt.textContent='軽くするほど早くできますが、波形が粗くなります。変えた後に作る波形から効きます（字幕の生成には影響しません）';nt.style.cssText='font-size:12px;color:var(--muted)';
+      const cl=document.createElement('label');cl.style.cssText='display:flex;align-items:center;gap:10px;font-size:15px;min-height:44px';cl.innerHTML='<input type="checkbox" style="width:22px;height:22px"><span>動画を選んだ後、裏で波形を先に作る</span>';
+      const cb=cl.querySelector('input');cb.checked=wfPre;cb.onchange=()=>{wfPre=cb.checked;try{localStorage.setItem('wfPre',cb.checked?'1':'0')}catch(e){}if(wfPre)wfPrefetch()};
+      w.append(r,nt,cl);return w})();
+    const secs=[['表示・色',[col,fs]],['パフォーマンス',[perf]],['テンプレート',[pt,tlb]],['字幕画面',[(()=>{const b=document.createElement('button');b.id='tzBtn';b.textContent='字幕画面の設定';b.style.cssText=pt.style.cssText;b.onclick=()=>{window.tzOpen&&window.tzOpen()};return b})()]],['SE（効果音）',[seD]],['音声認識の準備',[$('t_setup')]],['フォント',[(()=>{const t=$('t_fIn').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='字幕のフォントを追加';return t})()]],['AI',[window.apiBox(),(()=>{const t=$('t_fx').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='結果をくらべる（Claude仕上げ）';return t})(),$('t_txD')]]];
     let open=-1;const H=[];
     secs.forEach(([t,els],k)=>{const h=document.createElement('button');h.className='sh';h.innerHTML='<i class="dot"></i><span></span><i class="ar"></i>';h.children[1].textContent=t;
       const box=document.createElement('div');box.className='sb';els.forEach(e=>{if(!e)return;if(e.tagName==='DETAILS'){e.open=true;e.classList.add('inS')}box.appendChild(e)});
@@ -6740,7 +6755,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
 }
 
 renderSegs();
-restore().finally(()=>{restored=true;window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}else autoType();syncTypeRow()});
+restore().finally(()=>{restored=true;setTimeout(()=>window.wfPrefetch&&wfPrefetch(),3000);window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}else autoType();syncTypeRow()});
 })();
 </script>
 
@@ -7989,7 +8004,13 @@ window.tzOpen=()=>{let sc=$('tzSc');if(sc)sc.remove();sc=document.createElement(
   draw()};
 /* 音声波形(選んだ所の前後も表示)。タップ=そこから再生 */
 let wfPk=null,wfBusy=false;
-async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;const lid=ldO.show('波形を読み込み中…',{delay:300,stop:wfStop});try{const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
+/* v612: 字幕ページの波形は、動画ごとに保存してある波形(clipPeaks、1秒50個)から切り出して作る(音を全部ほどき直さない)。作れない時は今まで通り */
+async function wfFromPk(lid){if(rendOK()||!window.clipPeaks||!window.clipByKey)return null;const ks=[...new Set(JOB.filter(r=>!r.blank).map(r=>r.key))],P=new Map();let k=0;
+  for(const key of ks){if(audStop)throw new Error('stopped');const c=clipByKey(key);if(!c)return null;ldO.set(lid,'波形を読み込み中… '+(++k)+'/'+ks.length+'本');const p=await clipPeaks(c);if(!p)return null;P.set(key,p)}
+  const n=Math.ceil((VD+2)*100),a=new Float32Array(n);
+  for(const r of JOB){if(r.blank)continue;const p=P.get(r.key),o0=Math.round(r.v0*100),L=Math.round((r.b-r.a)*100);for(let i=0;i<L&&o0+i<n;i++){const v=(p[Math.floor((r.a+i/100)*50)]||0)/255;a[o0+i]=v*v}}
+  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;window.__wfSrc='pk';return a}
+async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;const lid=ldO.show('波形を読み込み中…',{delay:300,stop:wfStop});try{{const q=await wfFromPk(lid);if(q){wfPk=q;throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
   let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}ldO.hide(lid);wfBusy=false;audStop=false;return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
