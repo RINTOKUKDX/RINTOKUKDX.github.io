@@ -838,7 +838,9 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_rSt:empty{display:none}
 #t_skw{display:none!important}/* v547: シークバーは廃止(要素は残置) */
 html.s4open{overflow-anchor:none}/* 行の高さが変わっても勝手に画面が動かないように */
-#t_fold{display:flex;justify-content:flex-end;padding:0 8px}
+#t_fold{display:flex;justify-content:flex-end;gap:8px;padding:0 8px}
+#t_fold #t_adj{font-size:14px;font-weight:700}
+#t_fold #t_adj.on{background:var(--accent,#1a73e8);color:#fff;border-color:var(--accent,#1a73e8)}
 #t_fold button{min-height:32px;min-width:56px;padding:0 14px;font-size:18px;line-height:1;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:8px}
 #s4.fold #t_lt,#s4.fold #t_rg,#s4.fold #t_rSt{display:none!important}
 #t_skw{padding:0 8px}#t_tl input{pointer-events:none}
@@ -4698,7 +4700,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v578';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v579';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6282,7 +6284,7 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
    new MutationObserver(()=>{if($('s4').hidden){if(pad._lock)setLock(false)}else{fitRoot();setTimeout(fitRoot,300);setTimeout(fitRoot,1200)}}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}
 
   /* v547: 字幕・ナレーションページの「軽量化〜自動生成・再生成…」の範囲を畳める。畳んだ時は▼、開いている時は▲。初期は開く */
-  {const stk=$('t_stk'),lt=$('t_lt');if(stk&&lt&&!$('t_fold')){const f=document.createElement('div');f.id='t_fold';const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','軽量化・自動生成の欄を畳む');f.appendChild(b);lt.before(f);
+  {const stk=$('t_stk'),lt=$('t_lt');if(stk&&lt&&!$('t_fold')){const f=document.createElement('div');f.id='t_fold';const b=document.createElement('button');b.type='button';b.setAttribute('aria-label','軽量化・自動生成の欄を畳む');const ab=document.createElement('button');ab.type='button';ab.id='t_adj';ab.textContent='字幕調整';ab.setAttribute('aria-pressed','false');ab.onclick=()=>{window.adjMode=!window.adjMode;ab.classList.toggle('on',window.adjMode);ab.setAttribute('aria-pressed',String(window.adjMode));(window.adjDraw||(()=>{}))();(window.adjSt||(()=>{}))(window.adjMode?'字幕調整：再生ヘッドの位置で字幕クリップをタップ→その位置まで伸びます':'')};f.appendChild(ab);f.appendChild(b);lt.before(f);
     const set=o=>{$('s4').classList.toggle('fold',!o);b.textContent=o?'▲':'▼';b.setAttribute('aria-expanded',String(o))};set(true);window.s4FoldOpen=()=>set(true);b.onclick=()=>set($('s4').classList.contains('fold'));
     new MutationObserver(()=>{const open=!$('s4').hidden;document.documentElement.classList.toggle('s4open',open);if(open)set(true)}).observe($('s4'),{attributes:true,attributeFilter:['hidden']})}}
   mk($('s1'),'カット');mk($('s5'),'投稿');const n2=mk($('s2'),'タイムライン');mk(ex,'書き出し');
@@ -7769,10 +7771,18 @@ function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clie
     txMap.rects.push([X0,X0+w,g])});
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H)}
 let txMap=null,txHi=null;
+/* v579: 字幕調整モード。再生ヘッドの位置で字幕クリップをタップ→その位置までクリップを伸ばし、隣の元のクリップはその分短くなる */
+window.adjSt=m=>st(m);window.adjDraw=()=>{txHi=null;drawWf()};
+function adjExtend(g){if(!cur)return;const L=cur.list.filter(q=>!q.gap&&typeof q.t==='string').sort((x,y)=>x.a-y.a),i=L.indexOf(g),MIN=0.2;let t=Math.max(0,Math.min(VD,pos));
+  if(t>g.b){const n=L[i+1];if(n&&t>n.a){t=Math.min(t,n.b-MIN);if(t>n.a)n.a=t}if(t<=g.b+0.01){st('これ以上伸ばせません');return}g.b=t}
+  else if(t<g.a){const p=L[i-1];if(p&&t<p.b){t=Math.max(t,p.a+MIN);if(t<p.b)p.b=t}if(t>=g.a-0.01){st('これ以上伸ばせません');return}g.a=t}
+  else{st('再生ヘッドをクリップの外（伸ばしたい位置）に合わせてください');return}
+  sel=g;save();drawResults();drawWf();st('伸ばしました')}
+
 /* v383: 文字のタイムラインのボックスの端(±16px)をなぞる=その字幕の長さを変える(隣には重ならない)。端を長押し→なぞる=隣のボックスの端も一緒に動く */
 {const tc=$('tx');if(tc){let D=null;
  tc.addEventListener('touchmove',e=>{if(D&&(D.mv||D.lk))e.preventDefault()},{passive:false});
- tc.addEventListener('pointerdown',e=>{D=null;if(!txMap||!cur)return;const r=tc.getBoundingClientRect(),X=e.clientX-r.left,m=txMap,sx=v=>(v-m.A)/(m.B-m.A)*m.W;
+ tc.addEventListener('pointerdown',e=>{D=null;if(window.adjMode||!txMap||!cur)return;const r=tc.getBoundingClientRect(),X=e.clientX-r.left,m=txMap,sx=v=>(v-m.A)/(m.B-m.A)*m.W;
    /* v578: 字幕クリップの真ん中=下の一覧と同じ操作(ダブルタップ=修正、長押しして離す=1文字ずつ編集、長押しして横にスワイプ=隣に重ねる) */
    {const h=m.rects.find(q=>X>=q[0]&&X<=q[1]);const ez=h?Math.min(16,(h[1]-h[0])/4):0;
     const ne=Math.min(99,...cur.list.filter(q=>!q.gap&&typeof q.t==='string').flatMap(q=>[Math.abs(sx(q.a)-X),Math.abs(sx(q.b)-X)]));
@@ -7809,7 +7819,7 @@ let txMap=null,txHi=null;
    clearTimeout(d.tm);if(!d.mv){if(d.lk)st('');return}tc._eat=1;setTimeout(()=>tc._eat=0,400);
    save();drawResults();sel=d.g;[...$('rows').children].forEach(r=>r.classList.toggle('sel',r._g===d.g));drawWf();st('')};
  tc.addEventListener('pointerup',up);tc.addEventListener('pointercancel',up)}}
-{const tc=$('tx');if(tc)tc.addEventListener('click',e=>{if(!txMap||tc._eat){tc._eat=0;return}const r=tc.getBoundingClientRect(),X=e.clientX-r.left;const h=txMap.rects.find(q=>X>=q[0]&&X<=q[1]);if(h){pick(h[2]);showAt(h[2].a+0.01)}})}
+{const tc=$('tx');if(tc)tc.addEventListener('click',e=>{if(!txMap||tc._eat){tc._eat=0;return}const r=tc.getBoundingClientRect(),X=e.clientX-r.left;const h=txMap.rects.find(q=>X>=q[0]&&X<=q[1]);if(window.adjMode){if(h)adjExtend(h[2]);return}if(h){pick(h[2]);showAt(h[2].a+0.01)}})}
 addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
 {const wf=$('wf');
  wf.addEventListener('contextmenu',e=>e.preventDefault());
