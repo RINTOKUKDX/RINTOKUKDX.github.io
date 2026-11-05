@@ -2857,7 +2857,7 @@ function drawTW(t){
     const h=Math.max(1,(m/twMx)*(H-6));x.fillRect(px,(H-h)/2,1.5,h)}
   x.fillStyle=cs.muted||'#999';let o=0;segs.forEach((s,k)=>{if(k&&o>A&&o<B&&o>VR.a+1e-3&&o<T-1e-3)x.fillRect(sx(o),0,1,H);o+=segD(s)});
   if(selA!=null){const b=selB!=null?selB:selA;x.fillStyle='rgba(70,150,255,.28)';x.fillRect(sx(Math.min(selA,b)),0,Math.max(2,Math.abs(sx(b)-sx(selA))),H);x.fillStyle='#4a96ff';x.fillRect(sx(selA)-1,0,2,H);if(selB!=null)x.fillRect(sx(selB)-1,0,2,H)}
-  /* v590: ✂の長押しスワイプで消える所を赤く */if(twPv){const q=twPvR(twPv);if(q){x.fillStyle='rgba(224,69,58,.45)';x.fillRect(sx(q.a),0,Math.max(2,sx(q.b)-sx(q.a)),H)}}
+  /* v590: ✂の長押しスワイプで消える所を赤く */if(twPv!=null){const q=twPvR(twPv);if(q){x.fillStyle='rgba(224,69,58,.45)';x.fillRect(sx(q.a),0,Math.max(2,sx(q.b)-sx(q.a)),H)}}
   x.fillStyle=cs.warn||'#d33';x.fillRect(W/2-1,0,2.5,H)}
 {
   const pv=$('pvSec');pv.parentNode.insertBefore(tw,pv.nextSibling);
@@ -2867,7 +2867,7 @@ function drawTW(t){
     if(twP.size===2){const[a,b]=[...twP.values()];twDrag=null;twPinch={d0:Math.max(20,Math.abs(b-a)),z0:twZ};return}
     if(twP.size>2)return;const d0={x0:e.clientX,y0:e.clientY,t0:gt,map:{...twMap},moved:false,lp:false,dir:0,r:tw.getBoundingClientRect()};twDrag=d0;
     /* v590: ✂ON中は長押し→左右スワイプで、再生ヘッドからそのクリップの端までを消す(字幕と同じ動き) */
-    if(cutMode&&!selMode)d0.tm=setTimeout(()=>{if(twDrag!==d0||d0.moved)return;d0.lp=true;pausePreview();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}twPv=0;flashSel('右へ=左側を削除／左へ=右側を削除')},450)});
+    if(cutMode&&!selMode)d0.tm=setTimeout(()=>{if(twDrag!==d0||d0.moved)return;d0.lp=true;pausePreview();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}twPv=0;flashSel('離す=クリップ削除／右へ=左側／左へ=右側を削除')},450)});
   tw.addEventListener('pointermove',e=>{if(!twP.has(e.pointerId))return;twP.set(e.pointerId,e.clientX);
     if(twPinch){if(twP.size<2)return;const[a,b]=[...twP.values()],d=Math.max(20,Math.abs(b-a));twZ=Math.max(0.5,Math.min(Math.max(2,total()+2),twPinch.z0*twPinch.d0/d));drawTW();return}
     const d=twDrag;if(!d)return;const dx=e.clientX-d.x0;
@@ -4045,23 +4045,28 @@ function bindDrag(b,it,menu,rl){
   });
 }
 /* v590: ✂の長押しスワイプ。dir<0=再生ヘッドの左側(そのクリップの頭まで)を消す／dir>0=右側(終わりまで)。消した所は詰める(後ろの字幕・ナレーションなども一緒に前へ) */
-function twPvR(dir){if(!dir)return null;const L=locate(gt),q=L&&segs[L.i];if(!q||!q.clip)return null;return dir<0?{a:L.off,b:gt}:{a:gt,b:L.off+segD(q)}}
+function twPvR(dir){if(dir==null)return null;const L=locate(gt),q=L&&segs[L.i];if(!q||!q.clip)return null;if(!dir)return{a:L.off,b:L.off+segD(q)};return dir<0?{a:L.off,b:gt}:{a:gt,b:L.off+segD(q)}}
 function tlDelSide(dir){
-  if(!dir)return;if(roAll()){flashSel('先に上のコーナーを選んでください');return}
+  if(roAll()){flashSel('先に上のコーナーを選んでください');return}
   const L=locate(gt),q=L&&segs[L.i];if(!q||!q.clip){flashSel('ここでは削除できません');return}
   const k=L.i,d=segD(q),off=gt-L.off,cut=q.start+off*spdOf(q);
-  if((dir<0?off:d-off)<0.2){flashSel('ここでは削除できません');return}
+  if(dir&&(dir<0?off:d-off)<0.2){flashSel('ここでは削除できません');return}
   segHist();segU[segU.length-1].rb=true;segU[segU.length-1].items=cloneItems();
-  const ra=dir<0?L.off:gt,rb=dir<0?gt:L.off+d,dl=rb-ra;
-  if(dir<0)segs.splice(k,1,{clip:q.clip,start:cut,end:q.end,cn:q.cn,sp:1,spd:q.spd,fx:fxC(q.fx)});
+  const ra=dir<0?L.off:dir>0?gt:L.off,rb=dir<0?gt:L.off+d,dl=rb-ra;
+  if(!dir)segs.splice(k,1);else if(dir<0)segs.splice(k,1,{clip:q.clip,start:cut,end:q.end,cn:q.cn,sp:1,spd:q.spd,fx:fxC(q.fx)});
   else segs.splice(k,1,{clip:q.clip,start:q.start,end:cut,cn:q.cn,sp:q.sp,spd:q.spd,fx:fxC(q.fx)});
   /* 詰める: 消した範囲の後ろを前へ。範囲の中の物は縮める(全部中に入っていたら消す) */
   const f=t=>t<=ra?t:t>=rb?t-dl:ra;
   items=items.filter(o=>{if(o.full||o.lane===6)return true;if(corners.length&&o.cn!==q.cn)return true;
     const s0=o.start,e0=o.end;if(s0>=ra-1e-6&&e0<=rb+1e-6&&e0>s0)return false;
     o.start=f(s0);o.end=Math.max(o.start+0.05,f(e0));if((o.lane===5||o.lane===8)&&s0>ra&&s0<rb)o.off=(o.off||0)+(rb-s0);return true});
-  const ng=dir<0?ra:gt;
-  cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(ng);flashSel((dir<0?'左側':'右側')+'を削除して詰めました')}
+  const ng=dir>0?gt:ra;
+  cornerSync();resetOut();renderLanes();renderSegs();seekGlobal(ng);
+  if(!dir)tlDelToast();else flashSel((dir<0?'左側':'右側')+'を削除して詰めました')}
+/* v594: 「クリップを削除しました［戻す］」(3秒) */
+function tlDelToast(){let e=$('tlDelT');if(!e){e=document.createElement('div');e.id='tlDelT';e.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:300;background:var(--fg);color:var(--bg);padding:6px 8px 6px 16px;border-radius:20px;font-size:14px;max-width:92vw;display:flex;align-items:center;gap:10px';
+    const m=document.createElement('span');m.textContent='クリップを削除しました';const b=document.createElement('button');b.textContent='戻す';b.style.cssText='min-height:36px;padding:0 14px;border-radius:16px';b.onclick=()=>{clearTimeout(e._h);e.style.display='none';tlUndo()};e.append(m,b);document.body.appendChild(e)}
+  e.style.display='flex';clearTimeout(e._h);e._h=setTimeout(()=>{e.style.display='none'},3000)}
 function splitSegAt(t){
   let a=0;
   for(let k=0;k<segs.length;k++){const q=segs[k],d=segD(q);
@@ -4756,7 +4761,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v593';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v594';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
