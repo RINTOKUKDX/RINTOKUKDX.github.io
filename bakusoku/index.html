@@ -4082,7 +4082,7 @@ function setCutMode(on){cutMode=!!on;const b=$('sp2');b.setAttribute('aria-press
   tw.style.outline=cutMode?'2px solid #e0453a':'';tw.style.outlineOffset='-2px';if(cutMode)flashSel('カットモード: 波形をスワイプして合わせ、タップで分割／長押し→左右スワイプで削除')}
 $('sp2').onclick=()=>{if(!cutMode&&selMode)setSelMode(false);setCutMode(!cutMode)};
 /* v522: 速度を入れる(0.25〜4倍)。後ろの字幕・ナレーションなどは一緒に動かす。そのクリップの中の字幕は伸び縮み、他は長さそのままで位置だけ */
-function setSpd(L,v){v=Math.max(0.25,Math.min(100,v>=10?Math.round(v*10)/10:Math.round(v*100)/100));
+function setSpd(L,v){v=Math.max(0.25,Math.min(1000,v>=100?Math.round(v):v>=10?Math.round(v*10)/10:Math.round(v*100)/100));
   const S=L.filter(q=>q&&q.clip&&segs.includes(q)&&spdOf(q)!==v).sort((a,b)=>segs.indexOf(b)-segs.indexOf(a));if(!S.length)return false;
   if(corners.length)itemCn();
   S.forEach(q=>{const a=cumAt(segs.indexOf(q)),d0=segD(q),e0=a+d0;if(v===1)delete q.spd;else q.spd=v;const d1=segD(q),dl=d1-d0,r=d1/d0;
@@ -4093,13 +4093,13 @@ function setSpd(L,v){v=Math.max(0.25,Math.min(100,v>=10?Math.round(v*10)/10:Math
   if(corners.length)cornerSync();else cornerRebase();resetOut();renderLanes();renderSegs();renderPreview();return true}
 /* v522: 速度の操作部品(バーと よく使う倍率)。L()=変える物の一覧 */
 function spdUI(box,L,done){const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度';
-  const sl=document.createElement('input');sl.type='range';sl.min=-2;sl.max=Math.log2(100);sl.step=0.02;/* v523: 0.25〜100倍(対数) */const v=document.createElement('div');v.className='v';r.append(lb,sl,v);box.appendChild(r);
-  const ps=document.createElement('div');ps.className='seg';ps.style.margin='4px 0';const P=[0.5,1,2,4,10,30,100].map(x=>{const b=document.createElement('button');b.textContent=x+'倍';b.onclick=()=>put(x);ps.appendChild(b);return[b,x]});box.appendChild(ps);
+  const sl=document.createElement('input');sl.type='range';sl.min=-2;sl.max=Math.log2(1000);sl.step=0.02;/* v523: 0.25〜100倍(対数) → v594: 1000倍まで */const v=document.createElement('div');v.className='v';r.append(lb,sl,v);box.appendChild(r);
+  const ps=document.createElement('div');ps.className='seg';ps.style.margin='4px 0';const P=[0.5,1,2,4,10,30,100,300,1000].map(x=>{const b=document.createElement('button');b.textContent=x+'倍';b.onclick=()=>put(x);ps.appendChild(b);return[b,x]});box.appendChild(ps);
   const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin:4px 2px';nt.textContent='音の高さはそのまま。0.5〜2倍がきれいです。4倍以上は声が崩れやすく、16倍を超えるとプレビューは倍率どおりに動きません（書き出しは倍率どおり）';box.appendChild(nt);
   let pushed=false;const cur=()=>{const l=L();return l.length?spdOf(l[0]):1};
-  const draw=()=>{const k=cur();if(document.activeElement!==sl)sl.value=Math.log2(k);v.textContent=(k>=10?k.toFixed(1):k.toFixed(2))+'倍';P.forEach(([b,x])=>b.setAttribute('aria-pressed',String(Math.abs(x-k)<1e-3)));done&&done()};
+  const draw=()=>{const k=cur();if(document.activeElement!==sl)sl.value=Math.log2(k);v.textContent=(k>=100?Math.round(k):k>=10?k.toFixed(1):k.toFixed(2))+'倍';P.forEach(([b,x])=>b.setAttribute('aria-pressed',String(Math.abs(x-k)<1e-3)));done&&done()};
   function put(x){if(!pushed){pushed=true;segHist();segU[segU.length-1].items=cloneItems()}setSpd(L(),x);draw()}
-  sl.oninput=()=>{const x=Math.pow(2,+sl.value);v.textContent=(x>=10?x.toFixed(1):x.toFixed(2))+'倍'};sl.onchange=()=>put(Math.pow(2,+sl.value));draw();return draw}
+  sl.oninput=()=>{const x=Math.pow(2,+sl.value);v.textContent=(x>=100?Math.round(x):x>=10?x.toFixed(1):x.toFixed(2))+'倍'};sl.onchange=()=>put(Math.pow(2,+sl.value));draw();return draw}
 /* v522: 「速度」ボタン。押す→動画ブロックをタップで選ぶ(複数可・もう一度タップで外す)→右下の「決定」で速度の画面。ダブルタップ=選んだ全部のインスペクタ */
 /* v434: 選択モード。波形をスワイプで位置を合わせ、タップ1回目=イン点、2回目=アウト点(3回目は選び直し)。範囲は selA..selB(全体の時間) */
 function setSelMode(on){if(on&&cutMode)setCutMode(false);selMode=!!on;const b=$('selB');if(b){b.setAttribute('aria-pressed',String(selMode));b.style.background=selMode?'#2f7cf0':'';b.style.color=selMode?'#fff':'';b.style.borderColor=selMode?'#2f7cf0':''}
@@ -4761,7 +4761,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v594';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v595';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
