@@ -289,6 +289,7 @@ body.editing.subedit #s2 #pvSec .pcw canvas{max-height:25vh}
 #s2 .lbls .ln{font-size:13px;padding:2px;justify-content:center;text-align:center}
 .lane.vlane{background:#000}
 .blk.v.spdOn{outline:3px solid var(--accent);outline-offset:-3px;filter:brightness(1.25);z-index:2}
+.blk.v.vmsel::after{content:'';position:absolute;inset:0;background:rgba(255,179,0,.5);outline:3px solid #ffb300;outline-offset:-3px;pointer-events:none;z-index:6}
 .blk.v.xsel{outline:3px solid var(--accent);outline-offset:-3px;z-index:2}
 .blk.v.gap{background:#000;border-color:#666;color:#aaa}
 .blk.v.gap span{background:#444}
@@ -3397,7 +3398,7 @@ function renderLanes(){
     if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});
       segs.forEach((s,k)=>{
       const d=segD(s);if(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3)){videoBlks.push(null);x+=d;return}
-      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'')+(selVid===s&&actLane===0?' xsel':'');
+      const b=document.createElement('div');b.className='blk v'+(actLane===0?' edit':'')+(selVid===s&&actLane===0?' xsel':'')+(multiMode&&mselV.has(s)?' vmsel':'');
       b.style.left=(x*pps)+'px';bW(b,d*pps);
       if(s.clip&&inRun[k]){b.style.background='transparent';b.style.zIndex='1';const sp=document.createElement('span');sp.textContent=num(s.clip)+spdTx(s);b.appendChild(sp)}
       else if(s.clip){/* v367: 動画レーンは波形ではなくサムネイルを並べる(フィルムストリップ) */
@@ -3985,10 +3986,10 @@ function askDelete(it){
   row.append(del,ca);card.append(msg);if(aio)card.append(...aio);card.append(row);w.appendChild(card);document.body.appendChild(w);
 }
 /* ===== 複数選択 ===== */
-let multiMode=false;const msel=new Set();let blkEl=new Map(),mirEl=new Map();
+let multiMode=false;const msel=new Set(),mselV=new Set();/* v606: 複数選択でタップして選んだクリップ(segs の要素) */let blkEl=new Map(),mirEl=new Map();
 function setMulti(on){
   if(on&&roAll()){flashSel('先に上のコーナーを選んでください');return}
-  multiMode=on;msel.clear();
+  multiMode=on;msel.clear();mselV.clear();
   const bt=$('msel');if(bt)bt.classList.toggle('primary',on);
   $('scr').style.touchAction=on?'none':'pan-y';
   if(on){selItem=null;if(!ed.hidden)closeEd();actLane=null;flashSel('囲んで選択。長押しで移動、離すと削除')}
@@ -4950,7 +4951,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v605';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v606';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5970,6 +5971,12 @@ $('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent=
 function bindSegLP(b,s){
   b.addEventListener('contextmenu',e=>e.preventDefault());
   b.addEventListener('pointerdown',e=>{
+    if(multiMode&&s.clip){/* v606: 複数選択中=タップで色が付く／もう一度で消える(同じ動画のまとまりは一緒) */const id=e.pointerId,sx=e.clientX,sy=e.clientY;let mv=false;
+      const m=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8)mv=true};
+      const u=ev=>{if(ev.pointerId!==id)return;removeEventListener('pointermove',m,true);removeEventListener('pointerup',u,true);removeEventListener('pointercancel',c,true);
+        if(ev.type!=='pointerup'||mv||pinchUsed)return;const R=segRun(s),L=segs.slice(R[0],R[1]+1),on=!mselV.has(s);L.forEach(q=>{if(on)mselV.add(q);else mselV.delete(q)});
+        const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x};
+      const c=ev=>u(ev);addEventListener('pointermove',m,true);addEventListener('pointerup',u,true);addEventListener('pointercancel',c,true);return}
     if(multiMode||(roAll()&&!s.clip))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
     const R=segRun(s),RB=()=>videoBlks.slice(R[0],R[1]+1).filter(Boolean).concat(videoBlks.includes(b)?[]:[b]);const tm=setTimeout(()=>{fired=true;buzz();RB().forEach(e=>{e.style.opacity='.7'})},450);
     let mvd=false;const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){mvd=true;fin(false)}};
