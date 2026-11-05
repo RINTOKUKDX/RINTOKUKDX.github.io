@@ -1406,7 +1406,7 @@ const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.c
   const marker=g=>{const R=SIZE;g.beginPath();g.arc(0,0,R*1.45,0,Math.PI*2);g.fillStyle='rgba(255,176,32,.22)';g.fill();g.beginPath();g.arc(0,0,R,0,Math.PI*2);g.fillStyle=COLOR;g.fill();g.strokeStyle=INK;g.lineWidth=2.2;g.stroke();
     g.save();const sc=(R*1.5)/24;g.scale(sc,sc);g.translate(-12,-12.6);bike(g);g.restore()};
   const bump=x=>{const k=((x%46)+46)%46;return k<16?-Math.sin(k/16*Math.PI)*6:k>30&&k<36?-Math.sin((k-30)/6*Math.PI)*2.5:0};
-  const setT=t=>{o.querySelector('b').textContent=t;const m=/(\d+)\s*\/\s*(\d+)/.exec(t||''),bar=o.querySelector('.bl-bar');bar.style.visibility=m&&+m[2]?'visible':'hidden';o.querySelector('.bl-bar i').style.width=m&&+m[2]?(Math.min(1,m[1]/m[2])*100).toFixed(1)+'%':'0%'};
+  const setT=(t,pp)=>{o.querySelector('b').textContent=t;const m=/(\d+)\s*\/\s*(\d+)/.exec(t||''),bar=o.querySelector('.bl-bar'),f=pp!=null?pp:m&&+m[2]?m[1]/m[2]:null;bar.style.visibility=f!=null?'visible':'hidden';o.querySelector('.bl-bar i').style.width=f!=null?(Math.max(0,Math.min(1,f))*100).toFixed(1)+'%':'0%'};
   const start=()=>{if(o)return;o=document.createElement('div');o.id='ldO';o.innerHTML='<div class="bl-box"><canvas></canvas><b></b><div class="bl-bar"><i></i></div></div>';document.body.appendChild(o);
     const cv=o.querySelector('canvas'),t0=performance.now(),dpr=Math.min(3,devicePixelRatio||1),W=200,H=96,gy=72;cv.width=W*dpr;cv.height=H*dpr;const g=cv.getContext('2d');
     const loop=now=>{if(!o||!o.isConnected){raf=0;return}const t=(now-t0)/1000,off=t*70;g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,W,H);
@@ -1415,8 +1415,9 @@ const ldO=(()=>{let o=null,tm=null,dt=null,raf=0,cur=0,seq=0;const st=document.c
       const cx=W/2,y0=bump(cx+off),y1=bump(cx+8+off),ym=bump(cx-8+off),ang=Math.atan2(y1-ym,16),jig=Math.sin(t*22)*0.6;
       g.save();g.translate(cx,gy+Math.min(y0,(y1+ym)/2)-15+jig);g.rotate(ang);marker(g);g.restore();raf=requestAnimationFrame(loop)};
     raf=requestAnimationFrame(loop)};
-  return {show(t,opt){const id=++seq;cur=id;clearTimeout(tm);clearTimeout(dt);t=t||'読み込み中…';const go=()=>{if(cur!==id)return;start();setT(t);tm=setTimeout(()=>this.hide(),90000)};
+  return {show(t,opt){const id=++seq;cur=id;clearTimeout(tm);clearTimeout(dt);t=t||'読み込み中…';const go=()=>{if(cur!==id)return;start();setT(t,opt&&opt.p);tm=setTimeout(()=>this.hide(),90000)};
       if(opt&&opt.delay&&!o)dt=setTimeout(go,opt.delay);else go();return id},
+    /* 表示中の文字と進み具合だけ変える */set(id,t,pp){if(id!==cur||!o)return false;setT(t,pp);return true},
     hide(id){if(id!=null&&id!==cur)return;clearTimeout(tm);clearTimeout(dt);cur=0;if(o){o.remove();o=null}}}})();
 window.ldO=ldO;
 {const fi=$('file');let wait=false;fi.addEventListener('click',()=>{wait=true});
@@ -4723,7 +4724,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v583';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v584';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4807,7 +4808,8 @@ function relink(miss){return new Promise(res=>{const got=new Map();
   /* v347: アプリ(箱)の中なら、覚えている場所から自動で渡してもらう(ボタンを押すだけ) */
   const app=()=>{const A=window.BakuApp;if(!A||!A.relink)return 0;try{return A.relink(JSON.stringify(left().map(m=>({name:m.name,size:+String(m.key).split('|')[1]||0}))))}catch(e){return 0}};
   const upd=()=>{const L=left();if(!L.length){w.remove();res(got);return}
-    const n=app();if(n){lab.firstChild.textContent='前回の続き';p.textContent='前回の続きから始めます（動画'+n+'本）。\n下のボタンを押してください。'+(n<L.length?'\n残りの'+(L.length-n)+'本は、次に選んでください。':'');return}
+    const n=app();const pjN=window.__pjName;/* v584: プロジェクトから開いた時は「前回の続き」ではなく、そのプロジェクトの動画を読み込む案内(動画の中身はプロジェクトに入れていないので、アプリが覚えている場所から渡す。ファイル選択はボタンを押さないと開けない) */
+    if(n){lab.firstChild.textContent=pjN?'動画を読み込む':'前回の続き';p.textContent=(pjN?'「'+pjN+'」の動画（'+n+'本）を読み込みます。':'前回の続きから始めます（動画'+n+'本）。')+'\n下のボタンを押してください。'+(n<L.length?'\n残りの'+(L.length-n)+'本は、次に選んでください。':'');return}
     lab.firstChild.textContent='動画を選ぶ';
     p.textContent=(got.size?'あと'+L.length+'本です。\n':'')+'続きを作るには、使っていた動画を選んでください（'+L.length+'本）。\n動画フォルダで「すべて選択」を押せば、必要な物だけ自動で使います。\n\n'+L.slice(0,6).map(m=>'・'+m.name).join('\n')+(L.length>6?'\n…ほか'+(L.length-6)+'本':'')};
   lab.querySelector('input').onchange=e=>{for(const f of e.target.files){const k=fkey(f);let m=miss.find(q=>q.key===k);
@@ -4837,7 +4839,7 @@ async function restore(){
     try{const ks=await idbTx('state','readonly',o=>o.getAllKeys());for(const k of ks)if(/^(pk|th)\|/.test(String(k)))await idbDel('state',k)}catch(e){}
     /* v446: 最初に「前回の続き / プロジェクトから選ぶ / 新規作成」を出す */
     {const has=!!(st&&st.clips&&st.clips.length);let np=0;try{np=(await pList()).length}catch(e){}
-     let pj=false;try{pj=localStorage.getItem('projJust')==='1';localStorage.removeItem('projJust')}catch(e){}
+     let pj=false;try{pj=localStorage.getItem('projJust')==='1';localStorage.removeItem('projJust')}catch(e){}if(pj)window.__pjName=(curProj&&curProj.name)||'プロジェクト';
      if((has||np)&&!pj){let m0=[];if(has)for(const c of st.clips){try{const r=await idbGet('files',c.key);if(!(r&&r.blob))m0.push(c)}catch(e){m0.push(c)}}
        const ch=await startMenu(has,np,m0);
        if(ch==='new'){if(has){newArm=true;await $('newp').onclick()}return}
@@ -6504,6 +6506,10 @@ restore().finally(()=>{restored=true;window.fineReset&&fineReset();if(tpl){corne
 const $=id=>document.getElementById('t_'+id);
 /* v175: 進み具合は動画の下(いつも見える所)とボタンにも出す */
 const st=t=>{$('st').textContent=t;if($('go').dataset.busy){const l=(t||'').split('\n')[0];$('go').textContent=l||'処理中…';$('rSt').textContent=l}};
+/* v584: 自動生成・再生成・英語字幕など、字幕ページが処理中(working)の間はバイクの読み込みアニメ。文字は状態の1行目、棒は進み具合 */
+{let wid=0;setInterval(()=>{const on=working&&!document.getElementById('s4').hidden;if(!on){if(wid){ldO.hide(wid);wid=0}return}
+  const t=(($('st').textContent||'').split('\n')[0]||'処理中…'),b=$('bar'),w=b&&!b.hidden?parseFloat($('barI').style.width):NaN,pp=isFinite(w)?w/100:null;
+  if(!wid||!ldO.set(wid,t,pp))wid=ldO.show(t,{p:pp})},300)}
 const SR=16000;
 let lastMode='sub',MODE='sub',nrMute=false,vMute=false;try{vMute=localStorage.getItem('narVM')==='1'}catch(e){}
 const isN=()=>MODE==='nar';
