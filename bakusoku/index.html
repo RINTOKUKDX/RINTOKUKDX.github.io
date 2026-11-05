@@ -2388,7 +2388,7 @@ function sbDraw(g,W,H,K,t,o){o=o||{};const sz=o.sz||1,sh=o.sh==null?50:o.sh,tier
   if(SBS.ol){g.save();g.shadowColor='transparent';g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth*=2.3;sbFig(g,u,tier,t);g.restore()}
   sbFig(g,u,tier,t);g.restore();
   if(K!==1){const tx=(Number.isInteger(K)?K:+K.toFixed(2))+'倍速',fs=Math.round(u*0.3);g.save();g.font='900 '+fs+'px sans-serif';g.textAlign='right';g.textBaseline='alphabetic';g.lineJoin='round';
-    if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08}g.lineWidth=fs*0.16;g.strokeStyle='rgba(0,0,0,.85)';g.strokeText(tx,gx-u*1.05,gy-u*0.08);g.shadowColor='transparent';g.fillStyle='#fff';g.fillText(tx,gx-u*1.05,gy-u*0.08);g.restore()}}
+    /* v600: 縁どりなし(白い文字だけ。シャドウは設定どおり) */if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08;g.shadowOffsetX=u*0.02;g.shadowOffsetY=u*0.02}g.fillStyle='#fff';g.fillText(tx,gx-u*1.05,gy-u*0.08);g.restore()}}
 /* 今の時間のクリップに速度表記が入っていれば描く(プレビュー・書き出し共通) */
 function sbOver(g,W,H,t){if(t>=segSum()-0.001)return;const L=locate(t),s=L&&segs[L.i];const o=s&&s.clip&&s.fx&&s.fx.sb;if(!o||!o.on)return;sbDraw(g,W,H,spdOf(s),t,o)}
 /* インスペクタ「速度」の中: □アニメーション ▼(大きさ・シャドウ) */
@@ -4841,7 +4841,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v599';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v600';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
