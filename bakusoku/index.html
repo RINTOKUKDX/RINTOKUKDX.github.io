@@ -1427,10 +1427,9 @@ window.ldO=ldO;
 /* 読み込み */
 $('file').addEventListener('change',async e=>{
   const added=[],FL=[...e.target.files];let fn=0;
-  /* v477: もう入っている動画は「もう1本として追加するか」聞く */const dupOK=new Set();{const dd=FL.filter(f=>clips.some(c=>bkey(c.key)===fkey(f)));
-    if(dd.length&&await new Promise(r=>cdlg((dd.length===1?'「'+dd[0].name+'」':dd.length+'本の動画')+'はもう入っています。\n同じ動画をもう1本として追加しますか？\n(元の動画はそのまま。文字起こしは共有されます)',[['もう1本として追加',()=>r(true)],['追加しない',()=>r(false)]])))dd.forEach(f=>dupOK.add(f))}
+  /* v592: もう入っている動画は聞かずにスキップ(新しい動画だけ一番後ろに追加) */const skipped=[];
   for(const f of FL){ldO.show('読み込み中… '+(++fn)+'/'+FL.length+'本');
-    let fk=fkey(f);if(clips.some(c=>bkey(c.key)===fk)){if(!dupOK.has(f))continue;let n=2;while(clips.some(c=>c.key===fk+'#'+n))n++;fk=fk+'#'+n}
+    const fk=fkey(f);if(clips.some(c=>bkey(c.key)===fk)){skipped.push(f.name);continue}
     const url=URL.createObjectURL(f);
     const info=await new Promise(res=>{const v=document.createElement('video');v.preload='metadata';
       /* v401: 調べ終わった動画はすぐ閉じる(スマホは同時に開ける動画の数に限りがある) */const fin=o=>{res(o);try{v.removeAttribute('src');v.load()}catch(e){}};
@@ -1439,7 +1438,7 @@ $('file').addEventListener('change',async e=>{
     const c={id:nextId++,key:fk,name:f.name,file:f,url,d:info.d,w:info.w,h:info.h,meta:null};
     clips.push(c);added.push(c);
   }
-  e.target.value='';
+  e.target.value='';if(skipped.length)setTimeout(()=>cutMsg(skipped.length===1?'「'+skipped[0]+'」はもう入っているのでスキップしました':skipped.length+'本は もう入っているのでスキップしました'),300);
   {let k=0;if(added.length)ldO.show('撮影情報を読み込み中… 0/'+added.length+'本');
    await Promise.all(added.map(async c=>{try{c.meta=await readMeta(c.file)}finally{ldO.show('撮影情報を読み込み中… '+(++k)+'/'+added.length+'本')}}))}
   ldO.hide();
@@ -4756,7 +4755,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v591';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v592';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
