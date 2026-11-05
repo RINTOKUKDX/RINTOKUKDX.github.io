@@ -4702,7 +4702,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v581';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v582';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -4816,7 +4816,8 @@ async function restore(){
     try{const ks=await idbTx('state','readonly',o=>o.getAllKeys());for(const k of ks)if(/^(pk|th)\|/.test(String(k)))await idbDel('state',k)}catch(e){}
     /* v446: 最初に「前回の続き / プロジェクトから選ぶ / 新規作成」を出す */
     {const has=!!(st&&st.clips&&st.clips.length);let np=0;try{np=(await pList()).length}catch(e){}
-     if(has||np){let m0=[];if(has)for(const c of st.clips){try{const r=await idbGet('files',c.key);if(!(r&&r.blob))m0.push(c)}catch(e){m0.push(c)}}
+     let pj=false;try{pj=localStorage.getItem('projJust')==='1';localStorage.removeItem('projJust')}catch(e){}
+     if((has||np)&&!pj){let m0=[];if(has)for(const c of st.clips){try{const r=await idbGet('files',c.key);if(!(r&&r.blob))m0.push(c)}catch(e){m0.push(c)}}
        const ch=await startMenu(has,np,m0);
        if(ch==='new'){if(has){newArm=true;await $('newp').onclick()}return}
        if(ch==='pick')return}}
@@ -5621,6 +5622,7 @@ async function pOpen(meta){
   await idbPut('state','project',m.st);
   try{for(const k of P_NAR)await aTx('readwrite',o=>o.delete(k));for(const[k,v]of Object.entries(m.kv||{}))await aTx('readwrite',o=>o.put(v,k))}catch(e){}
   pSetCur(m);flashSel('「'+m.name+'」を開いています…');
+  /* v582: 開き直した時に最初の画面(前回の続き/プロジェクトから選ぶ/新規作成)を出さずに、そのまま開く */try{localStorage.setItem('projJust','1')}catch(e){}
   setTimeout(()=>location.reload(),300);setTimeout(()=>cdlg('「'+m.name+'」を読み込みました。\nアプリを開き直してください',[['閉じる']]),4000)}
 function pName(def,after){
   const w=document.createElement('div');w.className='cdlg';const c=document.createElement('div');
