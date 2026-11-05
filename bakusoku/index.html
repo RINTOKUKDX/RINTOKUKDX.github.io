@@ -2648,6 +2648,15 @@ function segIns(i,kind,SEL,keep){
         segs.forEach(o=>{if(!o.clip||o===s0||o.cn!==s0.cn)return;if(src){o.fx=fxC(o.fx)||{};o.fx[p]=fxC(src)}else if(o.fx){delete o.fx[p];if(!Object.keys(o.fx).length)delete o.fx}});renderPreview();flashSel((ti?'音':'見た目')+'をコーナー全体に適用しました')}],['やめる']])]]}},keep);
   segInsF={s0,SEL,M:MM,w:$('insP')};insMark()
 }
+/* v598: レーン左の「動画」「動画音声」「BGM」をダブルタップ=同じインスペクタ。中の数値は今のコーナー全体に入る */
+function lblIns(i){
+  if(roAll()){flashSel('先に上のコーナーを選んでください');return}
+  const cn=cview||(corners.length?(segs[(locate(gt)||{i:0}).i]||{}).cn:null),inC=o=>!corners.length||cn==null||o.cn===cn;
+  if(i===6){const L=items.filter(o=>o.lane===6&&!o.pk&&inC(o));if(!L.length){flashSel('このコーナーにBGMがありません');return}
+    const it=L.find(o=>gt>=o.start&&gt<o.end)||L[0];itemIns(it,L);flashSel('BGMの設定は、このコーナーの全部に入ります');return}
+  const A=segs.filter(q=>q.clip&&inC(q));if(!A.length){flashSel('このコーナーに動画がありません');return}
+  const L0=locate(gt),q0=L0&&segs[L0.i],q=q0&&q0.clip&&A.includes(q0)?q0:A[0];
+  segIns(segs.indexOf(q),i===7?'a':'v',A);flashSel('設定は、このコーナーの全部のクリップに入ります')}
 /* v588: インスペクタを再生ヘッドのクリップに付いていかせる */
 let segInsF=null;
 /* v589: インスペクタの範囲(tg と同じ)の波形の箱に insOn を付ける */
@@ -2656,16 +2665,16 @@ function insMark(){const F=segInsF,on=F&&F.w&&F.w.isConnected;let R=null;if(on){
 function segInsFollow(){const F=segInsF;if(!F||F.SEL||!F.M||!F.w||!F.w.isConnected)return;const L=locate(gt);const q=L&&segs[L.i];if(!q||!q.clip)return;
   const k=segs.indexOf(F.s0);if(k>=0){const[a,b]=visBlk(k);if(L.i>=a&&L.i<=b)return}const ti=F.M.tab();segIns(L.i,ti?'a':'v',null,{tab:ti,open:F.M.open?F.M.open():-1})}
 /* ナレーション・BGM のインスペクタ(設定は項目 it に直接: vol fi fo m nm nmG vo nz cut) */
-function itemIns(it){
+function itemIns(it,ALL){
   const bgm=it.lane===6;selItem=it;actLane=it.lane;renderLanes();
-  const tg=()=>[it];
+  const tg=()=>ALL?ALL.filter(o=>items.includes(o)):[it];
   const get=(o,k)=>bgm&&k==='vol'?bgmV(o):bgm&&k==='fi'?bgmFi(o):bgm&&k==='fo'?bgmFo(o):bgm&&k==='cut'?bgmCut(o):o[k]!=null?o[k]:k==='vol'?1:0;
   const set=(o,k,v)=>{if(v==null)delete o[k];else o[k]=v;if(k==='nm'&&!o.nm)delete o.nmG};
-  const ch=k=>{if(k==='nm'&&it.nm){const P=narPeaks[it.akey];it.nmG=nmGain(bgm?pkMax(P,0,1e9):pkMax(P,it.off||0,(it.off||0)+(it.end-it.start)))}
+  const ch=k=>{if(k==='nm')tg().forEach(it=>{if(it.nm){const P=narPeaks[it.akey];it.nmG=nmGain(bgm?pkMax(P,0,1e9):pkMax(P,it.off||0,(it.off||0)+(it.end-it.start)))}})
     if(bgm){it.text=bgmText(it);const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x}};
   insDlg(bgm?'BGM':'ナレーション',M=>{const K=insKit(M,tg,get,set,ch,()=>pushHist());
     const secs=[{t:'音声',on:K.any(['vol','m','fi','fo','nm','vo','nz','cut']),build:b=>insAudio(K,b,bgm)}];
-    if(bgm)secs.unshift({t:'曲',build:b=>{const nm=document.createElement('div');nm.style.cssText='text-align:center;font-size:13px;padding:4px';b.appendChild(nm);
+    if(bgm&&!ALL)secs.unshift({t:'曲',build:b=>{const nm=document.createElement('div');nm.style.cssText='text-align:center;font-size:13px;padding:4px';b.appendChild(nm);
       const sw=async d=>{const s=bgmSongs(it.g);if(!s.length)return;const k=(s.findIndex(x=>'bgm|'+x.id===it.akey)+d+s.length)%s.length;pushHist();it.akey='bgm|'+s[k].id;it.off=0;delete it.nmG;it.nm=false;await ensureNar(it.akey);ch();K.draw()};
       const r=document.createElement('div');r.className='seg';r.append(M.btn('◁ 前の曲',()=>sw(-1)),M.btn('次の曲 ▷',()=>sw(1)));b.appendChild(r);
       const d0=K.draw;K.draw=()=>{d0();nm.textContent=bgmText(it)};nm.textContent=bgmText(it)}});
@@ -3727,7 +3736,7 @@ function renderLbls(){
     el.addEventListener('pointerdown',e=>{if(adjLane){lblAdj(e,i);return}clearTimeout(lpT);lpT=setTimeout(()=>{/* v542: 長押し=テンプレート一覧→タップで再生ヘッドの位置に挿入(レーンを小さくする長押しは廃止) */if(!TPL_LIST(i))return;lpFlag=true;setTimeout(()=>{lpFlag=false},700);buzz();tplMenu(i)},500)});
     ['pointerup','pointercancel','pointerleave'].forEach(n=>el.addEventListener(n,()=>clearTimeout(lpT)));
     {const g=GCOL[LGRP[i]];/* v440: グループの色はグループ全体をぐるっと囲む枠(上下は端の見出しだけ) */if(g){const o=ordNow(),pv=o[k-2],nx=o[k],sh=['inset 2px 0 0 '+g,'inset -2px 0 0 '+g];if(pv==null||LGRP[pv]!==LGRP[i])sh.push('inset 0 2px 0 '+g);if(nx==null||LGRP[nx]!==LGRP[i])sh.push('inset 0 -2px 0 '+g);el.style.boxShadow=sh.join(',')}}
-    el.onclick=e=>{if(dbl('lbl',e.clientY)){setLset(LGRP[i]||'all');return}if(lpFlag||adjLane||i===7||i===9)return;smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes()}});
+    el.onclick=e=>{if(dbl('lbl',e.clientY)){if(i===0||i===7||i===6){lblIns(i);return}setLset(LGRP[i]||'all');return}if(lpFlag||adjLane||i===7||i===9)return;smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes()}});
 }
 let subRate=0.25;
 function openSubAdd(){
@@ -4832,7 +4841,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v597';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v598';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
