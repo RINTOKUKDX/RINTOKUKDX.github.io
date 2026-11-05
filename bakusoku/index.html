@@ -4702,7 +4702,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v580';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v581';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7765,6 +7765,7 @@ function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return
     if(wEdge&&wEdge.g===sel&&vmode!==sel){const X=sx(sel[wEdge.k]);x.fillRect(X-2,0,4,H);x.fillRect(X-6,0,12,12);x.fillRect(X-6,H-12,12,12)}
     /* v281: 動画モード(長押し)は、タイムラインのブロックのように枠で囲む */
     if(vmode===sel){const X0=sx(sel.a),X1=sx(sel.b);x.save();x.strokeStyle=acc;x.lineWidth=4;x.strokeRect(X0+2,2,Math.max(4,X1-X0-4),H-4);x.fillRect(X0-4,H/2-14,8,28);x.fillRect(X1-4,H/2-14,8,28);x.restore()}}
+  if(cutPrev&&!cutPrev.sub){x.fillStyle='rgba(255,40,40,.38)';x.fillRect(sx(cutPrev.x),0,Math.max(2,sx(cutPrev.y)-sx(cutPrev.x)),H)}
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H);drawTx(A,B)}
 /* v373: 文字のタイムライン。波形と同じ A〜B を描く。ブロックはタイムラインの字幕ブロック(.blk.l3)と同じ色・角丸・白文字 */
 function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
@@ -7781,6 +7782,7 @@ function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clie
     {const mw=Math.max(0,w-12),ch=[...g.t],ln=[''];for(const c of ch){const k=ln.length-1;if(x.measureText(ln[k]+c).width>mw&&ln[k]){if(ln.length===2){ln[1]=ln[1].slice(0,-1)+'…';break}ln.push(c)}else ln[k]+=c}
      const lh=17,y0=H/2-(ln.length-1)*lh/2;ln.forEach((l,i)=>x.fillText(l,X0+6,y0+i*lh))}x.restore();
     txMap.rects.push([X0,X0+w,g])});
+  if(cutPrev){x.fillStyle='rgba(255,40,40,.5)';const c0=sx(cutPrev.x),c1=sx(cutPrev.y);txMap.rects.forEach(([X0,X1,g])=>{const a=Math.max(X0,c0),b=Math.min(X1,c1);if(b>a)x.fillRect(a,4,b-a,H-8)})}
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H)}
 let txMap=null,txHi=null;
 /* v580: 「動画カット」「字幕調整」モード(▲の左のボタン)。波形と字幕クリップの上で
@@ -7795,6 +7797,12 @@ function cutToast(S,vid){/* vid=動画の写し(segSnap) */let e=$('cutT');if(!e
   const ref=$('lt')&&$('lt').offsetParent?$('lt'):($('tx')||$('wf')),r=ref.getBoundingClientRect();e.style.left=(r.left+r.width/2)+'px';e.style.top=Math.max(4,r.top)+'px';e.hidden=false;
   e.querySelector('button').onclick=()=>{e.hidden=true;clearTimeout(cutT);if(vid&&window.segRest)window.segRest(vid);applySnap(S,'戻しました');drawWf()};
   clearTimeout(cutT);cutT=setTimeout(()=>{e.hidden=true},3000)}
+/* 削除する部分の色(波形と字幕クリップ)。side=1 再生ヘッドから後ろ、-1 前、0 クリップごと */
+let cutPrev=null;
+function cutPv(side){const t=pos;let x,y,sub=false;
+  if(window.vcutMode){const f=fromV(t);if(!f){cutPrev=null;drawWf();return}const r=f.r;x=side>0?t:r.v0;y=side<0?t:r.v1;if(side>0)y=r.v1;if(side<0)x=r.v0}
+  else{const g=subsL().find(q=>t>=q.a&&t<=q.b);if(!g){cutPrev=null;drawWf();return}sub=true;x=side>0?t:g.a;y=side<0?t:g.b}
+  cutPrev={x,y,sub};drawWf()}
 /* 字幕だけ: 分割 */
 function subSplit(t){const g=subsL().find(q=>t>q.a+0.1&&t<q.b-0.1);if(!g){st('再生ヘッドを字幕クリップの中に合わせてください');return}
   const ch=[...g.t];if(ch.length<2){st('1文字なので分割できません');return}const k=Math.max(1,Math.min(ch.length-1,Math.round((t-g.a)/(g.b-g.a)*ch.length)));const g2={...g,a:t,t:ch.slice(k).join('')};delete g2.w;delete g2.words;['ka','oa','ca','va','vka','voa'].forEach(z=>delete g2[z]);
@@ -7821,13 +7829,13 @@ function vidDel(t,side){const f=fromV(t);if(!f)return;const r=f.r;let x=side>0?t
 ['wf','tx'].forEach(id=>{const c=$(id);if(!c)return;let G=null;const on=()=>window.vcutMode||window.adjMode;
   c.addEventListener('touchmove',e=>{if(G)e.preventDefault()},{passive:false,capture:true});
   c.addEventListener('pointerdown',e=>{if(!on()||!cur)return;e.stopImmediatePropagation();if(G)return;const m=id==='wf'?wfMap:txMap;if(!m)return;try{c.setPointerCapture(e.pointerId)}catch(_){}
-    G={id:e.pointerId,x0:e.clientX,y0:e.clientY,t0:pos,sc:(m.B-m.A)/m.W,lp:false,mv:false,dir:0};const g0=G;G.tm=setTimeout(()=>{if(G!==g0||g0.mv)return;g0.lp=true;stopPlay();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}st('左右にスワイプ=その側を削除／そのまま離す=削除')},450)},true);
+    G={id:e.pointerId,x0:e.clientX,y0:e.clientY,t0:pos,sc:(m.B-m.A)/m.W,lp:false,mv:false,dir:0};const g0=G;G.tm=setTimeout(()=>{if(G!==g0||g0.mv)return;g0.lp=true;stopPlay();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}st('');cutPv(0)},450)},true);
   c.addEventListener('pointermove',e=>{if(!G||e.pointerId!==G.id)return;e.stopImmediatePropagation();const dx=e.clientX-G.x0;
-    if(G.lp){const d=Math.abs(dx)>16?Math.sign(dx):0;if(d!==G.dir){G.dir=d;st(d>0?'離すと再生ヘッドから後ろを削除':d<0?'離すと再生ヘッドから前を削除':'そのまま離す=削除')}return}
+    if(G.lp){const d=Math.abs(dx)>16?-Math.sign(dx):0;if(d!==G.dir){G.dir=d;cutPv(d)}return}
     if(!G.mv&&Math.abs(dx)<8&&Math.abs(e.clientY-G.y0)<8)return;if(!G.mv){G.mv=true;clearTimeout(G.tm);stopPlay()}
     showAt(Math.max(0,Math.min(VD,G.t0-dx*G.sc)));drawWf()},true);
-  const up=e=>{if(!G||e.pointerId!==G.id)return;e.stopImmediatePropagation();const g=G;G=null;clearTimeout(g.tm);if(e.type!=='pointerup'){st('');return}
-    if(g.lp){st('');if(window.vcutMode)vidDel(pos,g.dir);else subDel(pos,g.dir);return}if(g.mv)return;
+  const up=e=>{if(!G||e.pointerId!==G.id)return;e.stopImmediatePropagation();const g=G;G=null;clearTimeout(g.tm);if(e.type!=='pointerup'){st('');cutPrev=null;drawWf();return}
+    if(g.lp){st('');cutPrev=null;drawWf();if(window.vcutMode)vidDel(pos,g.dir);else subDel(pos,g.dir);return}if(g.mv)return;
     if(window.vcutMode)vidSplit(pos);else subSplit(pos)};
   c.addEventListener('pointerup',up,true);c.addEventListener('pointercancel',up,true);
   c.addEventListener('click',e=>{if(on())e.stopImmediatePropagation()},true)});
