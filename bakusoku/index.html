@@ -4724,7 +4724,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v586';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v587';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6677,24 +6677,6 @@ document.addEventListener('visibilitychange',wakeOn);
 
 /* ===== 文字起こし ===== */
 let asr=null,asrKey='',wordOK=null,wordErr='';
-/* v576: 時間を測る用の「時間付き(軽い)」。ファイルがそろっている時だけ使う */
-const TS2={fs:null,p:null,k:'',err:''};
-async function getTsr(){const fs=await pickFiles('bts');if(NEED('bts').some(n=>!fs.has(n)))return null;
-  const k=onnx('bts').map(n=>fs.get(n).size+'.'+fs.get(n).lastModified).join('|')+fs.get('generation_config.json').size;if(TS2.p&&TS2.k===k)return TS2.p;
-  TS2.fs=fs;st('区切りの時間を測る準備中…(時間付き(軽い))');TS2.p=await T.pipeline('automatic-speech-recognition',MODELS.bts.repo,{dtype:MODELS.bts.dtype,device:'wasm'});TS2.k=k;return TS2.p}
-/* v576: 文字(text)と、時間付きの言葉(ws)を1文字ずつ照らし合わせて、文字ごとの時間を作る。合う文字が3割未満なら null */
-function mapTimes(text,ws){const M=[...text],B=[];
-  ws.forEach(c=>{const w=[...String(c.text||'').replace(/[\s　]/g,'')];if(!w.length)return;const s0=c.timestamp[0]??0,e0=c.timestamp[1]??s0+0.3;w.forEach((ch,k)=>B.push({c:ch,a:s0+(e0-s0)*k/w.length,b:s0+(e0-s0)*(k+1)/w.length}))});
-  const n=M.length,m=B.length;if(!n||!m||n*m>4e6)return null;const W=m+1,D=new Uint16Array((n+1)*W);for(let i=0;i<=n;i++)D[i*W]=i;for(let j=0;j<=m;j++)D[j]=j;
-  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){const c=M[i-1]===B[j-1].c?0:1;D[i*W+j]=Math.min(D[(i-1)*W+j-1]+c,D[(i-1)*W+j]+1,D[i*W+j-1]+1)}
-  const t=new Array(n).fill(null);let i=n,j=m,hit=0;
-  while(i>0&&j>0){const c=M[i-1]===B[j-1].c?0:1;if(D[i*W+j]===D[(i-1)*W+j-1]+c){if(!c){t[i-1]=[B[j-1].a,B[j-1].b];hit++}i--;j--}else if(D[i*W+j]===D[(i-1)*W+j]+1)i--;else j--}
-  const vis=M.filter(ch=>!/[\s　]/.test(ch)).length;if(hit<Math.max(1,vis*0.3))return null;
-  const ix=t.map((x,k)=>x?k:-1).filter(k=>k>=0),F=ix[0],Ls=ix[ix.length-1],out=[];let pa=0;
-  for(let k=0;k<n;k++){let a,b;if(t[k]){[a,b]=t[k]}else if(k<F){a=Math.max(0,t[F][0]-0.12*(F-k));b=a+0.12}else if(k>Ls){a=t[Ls][1]+0.12*(k-Ls-1);b=a+0.12}
-    else{let L=k,Rr=k;while(!t[L])L--;while(!t[Rr])Rr++;const x0=t[L][1],x1=Math.max(x0,t[Rr][0]),f=(Rr-L);a=x0+(x1-x0)*(k-L-1)/(f-1||1);b=x0+(x1-x0)*(k-L)/(f-1||1)}
-    a=Math.max(a,pa);b=Math.max(b,a+0.01);pa=a;out.push({text:M[k],timestamp:[a,b]})}
-  return out}
 const fms=x=>{x=Math.max(0,Math.round(x));return Math.floor(x/60)+'分'+String(x%60).padStart(2,'0')+'秒'};
 const fm=x=>{x=Math.max(0,Math.round(x));return x>=60?Math.floor(x/60)+'分'+String(x%60).padStart(2,'0')+'秒':x+'秒'};
 /* v374: 字幕ページの範囲と「自動生成」 */
@@ -6735,7 +6717,7 @@ $('go').onclick=async()=>{if(!JOB.length)return;
   try{
     const env=T.env;
     env.allowLocalModels=false;env.useBrowserCache=false;env.useCustomCache=true;
-    env.customCache={match:async r=>{const u=typeof r==='string'?r:r.url;const n=u.split('?')[0].split('/').pop();const f=(TS2.fs&&u.includes(MODELS.bts.repo+'/')?TS2.fs:files).get(n);return f?new Response(f):undefined},put:async()=>{}};
+    env.customCache={match:async r=>{const u=typeof r==='string'?r:r.url;const n=u.split('?')[0].split('/').pop();const f=files.get(n);return f?new Response(f):undefined},put:async()=>{}};
     env.backends.onnx.wasm.wasmBinary=await files.get(WASM).arrayBuffer();
     env.backends.onnx.wasm.numThreads=1;
     st('音声を取り出し中…');
@@ -6767,7 +6749,6 @@ $('go').onclick=async()=>{if(!JOB.length)return;
     const all=[];let first='';
     let sample=null;try{sample=window.claude&&await window.claude.use('sample')}catch(e){}
     let chain=Promise.resolve(),fixed=[],fixErr=null,nFix=0,doneFix=0;
-    let tsrU=undefined,nMap=0;TS2.err='';
     let done=0;for(const k of cpr){
       const a0=cuts[k],a1=cuts[k+1],off=a0/SR,el=(performance.now()-t1)/1000;
       bi.style.width=(done/D*100).toFixed(1)+'%';
@@ -6776,9 +6757,6 @@ $('go').onclick=async()=>{if(!JOB.length)return;
       let o=null,wd=false;const c0=performance.now();
       if(wordOK!==false){try{o=await asr(pcm.slice(a0,a1),{language:'japanese',task:'transcribe',return_timestamps:'word'});wordOK=true;wd=true}catch(e){wordOK=false;wordErr=String(e&&e.message||e).slice(0,80)}}
       if(!o)o=await asr(pcm.slice(a0,a1),{language:'japanese',task:'transcribe',return_timestamps:true});
-      /* v576: 言葉の時間が出ない版は、時間付き(軽い)で言葉の時間を測って、文字に当てはめる(文字はそのまま) */
-      if(!wd&&mk!=='bts'){if(tsrU===undefined){try{tsrU=await getTsr()}catch(e){tsrU=null;TS2.err=String(e&&e.message||e).slice(0,80)}}
-        if(tsrU){try{const o2=await tsrU(pcm.slice(a0,a1),{language:'japanese',task:'transcribe',return_timestamps:'word'});const pc=o2&&o2.chunks&&mapTimes(String(o.text||'').trim(),o2.chunks);if(pc){o={text:o.text,chunks:pc};wd=true;nMap++}}catch(e){tsrU=null;TS2.err=String(e&&e.message||e).slice(0,80)}}}
       const segEnd=Math.min(dur,a1/SR);
       if(k===0)first=(o.text||'').trim().slice(0,30);
       const cs=[];
@@ -6808,7 +6786,7 @@ $('go').onclick=async()=>{if(!JOB.length)return;
     if(sample&&nFix&&!bad){const tf=performance.now();const iv=setInterval(()=>st('Claudeで仕上げ中… '+doneFix+' / '+nFix),500);
       await chain;clearInterval(iv);info.fixSec=(performance.now()-tf)/1000;R[mk].fix=old?mg(old.fix||old.raw,rndFont(fixed.flat().filter(Boolean))):rndFont(fixed.flat().filter(Boolean));await saveR(mk,R[mk])}
     if(bad){st('完了しましたが文字化け(!!!!や,,,,)しました。'+(dev!=='wasm'?'この組み合わせはダメでした。別の版を試してください':'ファイルの問題の可能性があります'));view.m=mk;view.v='raw';drawResults();throw null}
-    st('完了 ✓ '+M.n+' 音声 '+fm(part?D:dur)+(part?'(範囲)':'')+' → 処理 '+fm(sec)+'(準備込み '+fm((performance.now()-t0)/1000)+')\n'+(wordOK?'言葉ごとの時間: 使えました ✓':nMap?'区切りの時間: 時間付き(軽い)で測って合わせました ✓('+nMap+'/'+cpr.length+')':'言葉ごとの時間: このモデルでは使えませんでした。⚙で「時間付き(軽い)」のファイルも保存すると区切りが合うようになります'+(TS2.err?'('+TS2.err+')':'')));
+    st('完了 ✓ '+M.n+' 音声 '+fm(part?D:dur)+(part?'(範囲)':'')+' → 処理 '+fm(sec)+'(準備込み '+fm((performance.now()-t0)/1000)+')\n'+(wordOK?'言葉ごとの時間: 使えました ✓':'言葉ごとの時間: このモデルでは使えませんでした(区切りの時間は手で合わせてください)'));
     view.m=mk;view.v=R[mk].fix?'fix':'raw';sel=null;drawResults();if(fixErr)$('rSt').textContent='一部Claude仕上げできませんでした('+errMsg(fixErr)+')';
   }catch(e){if(e!==null)st('エラー: '+(e&&e.message||e)+(model==='turbo'?'\n(メモリ不足の可能性があります。他のアプリやタブを閉じて再挑戦してください)':''))}
   $('bar').hidden=true;delete $('go').dataset.busy;if(/^(文字起こし中|Claude|音声|処理)/.test($('rSt').textContent))$('rSt').textContent='';working=false;try{wake&&wake.release()}catch(e){}wake=null;$('go').disabled=false;rgDraw();
