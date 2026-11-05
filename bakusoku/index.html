@@ -4724,7 +4724,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v585';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v586';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5298,7 +5298,7 @@ function cdlg(msg,btns){
   w.addEventListener('click',e=>{if(e.target===w&&!early())close()});w.appendChild(c);document.body.appendChild(w);
 }
 function syncTypeRow(){document.querySelectorAll('#typeRow button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.ty===tpl)))}
-function setType(ty){if(!TPL[ty])return;if(tpl&&tpl!==ty){cdlg('動画の種類は最初に選んだら変えられません。\n作り直すときは「新規」を押してください',[['閉じる']]);return}const ch=tpl!==ty;tpl=ty;tplOpen=false;cornerInit();renderSegs();syncTypeRow();if(ch&&!$('s2').hidden)renderTimeline()}
+function setType(ty){if(!TPL[ty])return;if(tpl&&tpl!==ty){cdlg('動画の種類は最初に選んだら変えられません。\n作り直すときは「新規」を押してください',[['閉じる']]);return}const ch=tpl!==ty;tpl=ty;try{localStorage.setItem('lastTy',ty)}catch(e){}tplOpen=false;cornerInit();renderSegs();syncTypeRow();if(ch&&!$('s2').hidden)renderTimeline()}
 /* v320: テンプレート(種類ごと)。種類は最初に1回だけ選ぶ(変更は「新規」から)。種類ボタン長押し→デフォルト/新規作成で今のタイムラインと動画をアプリ内(別DB cuttpl)に保存 */
 const TDB=(()=>{try{return new Promise((res,rej)=>{const r=indexedDB.open('cuttpl',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}catch(e){return Promise.reject(e)}})();TDB.catch(()=>{});
 const tTx=(mode,fn)=>TDB.then(db=>new Promise((res,rej)=>{const tx=db.transaction('f',mode);const rq=fn(tx.objectStore('f'));tx.oncomplete=()=>res(rq&&rq.result);tx.onerror=()=>rej(tx.error);tx.onabort=()=>rej(tx.error)}));
@@ -5450,8 +5450,10 @@ function askType(after){
   /* v338: 保存した作品を開く・引っ越しもここから */{const b=document.createElement('button');b.className='tyb';b.innerHTML='作品<small>保存した作品を開く・保存・引っ越し</small>';b.onclick=()=>{w.remove();pMenu()};c.appendChild(b)}
   w.appendChild(c);document.body.appendChild(w);
 }
-{const go=$('toS2').onclick;$('toS2').onclick=()=>{if(!tpl){askType(go);return}go()}}
-$('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent==='新規'&&!tpl){syncTypeRow();askType()}},60));
+/* v586: 「何の動画を作りますか?」は出さない(作り直す予定)。種類が決まっていない時は、前に使った種類(無ければ「旅」)を黙って入れる。askType は残す */
+function autoType(){if(tpl)return;let k=null;try{k=localStorage.getItem('lastTy')}catch(e){}if(!k||!TPL[k])k=TPL.tv?'tv':Object.keys(TPL)[0];if(k)setType(k)}
+{const go=$('toS2').onclick;$('toS2').onclick=()=>{autoType();go()}}
+$('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent==='新規'&&!tpl){autoType();syncTypeRow()}},60));
 /* ===== v377: タイムラインテンプレート(動画の種類ごと)。保存先 localStorage 'tlt'。OP/ED動画は files 'tlt|op|…' 'tlt|ed|…' ===== */
 const TCOL=['#2c5fd8','#d9731a','#12867a','#7a3fd0','#c2395f'];
 const TLT_B={diy:{n:'DIY',d:'冒頭 / 説明 / 作業 / ED'},tv:{n:'旅',d:'企画説明 / OP / 本編 / まとめ / ED',ch:'garakuta'},doc:{n:'ドキュメンタリー',d:'冒頭 / 出発 / 走行中 / 宿・まとめ / ED'}};
@@ -6495,7 +6497,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
 }
 
 renderSegs();
-restore().finally(()=>{restored=true;window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}syncTypeRow();if(!tpl)askType()});
+restore().finally(()=>{restored=true;window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}else autoType();syncTypeRow()});
 })();
 </script>
 
