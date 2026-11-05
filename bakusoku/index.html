@@ -4085,12 +4085,15 @@ $('sp2').onclick=()=>{if(!cutMode&&selMode)setSelMode(false);setCutMode(!cutMode
 function setSpd(L,v){v=Math.max(0.25,Math.min(1000,v>=100?Math.round(v):v>=10?Math.round(v*10)/10:Math.round(v*100)/100));
   const S=L.filter(q=>q&&q.clip&&segs.includes(q)&&spdOf(q)!==v).sort((a,b)=>segs.indexOf(b)-segs.indexOf(a));if(!S.length)return false;
   if(corners.length)itemCn();
+  /* v596: 再生ヘッドは同じコマに付いていく(速度で長さが変わっても今見ているコマのまま) */const pl=locate(gt),pq=pl&&segs[pl.i],psrc=pq&&pq.clip?pq.start+(gt-pl.off)*spdOf(pq):null,pdt=gt-(pl?pl.off:0);
   S.forEach(q=>{const a=cumAt(segs.indexOf(q)),d0=segD(q),e0=a+d0;if(v===1)delete q.spd;else q.spd=v;const d1=segD(q),dl=d1-d0,r=d1/d0;
     items.forEach(o=>{if(o.full||o.lane===6)return;if(corners.length&&o.cn!==q.cn)return;
       if(o.start>=e0-1e-6){o.start=Math.max(0,o.start+dl);o.end=o.end+dl;return}
       if(o.start>=a-1e-6){const n=a+(o.start-a)*r;if(o.lane===3&&o.end<=e0+1e-6)o.end=a+(o.end-a)*r;else o.end=n+(o.end-o.start);o.start=n;o.end=Math.max(o.start+0.05,o.end);return}
       if(o.end>e0-1e-6&&(o.lane===1||o.lane===2))o.end=Math.max(o.start+0.05,o.end+dl)})});
-  if(corners.length)cornerSync();else cornerRebase();resetOut();renderLanes();renderSegs();renderPreview();return true}
+  if(corners.length)cornerSync();else cornerRebase();resetOut();renderLanes();renderSegs();renderPreview();
+  {const k=pq?segs.indexOf(pq):-1;if(k>=0){const ng=cumAt(k)+(psrc!=null?Math.max(0,Math.min(segD(pq),(psrc-pq.start)/spdOf(pq))):pdt);if(Math.abs(ng-gt)>1e-6)seekGlobal(ng)}}
+  return true}
 /* v522: 速度の操作部品(バーと よく使う倍率)。L()=変える物の一覧 */
 function spdUI(box,L,done){const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度';
   const sl=document.createElement('input');sl.type='range';sl.min=-2;sl.max=Math.log2(1000);sl.step=0.02;/* v523: 0.25〜100倍(対数) → v594: 1000倍まで */const v=document.createElement('div');v.className='v';r.append(lb,sl,v);box.appendChild(r);
@@ -4761,7 +4764,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v595';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v596';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
