@@ -5137,7 +5137,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v633';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v634';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6057,7 +6057,8 @@ const caInfo=ck=>{const A=CA();if(!A||!ck||!ck.length)return ck?ck.map(()=>({c:0
 /* 作品ごと: c=コピーがある本数, x=外部の物でコピーが無い本数, b=スマホに保存している大きさ(コピー+作品に入れた音など) */
 async function pCache(L){let ks=[];try{ks=await pKeys()}catch(e){}const out=[];
   for(const m of L){let b=0;for(const k of ks){if(!String(k).startsWith('b|'+m.id+'|'))continue;try{const r=await pGet(k);b+=(r&&r.blob&&r.blob.size)||(r&&r.size)||0}catch(e){}}
-    let c=0,x=0;caInfo(m.ck).forEach(q=>{if(q.c){c++;b+=q.b||0}if(q.x)x++});
+    /* v634: スマホ内の動画(コピーしない物)も、元の動画の大きさを足す(外部でコピーが無い物は0) */
+    let c=0,x=0;caInfo(m.ck).forEach((q,i)=>{if(q.c){c++;b+=q.b||0}if(q.x)x++;if(!q.c&&!q.x)b+=(m.ck[i]&&m.ck[i].size)||0});
     out.push({c,x,b,t:x?(c?'キャッシュ一部':'キャッシュ無し'):(c?'キャッシュあり':'')})}return out}
 /* 起動して少し後: どの作品でも使っていないコピーを消す(カットで消した動画など)・30日以上触っていない作品のコピーを消すか聞く */
 window.cacheCare=async()=>{const A=CA();if(!A)return;const wt=()=>new Promise(r=>setTimeout(r,2000));
