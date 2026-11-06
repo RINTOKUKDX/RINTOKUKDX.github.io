@@ -2917,9 +2917,11 @@ const twR=()=>cview&&cR&&cIdx(cview)>=0?viewR():{a:0,b:total()},twC=t=>{const r=
 /* v358: 波形はどの表示でも出す */const twOn=()=>!$('s2').hidden&&segs.length>0;
 function twData(){const sig=segs.map(s=>(s.clip?s.clip.key:'-')+':'+s.start.toFixed(3)+':'+s.end.toFixed(3)+':'+spdOf(s)).join('|');
   if(sig===twSig)return twPk;twSig=sig;const n=Math.ceil(total()*50)+1,a=new Uint8Array(n);let x=0,wait=false;
-  segs.forEach(s=>{const d=segD(s),K=spdOf(s);if(s.clip){const P=s.clip._pk;
+  /* v619: その動画の使っている範囲だけ読む(範囲が変わったら読み足す) */const rsOf=c=>segs.filter(q=>q.clip===c).map(q=>[q.start,q.end]),rsig=c=>rsOf(c).map(r=>r[0].toFixed(2)+'-'+r[1].toFixed(2)).join(',')+'|'+wfQ;
+  segs.forEach(s=>{const d=segD(s),K=spdOf(s);if(s.clip){const P=s.clip._pk,sg=rsig(s.clip);
+    if(P&&s.clip._pkS!==sg&&!s.clip._pkW){wait=true;s.clip._pkW=1;clipPeaksR(s.clip,rsOf(s.clip)).then(q=>{s.clip._pkW=0;if(q){s.clip._pk=q;s.clip._pkS=sg;twSig='';drawTW()}})}
     if(P){const o=Math.round(x*50);for(let i=0;i<d*50&&o+i<n;i++)a[o+i]=P[Math.floor(s.start*50+i*K)]||0}
-    else{wait=true;/* v423: 待ちの登録は動画ごとに1回だけ(描くたびに増えて、波形ができた瞬間に何千回も描き直して固まっていた) */if(!s.clip._pkW){s.clip._pkW=1;clipPeaks(s.clip).then(q=>{s.clip._pkW=0;if(q){s.clip._pk=q;twSig='';drawTW()}})}}}x+=d});
+    else{wait=true;/* v423: 待ちの登録は動画ごとに1回だけ(描くたびに増えて、波形ができた瞬間に何千回も描き直して固まっていた) */if(!s.clip._pkW){s.clip._pkW=1;clipPeaksR(s.clip,rsOf(s.clip)).then(q=>{s.clip._pkW=0;if(q){s.clip._pk=q;s.clip._pkS=sg;twSig='';drawTW()}})}}}x+=d});
   if(wait)twSig='';twMx=1;for(const v of a)if(v>twMx)twMx=v;twPk=a;return a}
 /* v421: 波形を素早くスワイプした時、頭出しを指の動きごとに頼むと詰まって固まるので、線と波形はすぐ動かし、頭出しは前のが終わってから最後の位置だけ */
 let twBusy=false,twWant=null;
@@ -3429,10 +3431,10 @@ function renderLanes(){
     else if(i===7){/* v249: 動画の音声波形だけのレーン(BGM表示用) */let x=0;let rb=null,rx=0;/* v478: まとまり(同じ動画の続き)は1つの箱にして、中に部分ごとの波形を並べる */segs.forEach((s,k)=>{const d=segD(s);
       const R=s.clip?segRun(s):[k,k];if(s.clip&&R[1]>R[0]){if(k===R[0]){let D=0;for(let j=R[0];j<=R[1];j++)D+=segD(segs[j]);rb=null;rx=x;
           if(!(cview&&(x+D<=V.a+1e-3||x>=V.b-1e-3))){rb=document.createElement('div');rb.className='blk wvb wvrun';rb._ss=segs.slice(R[0],R[1]+1);if(multiMode&&rb._ss.some(q=>mselV.has(q)))rb.classList.add('vmsel');rb.style.left=(x*pps)+'px';rb.style.width=(D*pps)+'px';rb.style.pointerEvents='none';ln.appendChild(rb)}}
-        if(rb){const pc=document.createElement('div');pc.style.cssText='position:absolute;top:0;bottom:0;left:'+((x-rx)*pps)+'px;width:'+(d*pps)+'px';rb.appendChild(pc);{const x0=x;lzAdd(pc,x0,d,()=>clipPeaks(s.clip).then(p=>{if(p&&pc.isConnected)addWave(pc,p,s.start,s.end)}))}}
+        if(rb){const pc=document.createElement('div');pc.style.cssText='position:absolute;top:0;bottom:0;left:'+((x-rx)*pps)+'px;width:'+(d*pps)+'px';rb.appendChild(pc);{const x0=x;lzAdd(pc,x0,d,()=>clipPeaksR(s.clip,[[s.start,s.end]]).then(p=>{if(p&&pc.isConnected)addWave(pc,p,s.start,s.end)}))}}
         x+=d;return}
       if(s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk wvb'+(multiMode&&mselV.has(s)?' vmsel':'');b._ss=[s];b.style.left=(x*pps)+'px';b.style.width=(d*pps)+'px';b.style.pointerEvents='none';
-        {const x0=x;lzAdd(b,x0,d,()=>clipPeaks(s.clip).then(p=>{if(p&&b.isConnected)addWave(b,p,s.start,s.end)}))}ln.appendChild(b)}
+        {const x0=x;lzAdd(b,x0,d,()=>clipPeaksR(s.clip,[[s.start,s.end]]).then(p=>{if(p&&b.isConnected)addWave(b,p,s.start,s.end)}))}ln.appendChild(b)}
       /* v448: 空白は動画音声レーンにも黒く出す(動画レーンと揃える) */else if(!s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk v gap';b.style.left=(x*pps)+'px';bW(b,d*pps);b.style.pointerEvents='none';ln.appendChild(b)}x+=d})}
     else if(i===9){/* v437: ナレーションページの文章(見るだけ)。v475: 動画のまとまりごとに1つの箱 */subBoxes(ln,9,V)}
     else items.filter(o=>o.lane===i&&!o.pk&&(o.end-o.start>=0.01||!o.cfid)&&(!cview||(o.end>V.a-1e-3&&o.start<V.b+1e-3&&(cIdx(o.cn)<0||o.cn===cview)))).forEach(it=>{
@@ -4715,9 +4717,24 @@ window.narApi={ensure:ensureNar,buf:k=>narBuf[k],pk:k=>narPeaks[k],get micOK(){r
 /* v612: パフォーマンス設定。wfQ=波形の細かさ(1=フル/2=半分/4=4分の1。音のかたまりを wfQ 個に1つだけほどく)、wfPre=動画を選んだ後に裏で波形を先に作る */
 let wfQ=1,wfPre=true;try{wfQ=[1,2,4,10].includes(+localStorage.getItem('wfQ'))?+localStorage.getItem('wfQ'):1;wfPre=localStorage.getItem('wfPre')!=='0'}catch(e){}
 /* v613: 1本ずつ順に(一度に全部並べると、字幕ページで今要る動画の波形が後回しになるため) */let wfPreRun=false;
-async function wfPrefetch(){if(!wfPre||wfPreRun)return;wfPreRun=true;try{for(let c;wfPre&&(c=clips.find(q=>!q.peaksP));)await clipPeaks(c)}finally{wfPreRun=false}}
+async function wfPrefetch(){if(!wfPre||wfPreRun)return;wfPreRun=true;try{/* v619: タイムラインで使っている範囲だけ */const done=new Set();for(let c;wfPre&&(c=clips.find(q=>!done.has(q)&&segs.some(z=>z.clip===q)));){done.add(c);await idleWait();await clipPeaksR(c,segs.filter(z=>z.clip===c).map(z=>[z.start,z.end]))}}finally{wfPreRun=false}}
 window.wfPrefetch=wfPrefetch;window.clipByKey=k=>clips.find(c=>c.key===k);
 /* v615: 保存済みの波形だけ見る(無ければ作らない)・今の細かさ */window.pkCached=async c=>(await idbGet('state','pk|'+c.key).catch(()=>null))||(wfQ>1?await idbGet('state','pk'+wfQ+'|'+c.key).catch(()=>null):null);window.wfQget=()=>wfQ;window.clipPeaks=c=>clipPeaks(c);
+/* v619: 使っている範囲だけの波形(動画の長さ分の入れ物に、読んだ範囲だけ入れる)。⚙の細かさ(wfQ)で間引き。保存 pkr{q}|key={p,cov}。字幕ページ・タイムラインで共有。まるごとの波形が保存済みならそれを使う */
+const pkR=new Map();let prQ=Promise.resolve();
+const covMerge=L=>{L=L.slice().sort((x,y)=>x[0]-y[0]);const o=[];L.forEach(r=>{const l=o[o.length-1];if(l&&r[0]<=l[1]+0.05)l[1]=Math.max(l[1],r[1]);else o.push(r.slice())});return o};
+const covMiss=(cov,a,b)=>{let res=[[a,b]];for(const[x,y]of cov)res=res.flatMap(([s0,e0])=>y<=s0||x>=e0?[[s0,e0]]:[...(x>s0?[[s0,x]]:[]),...(y<e0?[[y,e0]]:[])]);return res.filter(([s0,e0])=>e0-s0>0.05)};
+async function clipPeaksR(c,R,prog){if(!c||!clips.includes(c))return null;
+  const full=await window.pkCached(c);if(full)return full;
+  const q=wfQ,k='pkr'+q+'|'+c.key,D=c.d||0;let o=pkR.get(k);
+  if(!o){const sv=await idbGet('state',k).catch(()=>null);o=sv&&sv.p&&sv.p.length>=Math.ceil(D*50)?sv:{p:new Uint8Array(Math.ceil(D*50)+2),cov:[]};pkR.set(k,o)}
+  const job=prQ.then(async()=>{let miss=[];R.forEach(([a,b])=>miss.push(...covMiss(o.cov,Math.max(0,a-0.1),Math.min(D,b+0.1))));miss=covMerge(miss.map(r=>[r[0],r[1]+0.9])).map(r=>[r[0],Math.min(D,r[1]-0.9)]).filter(r=>r[1]-r[0]>0.05);
+    if(!miss.length)return o.p;window.__wfRead=true;const tot=miss.reduce((x,r)=>x+r[1]-r[0],0);let dn=0;
+    for(const[a,b]of miss){let r=null;try{r=await xAudR(c,a,b,{peaks:true,skip:q,prog:prog?f=>prog((dn+f*(b-a))/tot):null})}catch(e){r=null}
+      if(!r){const f=await clipPeaks(c);return f}const i0=Math.floor(a*50);for(let j=0;j<r.length&&i0+j<o.p.length;j++)o.p[i0+j]=r[j];o.cov=covMerge(o.cov.concat([[a,b]]));dn+=b-a}
+    idbPut('state',k,{p:o.p,cov:o.cov}).catch(()=>{});return o.p});
+  prQ=job.catch(()=>{});return job}
+window.clipPeaksR=(c,R,prog)=>clipPeaksR(c,R,prog);
 function clipPeaks(c){
   if(c.peaksP)return c.peaksP;if(!clips.includes(c))return Promise.resolve(null);
   c.peaksP=peakQ=peakQ.then(async()=>{
@@ -4966,7 +4983,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v618';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v619';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -8017,10 +8034,8 @@ async function wfFromPk(){if(rendOK()||!window.clipByKey||!window.xAudR)return n
   /* v615: 動画まるごとではなく、字幕ページで使う範囲(動画ごとに最初〜最後)だけ読む。保存済みのまるごとの波形があればそれを使う。裏の先読みはこの間止める */
   const ks=[...new Set(JOB.filter(r=>!r.blank).map(r=>r.key))],P=new Map();let k=0;window.__wfLoading=true;
   try{for(const key of ks){if(audStop)throw new Error('stopped');const c=clipByKey(key);if(!c)return null;k++;wfMsg=k+'/'+ks.length+'本';
-      const pc=window.pkCached?await pkCached(c):null;if(pc){P.set(key,{p:pc,a:0});continue}
-      const R=JOB.filter(r=>!r.blank&&r.key===key),A=Math.max(0,Math.min(...R.map(r=>r.a))-0.1),B=Math.min(c.d||1e9,Math.max(...R.map(r=>r.b))+0.1);
-      window.__wfRead=true;let q=null;try{q=await xAudR(c,A,B,{peaks:true,skip:window.wfQget?wfQget():1,prog:f=>{wfMsg=k+'/'+ks.length+'本 '+Math.round(f*100)+'%'}})}catch(e){q=null}
-      if(!q){q=window.clipPeaks?await clipPeaks(c):null;if(!q)return null;P.set(key,{p:q,a:0})}else P.set(key,{p:q,a:A})}}
+      /* v619: タイムラインと同じ「使う範囲だけの波形」(共有・保存) */const R=JOB.filter(r=>!r.blank&&r.key===key).map(r=>[r.a,r.b]);
+      const q=window.clipPeaksR?await clipPeaksR(c,R,f=>{wfMsg=k+'/'+ks.length+'本 '+Math.round(f*100)+'%'}):null;if(!q)return null;P.set(key,{p:q,a:0})}}
   finally{window.__wfLoading=false}
   const n=Math.ceil((VD+2)*100),a=new Float32Array(n);
   for(const r of JOB){if(r.blank)continue;const{p,a:A}=P.get(r.key),o0=Math.round(r.v0*100),L=Math.round((r.b-r.a)*100);for(let i=0;i<L&&o0+i<n;i++){const v=(p[Math.floor((r.a-A+i/100)*50)]||0)/255;a[o0+i]=v*v}}
