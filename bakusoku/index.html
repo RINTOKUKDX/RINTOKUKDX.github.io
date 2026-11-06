@@ -1108,7 +1108,7 @@ const TPL={
   talk:{l3:'見出1',tag:'見出1'},travel:{l3:'見出1',tag:'見出1'},point:{l3:'見出1',tag:'見出1'}
 };
 const DEF={2:'サンプルテキスト',3:'サンプルテキスト0000000000',4:'サンプルテキスト'};
-const clips=[]; let cur=null, segs=[], segMan=false, inT=null, outBlob=null, outExt='mp4', busy=false, nextId=1;window.isBusy=()=>busy;
+const clips=[]; let cur=null, segs=[], segMan=false, inT=null, outBlob=null, outExt='mp4', outLite=false, busy=false, nextId=1;window.isBusy=()=>busy;
 /* v522: 速度。segs の各要素の spd=倍率(無い=1)。タイムライン上の長さ=(end-start)/spd */const spdOf=q=>q&&q.spd>0?q.spd:1,segD=q=>(q.end-q.start)/spdOf(q),spdTx=q=>spdOf(q)!==1?' ×'+spdOf(q):'';
 let thr=5, auto=true, hist=[], delArm=false, delTimer=null, tpl=null, pps=28;
 let cutMode=false,selMode=false,selA=null,selB=null;
@@ -4468,7 +4468,7 @@ const doExport=async PV=>{const sayX=PV?PV.say:say;
     }
     stopNodes(enodes);try{window.subTLSeStop&&window.subTLSeStop()}catch(e){}rR();rec.stop();await done;ac.close();
     if(PV){PV.done(new Blob(chunks,{type:pick[0].split(';')[0]}));return true}
-    outBlob=new Blob(chunks,{type:pick[0].split(';')[0]});outExt=pick[1];
+    outBlob=new Blob(chunks,{type:pick[0].split(';')[0]});outExt=pick[1];outLite=false;
     const r=$('result');r.src=URL.createObjectURL(outBlob);r.hidden=false;$('save').hidden=!dl;
     $('prog').style.width='100%';
     sayX('できました('+(outBlob.size/1048576).toFixed(1)+'MB・'+outExt+')','ok');
@@ -4821,7 +4821,7 @@ async function exportX(PV){
     const blob=new Blob([head.subarray(0,Math.min(HM,Math.max(headLen,0))),...parts],{type:'video/mp4'});
     const sec=(performance.now()-t0)/1000,inf=W+'×'+H+'・'+S0.br+'Mbps・'+XFPS+'fps / '+sec.toFixed(1)+'秒（速さ '+(all/Math.max(0.1,sec)).toFixed(1)+'倍）・'+(blob.size/1048576).toFixed(1)+'MB\n'+pfS();
     if(PV){PV.done(blob,inf);return true}
-    outBlob=blob;outExt='mp4';
+    outBlob=blob;outExt='mp4';outLite=!!xLiteRun;
     const r=$('result');r.src=URL.createObjectURL(outBlob);r.hidden=false;$('save').hidden=!dl;$('prog').style.width='100%';
     say('できました（'+inf+'）','ok');return true;
   }catch(err){cleanup();sayX('失敗:'+(err&&err.message||err),'err');return null}
@@ -4840,9 +4840,11 @@ let dl=null;
     const a=document.createElement('a'),u=URL.createObjectURL(data);a.href=u;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000)}}})();
 $('save').onclick=async()=>{
   if(!outBlob||!dl)return;
-  const d=new Date(),p=n=>String(n).padStart(2,'0');
-  const name='cut_'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+(exTag||'')+'.'+outExt;
-  try{await dl.save({filename:name,data:outBlob});say('保存しました:'+name,'ok')}
+  /* v633: 名前は「作品名_ver1」(ライト版は「作品名_ライト_ver1」)。同じ作品で保存するたびに数字が増える */
+  const base=((curProj&&curProj.name)||'無題').replace(/[\\/:*?"<>|\r\n]+/g,'_')+(outLite?'_ライト':'');
+  let n=1;try{n=(+localStorage.getItem('exVer|'+base)||0)+1}catch(e){}
+  const name=base+'_ver'+n+'.'+outExt;
+  try{await dl.save({filename:name,data:outBlob});try{localStorage.setItem('exVer|'+base,String(n))}catch(e){}say('保存しました:'+name,'ok')}
   catch(e){say(e&&e.code==='declined'?'キャンセルしました':'保存できません:'+(e&&e.message||''),'err')}
 };
 /* ===== 自動保存(動画もこの端末のブラウザ内に保存し、開き直しても続きから) ===== */
@@ -5135,7 +5137,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v632';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v633';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
