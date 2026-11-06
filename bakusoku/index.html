@@ -2387,7 +2387,7 @@ function sbDraw(g,W,H,K,t,o){o=o||{};/* v623: 不透明度は別のキャンバ�
   if(op<100){if(!sbOC)sbOC=document.createElement('canvas');if(sbOC.width!==W||sbOC.height!==H){sbOC.width=W;sbOC.height=H}const c=sbOC.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,H);sbDraw(c,W,H,K,t,Object.assign({},o,{op:100}));g.save();g.globalAlpha=op/100;g.drawImage(sbOC,0,0);g.restore();return}
   const col=o.col||'#fff',sw=+o.sw||0,scol=o.scol||'#000';
   const sz=o.sz||1,sh=o.sh==null?50:o.sh,tier=sbTier(K),u=Math.min(W,H)*0.2*sz,m=Math.min(W,H)*0.04;
-  const gx=W-m-u*1.0,gy=H-m;g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle=col;g.fillStyle=col;g.lineWidth=Math.max(1.5,u*0.035);
+  const gx=W-m-u*1.0+W*(+o.px||0)/100,gy=H-m+H*(+o.py||0)/100;g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle=col;g.fillStyle=col;g.lineWidth=Math.max(1.5,u*0.035);
   if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08;g.shadowOffsetX=u*0.02;g.shadowOffsetY=u*0.02}
   /* 地面: 線と流れる小石 */g.translate(gx,gy);const ground=()=>{g.beginPath();g.moveTo(-u*0.95,0);g.lineTo(u*0.95,0);g.stroke();
   const off=(t*SBG[tier])%0.5;for(let k=-1;k<5;k++){const x=0.95-(k*0.5+off+0.5)%2.0;if(x<-0.95||x>0.95)continue;g.beginPath();g.moveTo(x*u,u*0.07);g.lineTo((x+0.12)*u,u*0.07);g.stroke();g.beginPath();g.arc((x+0.3)*u,u*0.04,u*0.012+(g.strokeStyle===col?0:u*0.006*sw),0,Math.PI*2);g.fill()}};
@@ -3492,7 +3492,9 @@ function renderLanes(){try{sbMigrate()}catch(e){}
   try{window.xfTA&&xfTA()}catch(e){}/* v540 */
 }
 /* v623: 速度表記はレーン10の項目 {lane:10,start,end,cn,text,sb:{sz,sh,op,col,sw,scol,ts}}。速さは動画の速度から取る。✂で速度表記だけ切れる */
-const SBD={sz:1,sh:50,op:100,col:'#ffffff',sw:0,scol:'#000000'};
+const SBD={sz:1,sh:50,op:100,col:'#ffffff',sw:0,scol:'#000000',px:0,py:0};
+/* v624: 「テンプレート登録」した設定(次に作る速度表記から使う) */
+const sbTpl=()=>{try{return JSON.parse(localStorage.getItem('sbTpl')||'null')||{}}catch(e){return{}}};
 /* 以前の保存(クリップの fx.sb)→ レーン10の項目へ(同じコーナーの中は途切れず1つ) */
 function sbMigrate(){if(!segs.some(q=>q.fx&&q.fx.sb))return;let x=0,cur=null;const out=[];
   segs.forEach(s=>{const d=segD(s);if(sbOnS(s)){if(cur&&cur.cn===s.cn)cur.end=x+d;else{cur={id:itemId++,lane:10,start:x,end:x+d,cn:s.cn,text:'速度表記',sb:Object.assign({},s.fx.sb)};delete cur.sb.on;out.push(cur)}}else if(cur&&cur.cn!==s.cn)cur=null;
@@ -3504,7 +3506,7 @@ const sbHit=(o,R)=>o.lane===10&&o.end>R[0]+1e-3&&o.start<R[1]-1e-3;
 function sbChk(box,tg,M){const q0=()=>tg()[0],has=()=>{const R=q0()&&sbRange(q0());return!!R&&items.some(o=>sbHit(o,R))};
   const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度表記';
   const fin=()=>{renderLanes();renderPreview();draw();M.upd&&M.upd()};
-  const add=()=>{const R=q0()&&sbRange(q0());if(!R)return;pushHist();items.push({id:itemId++,lane:10,start:R[0],end:R[1],cn:q0().cn,text:'速度表記',sb:{}});fin()};
+  const add=()=>{const R=q0()&&sbRange(q0());if(!R)return;pushHist();items.push({id:itemId++,lane:10,start:R[0],end:R[1],cn:q0().cn,text:'速度表記',sb:sbTpl()});fin()};
   const del=()=>{const R=q0()&&sbRange(q0());if(!R)return;pushHist();for(let k=items.length-1;k>=0;k--)if(sbHit(items[k],R))items.splice(k,1);fin()};
   const cb=M.btn('',()=>{if(has())del();else if(!items.some(o=>o.lane===10))cdlg('レーンを追加します',[['はい',add],['×']]);else add()},'flex:1');
   r.append(lb,cb);box.appendChild(r);function draw(){const on=has();cb.textContent=(on?'☑':'☐')+' アニメーション';cb.setAttribute('aria-pressed',String(on))}draw()}
@@ -3518,7 +3520,8 @@ function sbItemIns(it){selItem=it;actLane=10;renderLanes();let pushed=false;
     const co=(t,k)=>{const i=document.createElement('input');i.type='color';i.value=g(k);i.dataset.k=k;i.style.cssText='flex:1;height:32px';i.oninput=()=>put(k,i.value);row(t,i)};
     const pc=x=>Math.round(x)+'%';
     sl('大きさ','sz',0.1,2,0.05,x=>Math.round(x*100)+'%');sl('不透明度','op',0,100,1,pc);co('色','col');
-    sl('ストロークの太さ','sw',0,20,1,x=>x?String(x):'オフ');co('ストロークの色','scol');sl('シャドウ','sh',0,100,1,x=>x?pc(x):'オフ')}}]}),{tab:0,open:0})}
+    sl('ストロークの太さ','sw',0,20,1,x=>x?String(x):'オフ');co('ストロークの色','scol');sl('シャドウ','sh',0,100,1,x=>x?pc(x):'オフ');
+    sl('位置 X(右へ)','px',-100,100,1,pc);sl('位置 Y(下へ)','py',-100,100,1,pc)}}],foot:[['テンプレート登録',()=>{try{localStorage.setItem('sbTpl',JSON.stringify(Object.assign({},it.sb||{})));flashSel('登録しました。次から新しい速度表記はこの設定で入ります')}catch(e){flashSel('登録できませんでした')}}]]}),{tab:0,open:0})}
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
   const t=(e.clientX-$('cv').getBoundingClientRect().left)/pps;
@@ -5036,7 +5039,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v623';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v624';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
