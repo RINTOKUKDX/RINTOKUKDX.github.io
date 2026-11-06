@@ -4722,8 +4722,8 @@ window.xAudR=xAudR;
 /* v635: 同じ動画を音と映像から同時に開いても、中身を調べるのは1回だけ */
 async function xOpen(c){if(c._x)return c._x;if(!c._xp)c._xp=xOpen0(c).finally(()=>{c._xp=null});return c._xp}
 /* v635: ファイルを読んだ回数と時間(どれかを読んでいる間の合計)。スマホは1回ごとの読み込みに時間がかかるので、回数を減らす・同時に読む */
-const XRC={n:0,ms:0,act:0,t0:0};
-const xRd=async(file,off,size)=>{XRC.n++;if(!XRC.act++)XRC.t0=performance.now();try{return new Uint8Array(await file.slice(off,off+size).arrayBuffer())}finally{if(!--XRC.act)XRC.ms+=performance.now()-XRC.t0}};
+const XRC={n:0,ms:0,act:0,t0:0,sum:0};
+const xRd=async(file,off,size)=>{XRC.n++;const t1=performance.now();if(!XRC.act++)XRC.t0=t1;try{return new Uint8Array(await file.slice(off,off+size).arrayBuffer())}finally{const t2=performance.now();XRC.sum+=t2-t1;if(!--XRC.act)XRC.ms+=t2-XRC.t0}};
 /* v635: 順番に使う物を n 個先まで同時に読みに出す(読み込みの待ち時間を重ねる) */
 function xAhead(n,len,get){const P=new Array(len);let hi=0;return async i=>{while(hi<len&&hi<i+n){const j=hi++;P[j]=get(j);P[j].catch(()=>{})}const r=await P[i];P[i]=null;return r}}
 async function xOpen0(c){
@@ -4761,23 +4761,25 @@ async function xOpen0(c){
 /* 1コマずつ読む係(時間の順に frameAt を呼ぶ) */
 const XDC={n:0};/* v631: 読んだ(デコードした)元のコマ数 */let XAS='';/* v635: 裏で作っている音の場所(止まった時の表示用) */
 class XVR{
-  constructor(X){this.X=X;this.q=[];this.cur=null;this.dec=null;this.err=null;this.lastT=-1e9;this.wk=null;this.km=new Map();this.kp=new Set();this.kts=new Map();this.kf=null;this.kk=-1;this.kd=null;this.kw=null;this.feeding=null;this.kr=new Map()}
+  constructor(X){this.X=X;this.q=[];this.cur=null;this.dec=null;this.err=null;this.lastT=-1e9;this.wk=null;this.km=new Map();this.kp=new Set();this.kts=new Map();this.kf=null;this.kk=-1;this.kd=null;this.kw=null;this.feeding=null;this.kr=new Map();this.kb=new Map()}
   close(){try{this.dec&&this.dec.state!=='closed'&&this.dec.close()}catch(e){}this.q.forEach(f=>f.close());this.q=[];if(this.cur)this.cur.close();this.cur=null;this.dec=null;this.kClose()}
-  kClose(){try{this.kd&&this.kd.state!=='closed'&&this.kd.close()}catch(e){}this.kd=null;this.km.forEach(f=>f.close());this.km.clear();this.kp.clear();this.kts.clear();this.kr.clear();if(this.kf)this.kf.close();this.kf=null;this.kk=-1}
+  kClose(){try{this.kd&&this.kd.state!=='closed'&&this.kd.close()}catch(e){}this.kd=null;this.km.forEach(f=>f.close());this.km.clear();this.kp.clear();this.kts.clear();this.kr.clear();this.kb.clear();if(this.kf)this.kf.close();this.kf=null;this.kk=-1}
   /* キーフレームの一覧(KI=サンプル番号)と、t 以前で一番近いキーフレームの番号 */
   kIdx(t){const V=this.X.V,S=V.S;if(!this.KI){this.KI=[];for(let i=0;i<S.length;i++)if(S[i].is_sync)this.KI.push(i)}
     let lo=0,hi=this.KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[this.KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}return k}
+  /* v640: キーフレーム k のデータだけ先に読みに出す(デコードはまだ)。早送りではコマごとに別の所を読むので、スマホの1回ごとの読み込み待ちを多く重ねる */
+  kB(k){let p=this.kb.get(k);if(!p){const s=this.X.V.S[this.KI[k]];p=this.X.readD(s.offset,s.size);p.catch(()=>{});this.kb.set(k,p)}return p}
   /* v631: キーフレーム k を読みに出す(まだなら)。v635: 読み込みを待たずに出す(先読みの分を同時に読む。スマホは1回ごとの読み込みが重い) */
   kQ(k){if(this.kp.has(k)||this.km.has(k)||this.kr.has(k)||(this.kk===k&&this.kf))return;const V=this.X.V,S=V.S;
     if(!this.kd||this.kd.state==='closed'){this.kd=new VideoDecoder({output:f=>{const j=this.kts.get(f.timestamp);if(j==null||!this.kp.has(j)){f.close()}else{this.kp.delete(j);this.km.set(j,f)}if(this.kw){const w=this.kw;this.kw=null;w()}},error:e=>{this.err=e;if(this.kw){const w=this.kw;this.kw=null;w()}}});this.kd.configure(V.cfg)}
     const kd=this.kd,s=S[this.KI[k]],ts=Math.round((s.cts/V.ts+V.sh)*1e6);
-    this.kr.set(k,this.X.readD(s.offset,s.size).then(d=>{this.kr.delete(k);if(kd!==this.kd||kd.state!=='configured')return;this.kp.add(k);this.kts.set(ts,k);XDC.n++;
-      kd.decode(new EncodedVideoChunk({type:'key',timestamp:ts,duration:Math.round(s.duration/V.ts*1e6),data:d}))},e=>{this.kr.delete(k);this.err=this.err||e}))}
+    this.kr.set(k,this.kB(k).then(d=>{this.kr.delete(k);this.kb.delete(k);if(kd!==this.kd||kd.state!=='configured')return;this.kp.add(k);this.kts.set(ts,k);XDC.n++;
+      kd.decode(new EncodedVideoChunk({type:'key',timestamp:ts,duration:Math.round(s.duration/V.ts*1e6),data:d}))},e=>{this.kr.delete(k);this.kb.delete(k);this.err=this.err||e}))}
   /* v625: 速い速度の時は、t より前の一番近いキーフレームだけを読む。
      v631: 次に使うキーフレームを先に読みに出しておく(o={step:1コマで進む元動画の秒数,end:区間の終わり})。前は1枚ごとに flush(出し切り)で待っていて、スマホでは特に遅かった */
   async keyAt(t,o){if(this.kIdx(t)==null||!this.KI.length)return this.frameAt(t);const k=this.kIdx(t);
     if(!(this.kk===k&&this.kf))this.kQ(k);
-    if(o&&o.step>0){let n=0,last=k;for(let i=1;i<=600&&n<4;i++){const ti=t+o.step*i;if(ti>o.end)break;const j=this.kIdx(ti);if(j>last){last=j;n++;this.kQ(j)}}}
+    if(o&&o.step>0){let n=0,last=k;for(let i=1;i<=600&&n<12;i++){const ti=t+o.step*i;if(ti>o.end)break;const j=this.kIdx(ti);if(j>last){last=j;n++;if(n<=4)this.kQ(j);else this.kB(j)}}}
     if(this.kk===k&&this.kf)return this.kf;
     {const pr=this.kr.get(k);if(pr)await pr}
     const t0=Date.now();let fl=false;
@@ -4789,7 +4791,7 @@ class XVR{
     if(this.err)throw this.err;
     const f=this.km.get(k);if(!f)return this.kf||null;this.km.delete(k);if(this.kf)this.kf.close();this.kf=f;this.kk=k;
     for(const [j,g] of this.km)if(j<k){g.close();this.km.delete(j)}
-    for(const j of this.kp)if(j<k)this.kp.delete(j);
+    for(const j of this.kp)if(j<k)this.kp.delete(j);for(const j of this.kb.keys())if(j<k)this.kb.delete(j);
     if(this.km.size>6)for(const [j,g] of [...this.km].sort((x,y)=>y[0]-x[0]).slice(0,this.km.size-6)){g.close();this.km.delete(j)}
     if(this.kts.size>64)for(const [ts,j] of this.kts)if(j<k)this.kts.delete(ts);
     return f}
@@ -4960,10 +4962,14 @@ async function exportX(PV){
     const mux=new Mp4Muxer.Muxer({target:new Mp4Muxer.StreamTarget({onData}),video:{codec:'avc',width:W,height:H,frameRate:XFPS},audio:{codec:acod,numberOfChannels:2,sampleRate:XSR},fastStart:false,firstTimestampBehavior:'offset'});
     let eErr=null;
     const venc=new VideoEncoder({output:(c,m)=>{try{mux.addVideoChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});venc.configure(vc);
+    /* v640: 圧縮の順番待ちは「空いた」合図(dequeue)ですぐ続ける。前は2msごとに見に行っていたが、実際は1回4ms以上空き、その間はスマホの圧縮の下ごしらえ(1コマずつ順番に進む)も止まっていた。
+       合図が来ない端末では前と同じく2msごとに見る(合図が来ないまま空いたのが3回続いたら切り替える) */
+    let eW=null,eEv='ondequeue' in VideoEncoder.prototype,eMiss=0;if(eEv)venc.addEventListener('dequeue',()=>{eMiss=0;if(eW){const w=eW;eW=null;w()}});
+    const eWait=()=>new Promise(r=>{eW=r;setTimeout(()=>{if(eW!==r)return;eW=null;if(eEv&&venc.encodeQueueSize<=10&&++eMiss>=3)eEv=false;r()},eEv?50:2)});
     const aenc=new AudioEncoder({output:(c,m)=>{try{mux.addAudioChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});aenc.configure(ac);
-    const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0},pn=()=>performance.now();window.__xPF=PF;
-    const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e)};
-    const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};let lastF=null,src0=0;const spH=[];XDC.n=0;XRC.n=0;XRC.ms=0;const rdS=()=>' / 読込 '+XRC.n+'回・'+(XRC.ms/1000).toFixed(0)+'秒';
+    const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0,w:0},pn=()=>performance.now();window.__xPF=PF;
+    const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e+PF.w),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e+PF.w)+'（うち待ち'+f(PF.w)+'）'};
+    const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};let lastF=null,src0=0;const spH=[];XDC.n=0;XRC.n=0;XRC.ms=0;XRC.sum=0;const rdS=()=>' / 読込 '+XRC.n+'回・'+(XRC.ms/1000).toFixed(0)+'秒'+(XRC.n?'・1回'+Math.round(XRC.sum/XRC.n)+'ms':'');
     /* v631: 元動画の大きさ・コマ数と、1コマ作るのに読んだ元のコマ数(多いほど遅い) */const xSrcS=(q,fi)=>{const c=q&&q.s.clip,X=c&&c._x;if(!X)return '';const V=X.V,w=V.t.video.width,h=V.t.video.height,d=V.S.length?(V.S[V.S.length-1].cts-V.S[0].cts)/V.ts:0,f=d>0?Math.round((V.S.length-1)/d):0;return '\n元 '+w+'×'+h+'・'+f+'fps・'+String(V.t.codec).slice(0,4)+'・'+spdOf(q.s)+'倍の所 / 読んだコマ '+(XDC.n/Math.max(1,fi)).toFixed(1)+'枚/1コマ'+rdS()};
     /* v635: 次の10秒の音は、今の10秒の映像を作っている間に裏で作っておく(音と映像を同時に進める。前は音を作り終わるまで映像が止まっていた) */
     const audAt=a=>{XAS=a.toFixed(0)+'秒〜';const p=xAudWin(ex,a,Math.min(XR.b,a+XWIN),XR);p.catch(()=>{});return p};let audP=audAt(XR.a);
@@ -4984,7 +4990,7 @@ async function exportX(PV){
             fc.videoWidth=ow;fc.videoHeight=oh;src=fc}}
         PF.v+=pn()-_v;_v=pn();ovX=await ovXFrame(vo,T,W,H);PF.o+=pn()-_v;_v=pn();drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);PF.d+=pn()-_v;_v=pn();
         const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;
-        {const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await xSleep(2)}}PF.e+=pn()-_v;
+        PF.e+=pn()-_v;_v=pn();{const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await eWait()}}PF.w+=pn()-_v;
         if(fi%10===0){const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
           const now=performance.now(),el=(now-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);/* v631: 今の速さ(直近3秒)も出す。どこで遅くなるか分かるように */spH.push([now,fi]);while(spH.length>2&&now-spH[1][0]>3000)spH.shift();const sn=spH.length>1?((fi-spH[0][1])/XFPS)/Math.max(0.05,(now-spH[0][0])/1000):sp;
           lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍・今 '+sn.toFixed(1)+'倍）'+'\n'+pfS()+xSrcS(q,fi);sayX(lastMsg)}}
@@ -5385,7 +5391,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v639';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v640';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
