@@ -2382,18 +2382,24 @@ function sbFig(g,u,tier,t){const st=SBS,sd0=Math.floor(t*6);let nseg=0;
 /* 汗(ダクダク): 頭から後ろへ飛ぶ雫 */
 function sbSweat(g,u,t,x,y){for(let k=0;k<6;k++){const p=(t*1.8+k/6)%1,dx=-0.15-p*(0.35+k%3*0.08),dy=-0.12+(k%2)*0.08+p*p*0.45;
   const X=(x+dx)*u,Y=(y+dy)*u,r=0.035*u*(1-p*0.4);g.beginPath();g.moveTo(X,Y-r*1.8);g.quadraticCurveTo(X+r,Y,X,Y+r);g.quadraticCurveTo(X-r,Y,X,Y-r*1.8);g.stroke()}}
-function sbDraw(g,W,H,K,t,o){o=o||{};const sz=o.sz||1,sh=o.sh==null?50:o.sh,tier=sbTier(K),u=Math.min(W,H)*0.2*sz,m=Math.min(W,H)*0.04;
-  const gx=W-m-u*1.0,gy=H-m;g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle='#fff';g.fillStyle='#fff';g.lineWidth=Math.max(1.5,u*0.035);
+let sbOC=null;
+function sbDraw(g,W,H,K,t,o){o=o||{};/* v623: 不透明度は別のキャンバスに描いてから重ねる(線の重なりが濃くならない) */const op=o.op==null?100:o.op;if(op<=0)return;
+  if(op<100){if(!sbOC)sbOC=document.createElement('canvas');if(sbOC.width!==W||sbOC.height!==H){sbOC.width=W;sbOC.height=H}const c=sbOC.getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,W,H);sbDraw(c,W,H,K,t,Object.assign({},o,{op:100}));g.save();g.globalAlpha=op/100;g.drawImage(sbOC,0,0);g.restore();return}
+  const col=o.col||'#fff',sw=+o.sw||0,scol=o.scol||'#000';
+  const sz=o.sz||1,sh=o.sh==null?50:o.sh,tier=sbTier(K),u=Math.min(W,H)*0.2*sz,m=Math.min(W,H)*0.04;
+  const gx=W-m-u*1.0,gy=H-m;g.save();g.lineCap='round';g.lineJoin='round';g.strokeStyle=col;g.fillStyle=col;g.lineWidth=Math.max(1.5,u*0.035);
   if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08;g.shadowOffsetX=u*0.02;g.shadowOffsetY=u*0.02}
-  /* 地面: 線と流れる小石 */g.translate(gx,gy);g.beginPath();g.moveTo(-u*0.95,0);g.lineTo(u*0.95,0);g.stroke();
-  const off=(t*SBG[tier])%0.5;for(let k=-1;k<5;k++){const x=0.95-(k*0.5+off+0.5)%2.0;if(x<-0.95||x>0.95)continue;g.beginPath();g.moveTo(x*u,u*0.07);g.lineTo((x+0.12)*u,u*0.07);g.stroke();g.beginPath();g.arc((x+0.3)*u,u*0.04,u*0.012,0,Math.PI*2);g.fill()}
+  /* 地面: 線と流れる小石 */g.translate(gx,gy);const ground=()=>{g.beginPath();g.moveTo(-u*0.95,0);g.lineTo(u*0.95,0);g.stroke();
+  const off=(t*SBG[tier])%0.5;for(let k=-1;k<5;k++){const x=0.95-(k*0.5+off+0.5)%2.0;if(x<-0.95||x>0.95)continue;g.beginPath();g.moveTo(x*u,u*0.07);g.lineTo((x+0.12)*u,u*0.07);g.stroke();g.beginPath();g.arc((x+0.3)*u,u*0.04,u*0.012+(g.strokeStyle===col?0:u*0.006*sw),0,Math.PI*2);g.fill()}};
+  /* v623: ストローク(ふち)は先に太く描く */const SW=u*0.012*sw;if(sw>0){g.save();g.strokeStyle=scol;g.fillStyle=scol;g.lineWidth+=SW;ground();g.restore()}ground();
   SBS=SBT[o.ts==null?9:o.ts|0]||SBT[9];/* 初期=チョーク */g.lineWidth=Math.max(1.5,u*0.035*(SBS.lw||1));if(SBS.chalk){g.setLineDash([u*0.05,u*0.018]);g.globalAlpha=0.92}
+  if(sw>0){g.save();g.shadowColor='transparent';g.setLineDash([]);g.globalAlpha=1;g.strokeStyle=scol;g.fillStyle=scol;g.lineWidth+=SW;sbFig(g,u,tier,t);g.restore()}
   if(SBS.ol){g.save();g.shadowColor='transparent';g.strokeStyle='#000';g.fillStyle='#000';g.lineWidth*=2.3;sbFig(g,u,tier,t);g.restore()}
   sbFig(g,u,tier,t);g.restore();
   if(K!==1){const tx=(Number.isInteger(K)?K:+K.toFixed(2))+'倍速',fs=Math.round(u*0.3);g.save();g.font='900 '+fs+'px sans-serif';g.textAlign='right';g.textBaseline='alphabetic';g.lineJoin='round';
-    /* v600: 縁どりなし(白い文字だけ。シャドウは設定どおり) */if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08;g.shadowOffsetX=u*0.02;g.shadowOffsetY=u*0.02}g.fillStyle='#fff';g.fillText(tx,gx-u*1.05,gy-u*0.08);g.restore()}}
+    /* v600: 縁どりなし(白い文字だけ。シャドウは設定どおり) */if(sh>0){g.shadowColor='rgba(0,0,0,'+Math.min(1,sh/100)+')';g.shadowBlur=u*0.08;g.shadowOffsetX=u*0.02;g.shadowOffsetY=u*0.02}if(sw>0){g.save();g.shadowColor='transparent';g.strokeStyle=scol;g.lineWidth=SW*1.6;g.strokeText(tx,gx-u*1.05,gy-u*0.08);g.restore()}g.fillStyle=col;g.fillText(tx,gx-u*1.05,gy-u*0.08);g.restore()}}
 /* 今の時間のクリップに速度表記が入っていれば描く(プレビュー・書き出し共通) */
-function sbOver(g,W,H,t){if(t>=segSum()-0.001)return;const L=locate(t),s=L&&segs[L.i];const o=s&&s.clip&&s.fx&&s.fx.sb;if(!o||!o.on)return;sbDraw(g,W,H,spdOf(s),t,o)}
+function sbOver(g,W,H,t){if(t>=segSum()-0.001)return;const it=items.find(o=>o.lane===10&&t>=o.start&&t<o.end);if(!it)return;const L=locate(t),s=L&&segs[L.i];if(!s||!s.clip)return;sbDraw(g,W,H,spdOf(s),t,it.sb||{})}
 /* インスペクタ「速度」の中: □アニメーション ▼(大きさ・シャドウ) */
 function sbUI(box,tg,M,only){let pushed=false;const g0=()=>{const l=tg();return(l[0]&&l[0].fx&&l[0].fx.sb)||{}};
   const put=(k,v)=>{if(!pushed){pushed=true;segHist()}tg().forEach(o=>{o.fx=fxC(o.fx)||{};const x=Object.assign({sz:1,sh:50},o.fx.sb||{});x[k]=v;o.fx.sb=x;if(!x.on&&x.sz===1&&x.sh===50)delete o.fx.sb;if(!Object.keys(o.fx).length)delete o.fx});draw();renderPreview();M.upd&&M.upd()};
@@ -2640,7 +2646,7 @@ function segIns(i,kind,SEL,keep){
     const tabs=[{t:'ビデオ',secs:[
       {t:'映像の形',on:Kv.any(['fh','fv','kl','kt','kr','kb']),build:b=>{Kv.icons(b,'反転',[['fh','⇋'],['fv','⇵']]);
         [['左クロップ','kl'],['上クロップ','kt'],['右クロップ','kr'],['下クロップ','kb']].forEach(([t,k])=>Kv.stp(b,t,k,0,40,1,x=>Math.round(x)+'%'))}},
-      /* v522 */{t:'速度',on:()=>tg().some(q=>spdOf(q)!==1||(q.fx&&q.fx.sb&&q.fx.sb.on)),build:b=>{spdUI(b,tg);sbUI(b,tg,M)}},
+      /* v522 */{t:'速度',on:()=>tg().some(q=>spdOf(q)!==1),build:b=>{spdUI(b,tg);sbChk(b,tg,M)}},
       {t:'色・明るさ',on:Kv.any(['br','ct','sa','tp','sh','op','fl']),build:b=>{Kv.stp(b,'明るさ','br',-100,100,1,sgn);Kv.stp(b,'コントラスト','ct',-100,100,1,sgn);Kv.stp(b,'彩度','sa',-100,100,1,sgn);
         Kv.stp(b,'色温度','tp',-100,100,1,sgn);Kv.stp(b,'シャープ','sh',0,100,1,x=>Math.round(x));Kv.stp(b,'不透明度','op',0,100,1,x=>Math.round(x));
         Kv.chs(b,'フィルター','fl',FXP.map(x=>x[0]))}}]},
@@ -2879,7 +2885,7 @@ const lblSelSave=()=>{try{localStorage.setItem('laneSel',JSON.stringify([...lblS
 /* v620: 動画2のレーン(長押しで追加)。中身が無いレーン(字幕・ナレ・ナレ字幕・動画2)は隠す(作ると自動で出る) */
 let v2On=false;try{v2On=localStorage.getItem('v2On')==='1'}catch(e){}
 const sbOnS=q=>!!(q&&q.clip&&q.fx&&q.fx.sb&&q.fx.sb.on);
-const laneHas=i=>i===10?segs.some(sbOnS):i===3?items.some(o=>o.lane===3)||!!(window.subTLSubTx&&subTLSubTx().length):i===5?items.some(o=>o.lane===5)||!!(window.subTLNar&&subTLNar().length):i===9?!!(window.subTLNarTx&&subTLNarTx().length):i===8?v2On||items.some(o=>o.lane===8):true;
+const laneHas=i=>i===10?items.some(o=>o.lane===10):i===3?items.some(o=>o.lane===3)||!!(window.subTLSubTx&&subTLSubTx().length):i===5?items.some(o=>o.lane===5)||!!(window.subTLNar&&subTLNar().length):i===9?!!(window.subTLNarTx&&subTLNarTx().length):i===8?v2On||items.some(o=>o.lane===8):true;
 let lset='all';try{const v=localStorage.getItem('laneSet');if(v&&(LSETS[v]||v==='all'||v==='sel'))lset=v}catch(e){}
 function setLset(k){lset=k;try{localStorage.setItem('laneSet',k)}catch(e){}const L=k==='sel'?[0,...lblSel]:LSETS[k];if(L&&actLane!=null&&!L.includes(actLane)){actLane=null;selItem=null;if(!ed.hidden)closeEd()}renderLanes();drawTW()}
 const lsetName=k=>'全部';
@@ -3389,7 +3395,7 @@ function lzAdd(b,x,d,f){lzL.push({b,a:x,e:x+d,f})}
 function lzRun(){if(!lzL.length)return;const sc=$('scr'),w=szOf(sc).w||innerWidth,V=viewR(),a=(sc.scrollLeft-w)/pps+V.a,e=(sc.scrollLeft+2*w)/pps+V.a;
   lzL=lzL.filter(o=>{if(o.e<a||o.a>e)return true;if(o.b.isConnected)try{o.f()}catch(x){}return false})}
 setTimeout(()=>{$('scr').addEventListener('scroll',()=>{if(!lzQ)lzQ=requestAnimationFrame(()=>{lzQ=0;lzRun()})},{passive:true})},0);
-function renderLanes(){
+function renderLanes(){try{sbMigrate()}catch(e){}
   calcAutoH();cleanEmptySubs();
   items.forEach(o=>{if(o.fromSub){o.lane=3;o.bold=true;o.bstyle=o.style||'setsumei_yoko';o.style='';o.auto=true;delete o.fromSub}});
   cornerSync();if(!document.querySelector('.blk.dragging'))cornerCutCH(total());migrateGroups();saveLanes();blkMap={};blkEl=new Map();mirEl=new Map();
@@ -3446,8 +3452,6 @@ function renderLanes(){
       if(s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk wvb'+(multiMode&&mselV.has(s)?' vmsel':'');b._ss=[s];b.style.left=(x*pps)+'px';b.style.width=(d*pps)+'px';b.style.pointerEvents='none';
         {const x0=x;lzAdd(b,x0,d,()=>clipPeaksR(s.clip,[[s.start,s.end]]).then(p=>{if(p&&b.isConnected)addWave(b,p,s.start,s.end)}))}ln.appendChild(b)}
       /* v448: 空白は動画音声レーンにも黒く出す(動画レーンと揃える) */else if(!s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk v gap';b.style.left=(x*pps)+'px';bW(b,d*pps);b.style.pointerEvents='none';ln.appendChild(b)}x+=d})}
-    else if(i===10){/* v621: 速度表記。速度表記が入っている所(同じコーナーで続く所)を1つの箱。ダブルタップ=速度表記のインスペクタ(laneTap) */let x=0,b=null,bc=null;
-      segs.forEach(s=>{const d=segD(s);if(sbOnS(s)&&b&&bc===s.cn){bW(b,(x+d)*pps-parseFloat(b.style.left))}else if(sbOnS(s)){b=document.createElement('div');b.className='blk it l10';b.style.left=(x*pps)+'px';bW(b,d*pps);b.style.pointerEvents='none';b.textContent='速度表記';ln.appendChild(b);bc=s.cn}else{b=null}x+=d})}
     else if(i===9){/* v437: ナレーションページの文章(見るだけ)。v475: 動画のまとまりごとに1つの箱 */subBoxes(ln,9,V)}
     else items.filter(o=>o.lane===i&&!o.pk&&(o.end-o.start>=0.01||!o.cfid)&&(!cview||(o.end>V.a-1e-3&&o.start<V.b+1e-3&&(cIdx(o.cn)<0||o.cn===cview)))).forEach(it=>{
       const b=document.createElement('div');b.className='blk it l'+i+(it.bold?' fsub':'')+(it===selItem?' sel':'')+(msel.has(it)?' msel':'');blkEl.set(it,b);
@@ -3487,17 +3491,41 @@ function renderLanes(){
   ph=document.createElement('div');ph.className='ph';cv.appendChild(ph);updatePlayhead();renderLbls();renderSelBar();lzRun();try{insMark()}catch(e){}try{if(selA!=null)selDraw()}catch(e){}
   try{window.xfTA&&xfTA()}catch(e){}/* v540 */
 }
-/* v621: 速度表記レーンの箱(時間 t)のインスペクタ = 箱の中の全部のクリップ */
-function sbIns(t){const L=locate(t),k=L&&L.i;if(k==null||!sbOnS(segs[k]))return;const cn=segs[k].cn;let a=k,b=k;while(a>0&&sbOnS(segs[a-1])&&segs[a-1].cn===cn)a--;while(b<segs.length-1&&sbOnS(segs[b+1])&&segs[b+1].cn===cn)b++;
-  const A=segs.slice(a,b+1);let ph=0;
-  insDlg('速度表記',M=>({secs:[{t:'大きさ・シャドウ',build:bx=>sbUI(bx,()=>A.filter(q=>segs.includes(q)),M,true)}]}),{tab:0,open:0})}
+/* v623: 速度表記はレーン10の項目 {lane:10,start,end,cn,text,sb:{sz,sh,op,col,sw,scol,ts}}。速さは動画の速度から取る。✂で速度表記だけ切れる */
+const SBD={sz:1,sh:50,op:100,col:'#ffffff',sw:0,scol:'#000000'};
+/* 以前の保存(クリップの fx.sb)→ レーン10の項目へ(同じコーナーの中は途切れず1つ) */
+function sbMigrate(){if(!segs.some(q=>q.fx&&q.fx.sb))return;let x=0,cur=null;const out=[];
+  segs.forEach(s=>{const d=segD(s);if(sbOnS(s)){if(cur&&cur.cn===s.cn)cur.end=x+d;else{cur={id:itemId++,lane:10,start:x,end:x+d,cn:s.cn,text:'速度表記',sb:Object.assign({},s.fx.sb)};delete cur.sb.on;out.push(cur)}}else if(cur&&cur.cn!==s.cn)cur=null;
+    x+=d;if(s.fx&&s.fx.sb){delete s.fx.sb;if(!Object.keys(s.fx).length)delete s.fx}});items.push(...out)}
+/* クリップのコーナーの時間(コーナーが無ければ同じ動画のまとまり) */
+function sbRange(q){const k=segs.indexOf(q);if(k<0)return null;if(corners.length&&q.cn!=null){const r=cTimes()[cIdx(q.cn)];if(r&&r.b>r.a)return[r.a,r.b]}const[a,b]=visBlk(k);return[cumAt(a),cumAt(b)+segD(segs[b])]}
+const sbHit=(o,R)=>o.lane===10&&o.end>R[0]+1e-3&&o.start<R[1]-1e-3;
+/* 動画のインスペクタ「速度」の中: □アニメーション(オン=このコーナーいっぱいに速度表記を入れる) */
+function sbChk(box,tg,M){const q0=()=>tg()[0],has=()=>{const R=q0()&&sbRange(q0());return!!R&&items.some(o=>sbHit(o,R))};
+  const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度表記';
+  const fin=()=>{renderLanes();renderPreview();draw();M.upd&&M.upd()};
+  const add=()=>{const R=q0()&&sbRange(q0());if(!R)return;pushHist();items.push({id:itemId++,lane:10,start:R[0],end:R[1],cn:q0().cn,text:'速度表記',sb:{}});fin()};
+  const del=()=>{const R=q0()&&sbRange(q0());if(!R)return;pushHist();for(let k=items.length-1;k>=0;k--)if(sbHit(items[k],R))items.splice(k,1);fin()};
+  const cb=M.btn('',()=>{if(has())del();else if(!items.some(o=>o.lane===10))cdlg('レーンを追加します',[['はい',add],['×']]);else add()},'flex:1');
+  r.append(lb,cb);box.appendChild(r);function draw(){const on=has();cb.textContent=(on?'☑':'☐')+' アニメーション';cb.setAttribute('aria-pressed',String(on))}draw()}
+/* 速度表記の項目のインスペクタ(見た目だけ。速度は動画で決める) */
+function sbItemIns(it){selItem=it;actLane=10;renderLanes();let pushed=false;
+  const g=k=>{const x=(it.sb||{})[k];return x!=null?x:SBD[k]};
+  const put=(k,v)=>{if(!items.includes(it))return;if(!pushed){pushed=true;pushHist()}it.sb=Object.assign({},it.sb||{},{[k]:v});renderPreview()};
+  insDlg('速度表記',M=>({secs:[{t:'見た目',build:bx=>{
+    const row=(t,el,v)=>{const q=document.createElement('div');q.className='r';const l=document.createElement('span');l.textContent=t;q.append(l,el);if(v)q.appendChild(v);bx.appendChild(q)};
+    const sl=(t,k,mn,mx,st,fm)=>{const i=document.createElement('input');i.type='range';i.min=mn;i.max=mx;i.step=st;i.value=g(k);i.dataset.k=k;const v=document.createElement('div');v.className='v';v.textContent=fm(+g(k));i.oninput=()=>{put(k,+i.value);v.textContent=fm(+i.value)};row(t,i,v)};
+    const co=(t,k)=>{const i=document.createElement('input');i.type='color';i.value=g(k);i.dataset.k=k;i.style.cssText='flex:1;height:32px';i.oninput=()=>put(k,i.value);row(t,i)};
+    const pc=x=>Math.round(x)+'%';
+    sl('大きさ','sz',0.1,2,0.05,x=>Math.round(x*100)+'%');sl('不透明度','op',0,100,1,pc);co('色','col');
+    sl('ストロークの太さ','sw',0,20,1,x=>x?String(x):'オフ');co('ストロークの色','scol');sl('シャドウ','sh',0,100,1,x=>x?pc(x):'オフ')}}]}),{tab:0,open:0})}
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
   const t=(e.clientX-$('cv').getBoundingClientRect().left)/pps;
   /* v360: 動画・動画音声レーンのダブルタップ=動画のインスペクタ */if((i===0||i===7)&&dbl('lane07',e.clientX)){const L=locate(t),q=L&&segs[L.i];if(q&&q.clip){segIns(L.i,i===0?'v':'a');return}}
   if(roAll()){const k=cAt(t);if(k>=0){cornerPick(corners[k].id);return}}
   pausePreview();
-  if(i===10){if(dbl('lane10',e.clientX))sbIns(t);else seekGlobal(t);return}
+  if(i===10){seekGlobal(t);return}
   if(i===0||i===7||i===9){seekGlobal(t);return}
   /* v412: 上の動画 ダブルタップ=動画を重ねる */if(i===8){seekGlobal(t);if(dbl('lane8',e.clientX))ovPick(t,null);return}
   if(i===6){seekGlobal(t);if(dbl('lane6',e.clientX))bgmAddDlg(t);return}
@@ -3671,6 +3699,7 @@ function placeEd(){}
 if(vv){vv.addEventListener('resize',placeEd);vv.addEventListener('scroll',placeEd)}
 tx.addEventListener('focus',()=>{[80,250,500,900].forEach(t=>setTimeout(()=>{placeEd()},t))});
 function openEd(it){
+  if(it.lane===10){sbItemIns(it);return}
   if(it.lane===6){bgmDlg(it);return}
   if(it.lane===5){pausePreview();selItem=it;actLane=5;ed.hidden=true;$('s2').style.paddingBottom='';renderLanes();seekGlobal(gt>=it.start&&gt<it.end?gt:it.start+0.01);return}
   pausePreview();selItem=it;actLane=it.lane;editSnap=cloneItems();editPushed=false;
@@ -3762,7 +3791,7 @@ function renderLbls(){
     if(lblSel.has(i)){el.style.background='#ffb300';el.style.color='#111';el.style.fontWeight='700'}
     /* v620: ワンタップ=選ぶ/外す(複数可)。ダブルタップ=今までのワンタップ(このレーンを編集)。選んだレーンだけ表示中は 動画/動画音声/BGM のダブルタップ=インスペクタ */
     el.onclick=e=>{if(lpFlag||adjLane)return;if(dbl('lbl',e.clientY)){if(lblSel.has(i))lblSel.delete(i);else lblSel.add(i);lblSelSave();
-        if((i===0||i===7||i===6)&&lset!=='all'){renderLbls();lblIns(i);return}if(i===7||i===9||i===10){renderLbls();return}
+        if((i===0||i===7||i===6)&&lset!=='all'){renderLbls();lblIns(i);return}if(i===7||i===9){renderLbls();return}
         smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes();return}
       if(lblSel.has(i))lblSel.delete(i);else lblSel.add(i);lblSelSave();renderLbls()}});
 }
@@ -4145,6 +4174,7 @@ function bindDrag(b,it,menu,rl){
       /* v247: BGM タップ=次の曲 / ダブルタップ=設定 */
       if(it.lane===6){if(panned||panGuard||pinchUsed)return;clearTimeout(bgmTapT);if(dbl(it,sx))bgmDlg(it);else bgmTapT=setTimeout(()=>bgmNext(it),390);return}
       /* v361: ナレーション ダブルタップ=インスペクタ */if(it.lane===5){if(!panned&&!panGuard&&!pinchUsed&&dbl(it,sx))itemIns(it);return}
+      /* v623 */if(it.lane===10){if(!panned&&!panGuard&&!pinchUsed&&dbl(it,sx))sbItemIns(it);return}
       if(!panned&&!panGuard&&!pinchUsed&&dbl(it,sx))openMenu()};
     const cancel=()=>{end();if(moved){renderLanes()}};
     b.addEventListener('pointermove',mv);b.addEventListener('pointerup',up);b.addEventListener('pointercancel',cancel);
@@ -4205,7 +4235,7 @@ function swMove(from,to,cn){
   const pl=locate(gt),pr=pl?R.findIndex(r=>r.L.includes(segs[pl.i])):-1,poff=pr>=0?gt-R[pr].a:0;
   const cs0=corners.length?cTimes().map(r=>r.a):null;
   /* 動画以外(字幕・ナレーションなど)は、始まりが入っているクリップと一緒に動く */
-  const own=new Map();items.forEach(o=>{if(o.full||o.lane===6||o.cfid)return;const j=R.findIndex(r=>o.start>=r.a-1e-6&&o.start<r.a+r.d-1e-6&&(!corners.length||o.cn==null||r.cn===o.cn));if(j>=0)own.set(o,j)});
+  const own=new Map();items.forEach(o=>{if(o.full||o.lane===6||o.lane===10||o.cfid)return;/* v623: 速度表記はコーナーの場所のまま */const j=R.findIndex(r=>o.start>=r.a-1e-6&&o.start<r.a+r.d-1e-6&&(!corners.length||o.cn==null||r.cn===o.cn));if(j>=0)own.set(o,j)});
   const O=R.slice();O.splice(from,1);O.splice(to>from?to-1:to,0,m);
   if(corners.length&&cn!=null)m.L.forEach(q=>{q.cn=cn});
   segs=[];O.forEach((r,i)=>{if(i){const p=O[i-1].L[O[i-1].L.length-1],k=segKey(r.L[0]);if(k!=null&&segKey(p)===k)r.L[0].sp=1}segs.push(...r.L)});
@@ -4340,14 +4370,14 @@ function doCut(){
   const ok=base.filter(o=>t>o.start+MINLEN&&t<o.end-MINLEN);
   if(!ok.length){flashSel(selItem?'線が選択中のクリップの中にありません':'線が通るクリップがありません');return}
   pushHist();
-  ok.forEach(it=>{const n={...it,id:itemId++,start:t,sample:false,full:false};if(it.lane===5||it.lane===6||it.lane===8)n.off=(it.off||0)+(t-it.start);it.end=t;it.full=false;items.push(n)});
+  ok.forEach(it=>{const n={...it,id:itemId++,start:t,sample:false,full:false};if(it.sb)n.sb={...it.sb};if(it.lane===5||it.lane===6||it.lane===8)n.off=(it.off||0)+(t-it.start);it.end=t;it.full=false;items.push(n)});
   renderLanes();renderPreview();
 }
 $('edSp').onclick=()=>{
   const it=selItem;if(!it)return;const t=gt;
   if(t<=it.start+MINLEN||t>=it.end-MINLEN)return;
   pushHist();
-  const n={...it,id:itemId++,start:t,sample:false,full:false};
+  const n={...it,id:itemId++,start:t,sample:false,full:false};if(it.sb)n.sb={...it.sb};
   if(it.lane===5||it.lane===6||it.lane===8)n.off=(it.off||0)+(t-it.start);
   it.end=t;it.full=false;items.push(n);
   renderLanes();renderPreview();
@@ -5006,7 +5036,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v622';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v623';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
