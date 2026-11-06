@@ -644,6 +644,7 @@ body.editing .pgnav{display:none!important}
     <select id="exq" aria-label="画質" style="width:100%;margin-bottom:8px"><option value="8">標準(8Mbps)</option><option value="16">高画質(16Mbps・ファイル約2倍)</option><option value="24">最高(24Mbps・ファイル約3倍)</option></select>
     <button id="export" class="primary" style="width:100%">書き出す</button>
     <button id="xStep" style="width:100%;margin-top:8px">段階的に書き出す<span id="xStepN"></span></button>
+    <button id="xLite" style="width:100%;margin-top:8px"></button>
     <div class="bar"><i id="prog"></i></div>
     <p class="msg" id="msg"></p>
     <video id="result" controls playsinline hidden></video>
@@ -4475,6 +4476,9 @@ const doExport=async PV=>{const sayX=PV?PV.say:say;
   finally{busy=false;ovLive=false;try{ovV.pause()}catch(e){}if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
 };
 $('export').onclick=()=>exportX();
+/* v626: 確認用ライト版の書き出し(タイムライン全体)。長押し=バーで設定 */
+setTimeout(()=>{const b=$('xLite');if(!b)return;xLP(b,'lite',()=>{b.innerHTML='確認用ライト版の書き出し<br><small style="font-size:11px;opacity:.8">'+xLiteLab(xLv())+'（長押しで設定）</small>'});
+  b.addEventListener('click',async()=>{if(busy)return;xLiteRun=true;try{await exportX()}finally{xLiteRun=false}})},0);
 /* v291: 書き出すボタン長押し=本番の設定。画質の選択は設定に入れたので隠す */
 setTimeout(()=>{$('exq').style.display='none';xLP($('export'),'main',()=>{$('export').innerHTML='書き出す<br><small style="font-size:11px;opacity:.8">'+xLab('main')+'（長押しで設定）</small>'})},0);
 /* ===== v289: 書き出し(1コマずつ作る方式) =====
@@ -4484,7 +4488,12 @@ setTimeout(()=>{$('exq').style.display='none';xLP($('export'),'main',()=>{$('exp
 const XSR=48000,XWIN=10;
 /* v291: 書き出しの設定(解像度・ビットレート・フレームレート)。プレビュー用(pv)と本番用(main)を別々に覚える(localStorage xset_pv / xset_main) */
 const XRES=[[144,256],[180,320],[270,480],[360,640],[540,960],[720,1280],[1080,1920],[1440,2560],[2160,3840]],XBR=[0.2,0.3,0.5,1,2,4,8,12,16,24,40,60],XFP=[24,30,60];
-function xSet(k){const d=k==='pv'?{h:360,br:1,fps:30}:{h:1080,br:+($('exq').value||8),fps:30};try{Object.assign(d,JSON.parse(localStorage.getItem('xset_'+k)||'{}'))}catch(e){}
+/* v626: 確認用ライト版。バー 0(最速)〜5(最高)。配置・タイミング・音は本編と同じ計算で、画質・コマ数・映像の読み方だけ軽くする */
+const XLV=[{h:144,br:0.2,fps:12,kf:1,t:'最速'},{h:180,br:0.3,fps:15,kf:1},{h:270,br:0.5,fps:15,kf:1},{h:360,br:1,fps:24,kf:1},{h:540,br:2,fps:24,kf:0},{h:720,br:4,fps:30,kf:0,t:'最高'}];
+let xLiteRun=false;
+const xLv=()=>{let v=2;try{const q=localStorage.getItem('xlite_lv');if(q!=null&&+q>=0&&+q<=5)v=+q}catch(e){}return v};
+const xLiteLab=lv=>{const o=XLV[lv];return o.h+'p・'+o.fps+'fps・'+o.br+'Mbps・'+(o.kf?'映像は要所のコマだけ読む':'映像は全部読む')};
+function xSet(k){if(xLiteRun)return XLV[xLv()];const d=k==='pv'?{h:360,br:1,fps:30}:{h:1080,br:+($('exq').value||8),fps:30};try{Object.assign(d,JSON.parse(localStorage.getItem('xset_'+k)||'{}'))}catch(e){}
   if(!XRES.some(r=>r[0]===d.h))d.h=k==='pv'?360:1080;if(!XFP.includes(d.fps))d.fps=30;return d}
 const xLab=k=>{const v=xSet(k);return v.h+'p・'+v.br+'Mbps・'+v.fps+'fps'};
 function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.className='cdlg';const c=document.createElement('div');
@@ -4501,9 +4510,20 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
     if(k==='main'){const q=$('exq');const best=[...q.options].map(o=>+o.value).reduce((a,b)=>Math.abs(b-nv.br)<Math.abs(a-nv.br)?b:a,8);q.value=String(best);try{localStorage.setItem('exq',q.value)}catch(e){}}
     w.remove();after&&after()};
   row.append(no,ok);c.appendChild(row);w.appendChild(c);document.body.appendChild(w)}
+function xLiteDlg(after){const w=document.createElement('div');w.className='cdlg';const c=document.createElement('div');
+  const p=document.createElement('p');p.textContent='確認用ライト版の設定';c.appendChild(p);
+  const l=document.createElement('div');l.style.cssText='display:flex;justify-content:space-between;font-size:12px;opacity:.8';l.innerHTML='<span>◀ 最速</span><span>最高 ▶</span>';c.appendChild(l);
+  const r=document.createElement('input');r.type='range';r.min=0;r.max=5;r.step=1;r.value=xLv();r.style.cssText='width:100%;margin:6px 0';r.id='xLiteR';c.appendChild(r);
+  const n=document.createElement('p');n.style.cssText='font-size:13px;margin:6px 0;min-height:3em';c.appendChild(n);
+  const sh=()=>{n.textContent=xLiteLab(+r.value)};r.oninput=sh;sh();
+  const t=document.createElement('p');t.style.cssText='font-size:12px;opacity:.75;margin:6px 0';t.textContent='タイミング・配置・音は本編と同じです。左ほど速く、右ほど本編に近い画質になります。';c.appendChild(t);
+  const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
+  const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
+  const ok=document.createElement('button');ok.className='primary';ok.textContent='保存';ok.onclick=()=>{try{localStorage.setItem('xlite_lv',r.value)}catch(e){}w.remove();after&&after()};
+  row.append(no,ok);c.appendChild(row);w.appendChild(c);document.body.appendChild(w)}
 /* 長押し=設定、タップ=いつも通り */
 function xLP(b,k,upd){let tm=null,lp=false;
-  b.addEventListener('pointerdown',()=>{lp=false;clearTimeout(tm);tm=setTimeout(()=>{lp=true;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}xSetDlg(k,upd)},500)});
+  b.addEventListener('pointerdown',()=>{lp=false;clearTimeout(tm);tm=setTimeout(()=>{lp=true;try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(k==='lite')xLiteDlg(upd);else xSetDlg(k,upd)},500)});
   ['pointerup','pointercancel','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>clearTimeout(tm)));b.addEventListener('contextmenu',e=>e.preventDefault());
   b.addEventListener('click',e=>{if(lp){lp=false;e.stopImmediatePropagation();e.preventDefault()}},true);upd()}
 const xOK=()=>!!(window.VideoEncoder&&window.VideoDecoder&&window.AudioEncoder&&window.AudioDecoder&&window.OfflineAudioContext&&window.MP4Box&&window.Mp4Muxer&&window.DataStream);
@@ -4719,7 +4739,7 @@ async function exportX(PV){
         if(eErr)throw eErr;if(xAbort)throw new Error('中止しました');xS('映像 '+fi+'/'+N+'コマ');
         const q=segOf(T);let src=null;
         if(q&&q.s.clip){const c=q.s.clip;let r=vr.get(c);if(!r){vr.forEach(x=>x.close());vr.clear();r=new XVR(await xOpen(c));vr.set(c,r)}
-          const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8?await r.keyAt(ct):await r.frameAt(ct);
+          const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8||S0.kf?await r.keyAt(ct):await r.frameAt(ct);
           if(f){const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
             const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(fc.width!==ow||fc.height!==oh){fc.width=ow;fc.height=oh}
             fg.save();fg.translate(ow/2,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();
@@ -5049,7 +5069,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v625';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v626';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
