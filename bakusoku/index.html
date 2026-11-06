@@ -4628,6 +4628,8 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
   const sb=mk('ビットレート',XBR,v.br,b=>b+' Mbps'+(b===8?' (標準)':''));
   const sf=mk('フレームレート',XFP,v.fps,f=>f+' fps'+(f===30?' (標準)':''));
   const n=document.createElement('p');n.style.cssText='font-size:12px;opacity:.75;margin:6px 0';n.textContent='目安: フルHDは8Mbps、4Kは40Mbps前後。大きいほど時間がかかります';c.appendChild(n);
+  /* v641: 圧縮の速さを測る(本番の設定だけ) */if(k==='main'){const bb=document.createElement('button');bb.id='xBench';bb.textContent='圧縮の速さを測る（約20秒）';bb.style.cssText='width:100%;margin:4px 0';const bo=document.createElement('p');bo.id='xBenchOut';bo.style.cssText='font-size:12px;white-space:pre-wrap;margin:6px 0';
+    bb.onclick=async()=>{bb.disabled=true;bo.textContent='測っています…（画面を消さずに待ってください）';await xBench(t=>bo.textContent=t);bb.disabled=false};c.append(bb,bo)}
   const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
   const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
   const ok=document.createElement('button');ok.className='primary';ok.textContent='保存';ok.onclick=()=>{const nv={h:+sh.value,br:+sb.value,fps:+sf.value};try{localStorage.setItem('xset_'+k,JSON.stringify(nv))}catch(e){}
@@ -4919,6 +4921,47 @@ async function xAudWin(ex,A,B,XR){
   if(window.subTLSeAll)try{window.subTLSeAll(ctx,mg,A,B)}catch(e){}
   if(B>=XR.b-1e-6){const e=B-A;mg.gain.setValueAtTime(1,Math.max(0,e-FD));mg.gain.linearRampToValueAtTime(0,e)}
   XAS=A.toFixed(0)+'秒〜';return await ctx.startRendering()}
+/* v641: 圧縮の速さを測る(本番の設定で)。圧縮器1つ/2つ同時/3つ同時・軽い絵/本物に近い絵・順番待ち10/30 を比べる。
+   スマホの書き出しは「圧縮の待ち」が6割。Chrome は圧縮器ごとにキャンバスのコマを1枚ずつ読み戻すので、圧縮器を2つにすると速くなるかを実機で確かめる(結果で次の手を決める) */
+async function xBench(out){
+  if(busy)return out('書き出し中は測れません');if(!xOK())return out('この端末では測れません');
+  busy=true;let rd=null;const L=[],put=s=>{L.push(s);out(L.join('\n'))},pn=()=>performance.now();
+  try{
+    const S0=xSet('main'),FPS=S0.fps,H=S0.h,W=XRES.find(r=>r[0]===H)[1],br=S0.br*1e6,big=W*H>2560*1440&&FPS>30;let vc=null;
+    for(const codec of (big?['avc1.640034']:[]).concat(['avc1.640033','avc1.640028','avc1.4d0033','avc1.4d0028','avc1.42e033','avc1.42e028','avc1.42001f'])){const c={codec,width:W,height:H,bitrate:br,framerate:FPS,avc:{format:'avc'}};
+      if(H<=360){const c2={...c,hardwareAcceleration:'prefer-software'};const s2=await VideoEncoder.isConfigSupported(c2).catch(()=>({supported:false}));if(s2.supported){vc=c2;break}}
+      const s=await VideoEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){vc=c;break}}
+    if(!vc)return put('この設定の圧縮に対応していません');
+    put('圧縮の速さ（'+W+'×'+H+'・'+S0.br+'Mbps・'+FPS+'fps）');
+    const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');const fc=document.createElement('canvas'),fg=fc.getContext('2d');
+    await Promise.all([...new Set(items.map(o=>o.text))].map(fontFor));
+    const XR=exRange();let f=null;const q0=segs.find(s=>s.clip);
+    if(q0)try{rd=new XVR(await xOpen(q0.clip));f=await rd.frameAt(Math.min(q0.end-0.001,q0.start+0.5))}catch(e){f=null}
+    /* 本物に近い絵=書き出しと同じ描き方(元のコマを少しずつずらして描く→字幕などを重ねる)。軽い絵=色を塗るだけ */
+    const N=Math.max(60,FPS*8),draw=(i,heavy)=>{const T=Math.min(XR.b-0.001,XR.a+(i%N)/FPS);/* どの測り方も同じ範囲(最初の8秒)を描く */
+      if(!heavy){g.fillStyle='hsl('+(i*7%360)+',60%,50%)';g.fillRect(0,0,W,H);g.fillStyle='#fff';g.fillRect((i*13)%W,H/3,80,80);return}
+      let src={videoWidth:0,videoHeight:0};
+      if(f){const rot=rd.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh),ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));
+        if(fc.width!==ow||fc.height!==oh){fc.width=ow;fc.height=oh}const dx=(i%9)-4;
+        fg.save();fg.translate(ow/2+dx,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();fc.videoWidth=ow;fc.videoHeight=oh;src=fc}
+      ovX=null;drawFrame(g,W,H,src,T)};
+    const run=async(k,Q,heavy,n)=>{const E=[];let err=null,ch=0;
+      try{for(let j=0;j<k;j++){const e=new VideoEncoder({output:()=>{ch++},error:x=>{err=err||x}});e.configure(vc);E.push(e)}
+        const ev='ondequeue' in VideoEncoder.prototype,wt=e=>new Promise(r=>{let d=0;const h=()=>{if(d)return;d=1;if(ev)e.removeEventListener('dequeue',h);r()};if(ev)e.addEventListener('dequeue',h);setTimeout(h,ev?50:2)});
+        const t0=pn();let ws=0;
+        for(let i=0;i<n;i++){if(err)throw err;const e=E[i%k],li=Math.floor(i/k);
+          const w0=pn(),tw=Date.now();while(e.encodeQueueSize>Q){if(err)throw err;if(Date.now()-tw>8000)throw new Error('止まりました');await wt(e)}ws+=pn()-w0;
+          draw(i,heavy);const vf=new VideoFrame(cv,{timestamp:Math.round(li*1e6/FPS),duration:Math.round(1e6/FPS)});e.encode(vf,{keyFrame:li%(FPS*2)===0});vf.close()}
+        await xTO(Promise.all(E.map(e=>e.flush())),15000);if(err)throw err;const s=(pn()-t0)/1000;
+        return {fps:n/s,w:ws/1000/s,ok:ch===n}}
+      finally{E.forEach(e=>{try{e.state!=='closed'&&e.close()}catch(x){}})}};
+    try{await run(1,10,true,N)}catch(e){}/* 最初の1回は準備の時間(文字の用意など)が入るので数えない */
+    for(const [lab,k,Q,heavy,n] of [['軽い絵・1つ',1,10,false,N],['本物に近い絵・1つ',1,10,true,N],['本物に近い絵・1つ・待ち30',1,30,true,N],['本物に近い絵・2つ同時',2,10,true,N*2],['本物に近い絵・3つ同時',3,10,true,N*2]]){
+      try{const r=await run(k,Q,heavy,n);put(lab+': '+Math.round(r.fps)+'コマ/秒＝'+(r.fps/FPS).toFixed(1)+'倍速（待ち'+Math.round(r.w*100)+'%）'+(r.ok?'':'・コマ数が合わない'))}
+      catch(e){put(lab+': 使えない（'+String(e&&e.message||e).slice(0,40)+'）')}}
+    put('（この画面のスクショを送ってください）');
+  }catch(e){put('失敗: '+(e&&e.message||e))}
+  finally{try{rd&&rd.close()}catch(e){}busy=false}}
 /* PV={r,say,p,done,end,w} で書き出しプレビュー(小さい画面) */
 async function exportX(PV){
   if(!segs.length||busy)return false;
@@ -5391,7 +5434,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v640';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v641';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
