@@ -1300,9 +1300,9 @@ function cornerDel(id){const i=cIdx(id);if(i<0||corners.length<2)return;
   const to=corners[i>0?i-1:1].id;segs.forEach(s=>{if(s.cn===id)s.cn=to});draft.forEach(L=>L.forEach(s=>{if(s.cn===id)s.cn=to}));items.forEach(o=>{if(o.cn===id)o.cn=to});
   corners.splice(i,1);if(cview===id)cview=null;if(cutCn===id)cutCn=to;
   sortSegs();cornerRebase();itemCn(true);resetOut();renderSegs();renderCBar();renderLanes();try{renderCutCn()}catch(e){}}
-function exRange(){
-  const v=($('exRange')||{}).value||'all';exTag='';
-  if(v!=='all'&&cR){const i=cIdx(v);if(i>=0&&cR[i].b-cR[i].a>0.01){exTag='_'+corners[i].name.replace(/[\\/:*?"<>|\s]+/g,'');return{a:cR[i].a,b:cR[i].b}}}
+function exRange(pure){/* v648: pure=書き出しの名前の印(exTag)を変えない(裏の準備用) */
+  const v=($('exRange')||{}).value||'all';if(!pure)exTag='';
+  if(v!=='all'&&cR){const i=cIdx(v);if(i>=0&&cR[i].b-cR[i].a>0.01){if(!pure)exTag='_'+corners[i].name.replace(/[\\/:*?"<>|\s]+/g,'');return{a:cR[i].a,b:cR[i].b}}}
   return{a:0,b:total()};
 }
 function chapText(){
@@ -4097,7 +4097,8 @@ function flashSel(m){
 const MINLEN=0.2;
 let ihist=[],iredo=[],editSnap=null,editPushed=true;
 const cloneItems=()=>items.map(o=>({...o}));
-function updHist(){$('iu').disabled=!ustack.length;$('ir').disabled=!iredo.length}
+var xbgVer=0,xbgES='';/* v648: 編集の回数(裏の準備をやり直す合図)・書き出しに関わる内容の写し */
+function updHist(){$('iu').disabled=!ustack.length;$('ir').disabled=!iredo.length;xbgVer=(xbgVer|0)+1}
 function pushHist(){ihist.push(cloneItems());if(ihist.length>50)ihist.shift();ustack.push('item');iredo=[];updHist()}
 function markEdit(){if(editPushed||!editSnap)return;ihist.push(editSnap);if(ihist.length>50)ihist.shift();ustack.push('item');iredo=[];editPushed=true;updHist()}
 function afterHist(){msel.clear();selItem=null;ed.hidden=true;$('s2').style.paddingBottom='';updHist();renderLanes();renderPreview();seekGlobal(gt)}
@@ -4617,7 +4618,7 @@ const XLFP=[10,12,15,24,30,60];
 const xLiteCur=()=>{const o={...XLV[xLv()]};try{const c=JSON.parse(localStorage.getItem('xlite_c')||'null');
   if(c&&typeof c==='object'){if(XRES.some(r=>r[0]===c.h))o.h=c.h;if(XBR.includes(+c.br))o.br=+c.br;if(XLFP.includes(+c.fps))o.fps=+c.fps;if(c.kf===0||c.kf===1)o.kf=c.kf}}catch(e){}return o};
 const xLiteLab=o=>o.h+'p・'+o.fps+'fps・'+o.br+'Mbps・'+(o.kf?'映像は要所のコマだけ読む':'映像は全部読む');
-function xSet(k){if(xLiteRun)return xLiteCur();const d=k==='pv'?{h:360,br:1,fps:30}:{h:1080,br:+($('exq').value||8),fps:30};try{Object.assign(d,JSON.parse(localStorage.getItem('xset_'+k)||'{}'))}catch(e){}
+function xSet(k,noLite){if(xLiteRun&&!noLite)return xLiteCur();const d=k==='pv'?{h:360,br:1,fps:30}:{h:1080,br:+($('exq').value||8),fps:30};try{Object.assign(d,JSON.parse(localStorage.getItem('xset_'+k)||'{}'))}catch(e){}
   if(!XRES.some(r=>r[0]===d.h))d.h=k==='pv'?360:1080;if(!XFP.includes(d.fps))d.fps=30;return d}
 const xLab=k=>{const v=xSet(k);return v.h+'p・'+v.br+'Mbps・'+v.fps+'fps'};
 function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.className='cdlg';const c=document.createElement('div');
@@ -4628,17 +4629,20 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
   const sb=mk('ビットレート',XBR,v.br,b=>b+' Mbps'+(b===8?' (標準)':''));
   const sf=mk('フレームレート',XFP,v.fps,f=>f+' fps'+(f===30?' (標準)':''));
   const n=document.createElement('p');n.style.cssText='font-size:12px;opacity:.75;margin:6px 0';n.textContent='目安: フルHDは8Mbps、4Kは40Mbps前後。大きいほど時間がかかります';c.appendChild(n);
-  /* v646: 直した所だけ書き出し直す(押すと切り替わる)・使い回しのデータを消す */let xcOn=xcWant();
+  /* v646: 直した所だけ書き出し直す(押すと切り替わる)・使い回しのデータを消す */let xcOn=xcWant(),bgOn=xbgWant();
   if(k==='main'){const tb=document.createElement('button');tb.id='xcTgl';tb.type='button';tb.style.cssText='display:block;width:100%;margin:10px 0 4px';
     const st=()=>{tb.textContent=(xcOn?'✓ ':'')+'直した所だけ書き出し直す';tb.className=xcOn?'primary':'no';tb.setAttribute('aria-pressed',String(xcOn))};st();tb.onclick=()=>{xcOn=!xcOn;st()};c.appendChild(tb);
     const nt=document.createElement('p');nt.style.cssText='font-size:12px;opacity:.75;margin:4px 0';nt.textContent=xcOK()?'2回目からは、前回と同じ所の圧縮と、元の動画から音を読む所を飛ばして速く書き出します（画質・音は同じ）。前回の分をスマホの中に置きます（フルHD・8Mbpsなら10分で約600MB）。カットなどで長さが変わると、その後ろは作り直しになります。本番とライト版は別々です。':'この端末では使えません';c.appendChild(nt);
     const cb=document.createElement('button');cb.id='xcClr';cb.type='button';cb.className='no';cb.style.cssText='display:block;width:100%;margin:4px 0 8px';cb.textContent='使い回しのデータを消す';
     xcSize().then(s=>{if(s!=null&&cb.isConnected&&!cb.disabled)cb.textContent='使い回しのデータを消す（今 '+xcMB(s)+'）'});
-    cb.onclick=async()=>{if(busy)return;cb.disabled=true;cb.textContent='消しています…';await xcClearAll();cb.textContent='消しました'};c.appendChild(cb)}
+    cb.onclick=async()=>{if(busy)return;cb.disabled=true;cb.textContent='消しています…';XBG.hold++;try{await xbgHalt();XBG.cyc=null;await xcClearAll()}finally{XBG.hold--}cb.textContent='消しました';xbgShow()};c.appendChild(cb);
+    /* v648: 編集中に裏で書き出しておく(押すと切り替わる) */const bb=document.createElement('button');bb.id='xbgTgl';bb.type='button';bb.style.cssText='display:block;width:100%;margin:10px 0 4px';
+    const bst=()=>{bb.textContent=(bgOn?'✓ ':'')+'編集中に裏で書き出しておく';bb.className=bgOn?'primary':'no';bb.setAttribute('aria-pressed',String(bgOn))};bst();bb.onclick=()=>{bgOn=!bgOn;bst()};c.appendChild(bb);
+    const bn=document.createElement('p');bn.style.cssText='font-size:12px;opacity:.75;margin:4px 0';bn.textContent=xcOK()?'手を止めて4秒たつと、書き出しの圧縮を裏で先に進めておきます（右下に「書き出しの準備」と出ます）。本番の書き出しは、出来ている所を使い回すので速くなります（画質は同じ）。触る・再生する・画面が消えるとすぐ止まり、続きは次に手を止めた時に進めます。電池が20%未満で充電していない時は動きません。動いている間は電池を使い、スマホが温かくなることがあります。上の「直した所だけ書き出し直す」がオンの時だけ動きます。':'この端末では使えません';c.appendChild(bn)}
   const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
   const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
   const ok=document.createElement('button');ok.className='primary';ok.textContent='保存';ok.onclick=()=>{const nv={h:+sh.value,br:+sb.value,fps:+sf.value};try{localStorage.setItem('xset_'+k,JSON.stringify(nv))}catch(e){}
-    if(k==='main'){try{localStorage.setItem('xcache',xcOn?'1':'0')}catch(e){}}
+    if(k==='main'){try{localStorage.setItem('xcache',xcOn?'1':'0');localStorage.setItem('xbg',bgOn?'1':'0')}catch(e){}if(!xcOn||!bgOn){xbgHalt();XBG.cyc=null}xbgShow()}
     if(k==='main'){const q=$('exq');const best=[...q.options].map(o=>+o.value).reduce((a,b)=>Math.abs(b-nv.br)<Math.abs(a-nv.br)?b:a,8);q.value=String(best);try{localStorage.setItem('exq',q.value)}catch(e){}}
     w.remove();after&&after()};
   row.append(no,ok);c.appendChild(row);w.appendChild(c);document.body.appendChild(w)}
@@ -4832,8 +4836,8 @@ class XVR{
       if(g>20000)throw new Error('動画の読み込みが止まりました')}}
 }
 /* 元動画の音を c0〜c1 だけ取り出す */
-async function xAud(X,c0,c1,ck){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
-  const dec=new AudioDecoder({output:d=>out.push(d),error:e=>err=e});dec.configure(A.cfg);
+async function xAud(X,c0,c1,ck,pre){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
+  const dec=pre?null:new AudioDecoder({output:d=>out.push(d),error:e=>err=e});if(dec)dec.configure(A.cfg);
   /* v629: 使う音だけ読む。近い音(v631: 間が1MB未満・1回8MBまで。細かく読むと回数が増えて遅い)はまとめて1回で読む。前は映像と同じ8MBの入れ物で読み、早送りの所では映像ごと何百MBも読んでいた */
   const tt=i=>S[i].cts/A.ts+A.sh;let lo=0,hi=S.length-1,i0=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=c0-0.12){i0=m;hi=m-1}else lo=m+1}
   /* v635: まとまりを先に決めて、4つ先まで同時に読む(読み込みの待ち時間を重ねる) */
@@ -4841,8 +4845,9 @@ async function xAud(X,c0,c1,ck){const A=X.A;if(!A)return null;const S=A.S;const 
     while(j+1<S.length&&tt(j+1)<=c1+0.05&&S[j+1].offset>=S[i].offset&&S[j+1].offset-end<(1<<20)&&S[j+1].offset+S[j+1].size-S[i].offset<(8<<20)){j++;end=Math.max(end,S[j].offset+S[j].size)}
     G.push([i,j,S[i].offset,end-S[i].offset]);i=j+1}
   /* v647: 前の書き出しで取っておいたサンプルがあれば、元のファイルを読まない(ほどく所からは同じ) */
-  const SL=[];for(const q of G)for(let k=q[0];k<=q[1];k++)SL.push(k);const C=await xcAGet(ck,S,SL);let ci=0;
+  const SL=[];for(const q of G)for(let k=q[0];k<=q[1];k++)SL.push(k);const C=await xcAGet(ck,S,SL,pre);let ci=0;
   const rd=C.d?null:xAhead(4,G.length,g=>X.readD(G[g][2],G[g][3]));
+  /* v648: 裏の準備(pre)は、読んで取っておくだけ(ほどかない) */if(pre){if(C.keep){for(let g=0;g<G.length;g++){await xbgYield(pre);const [i,j,o]=G[g],buf=await rd(g);for(let k=i;k<=j;k++){const s=S[k];C.keep.push(buf.subarray(s.offset-o,s.offset-o+s.size).slice())}}if(C.keep.length===SL.length)xcAWr(C.au,C.name,C.keep)}return null}
   try{for(let g=0;g<G.length&&!err;g++){const [i,j,o]=G[g],buf=C.d?null:await rd(g);
       for(let k=i;k<=j;k++){const s=S[k],t=tt(k),d=s.duration/A.ts,data=C.d?C.d[ci++]:buf.subarray(s.offset-o,s.offset-o+s.size);if(C.keep)C.keep.push(data.slice());
         dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data}))}
@@ -4856,7 +4861,7 @@ async function xAud(X,c0,c1,ck){const A=X.A;if(!A)return null;const S=A.S;const 
   return{buf:ab,off:c0-t0}}
 /* v630: 早送り(8倍以上)の音。元の音を全部ほどいて縮めると、30倍なら10秒の窓で300秒分をほどく必要があり重い(スマホで「音63%」)。
    代わりに 0.06秒ごとに、元の動画の対応する位置から 0.12秒だけ取り出して重ねる(音程そのまま)。ほどくのは使う所だけ */
-async function xAudSp(X,c0,c1,K,ck){const A=X.A;if(!A)return null;const S=A.S,tt=i=>S[i].cts/A.ts+A.sh,du=i=>S[i].duration/A.ts;if(!S.length)return null;
+async function xAudSp(X,c0,c1,K,ck,pre){const A=X.A;if(!A)return null;const S=A.S,tt=i=>S[i].cts/A.ts+A.sh,du=i=>S[i].duration/A.ts;if(!S.length)return null;
   let sr=A.cfg.sampleRate||XSR;const D=(c1-c0)/K;
   /* v635: 速いほど粒を長く・少なくする(100倍なら10秒で67か所。前は167か所)。スマホは1回ごとの読み込みに時間がかかり、100倍の所で止まって見えた */
   const Lg=K>=50?0.3:K>=20?0.2:0.12,Hg=Lg/2,PR=0.05;
@@ -4872,8 +4877,9 @@ async function xAudSp(X,c0,c1,K,ck){const A=X.A;if(!A)return null;const S=A.S,tt
     if(i<=prevJ){i=prevJ+1;if(i>=S.length)break;if(j<i)j=i}
     G.push({n,p,i,j,one:!big(i,j)});prevJ=j}
   /* v647: 前の書き出しで取っておいたサンプルがあれば、元のファイルを読まない */
-  const SL=[];for(const q of G)for(let k=q.i;k<=q.j;k++)SL.push(k);const C=await xcAGet(ck,S,SL);let ci=0;
+  const SL=[];for(const q of G)for(let k=q.i;k<=q.j;k++)SL.push(k);const C=await xcAGet(ck,S,SL,pre);let ci=0;
   const rd=C.d?null:xAhead(6,G.length,g=>{const q=G[g];return q.one?X.readD(S[q.i].offset,span(q.i,q.j)):Promise.all(Array.from({length:q.j-q.i+1},(_,k)=>X.readD(S[q.i+k].offset,S[q.i+k].size)))});
+  /* v648: 裏の準備(pre)は、読んで取っておくだけ */if(pre){if(C.keep){for(let g=0;g<G.length;g++){await xbgYield(pre);const q=G[g],b=await rd(g);for(let k=q.i;k<=q.j;k++){const s=S[k];C.keep.push((q.one?b.subarray(s.offset-S[q.i].offset,s.offset-S[q.i].offset+s.size):b[k-q.i]).slice())}}if(C.keep.length===SL.length)xcAWr(C.au,C.name,C.keep)}return null}
   /* v631: 粒ごとに flush せず、まとめて入れて最後に1回だけ flush。出てきた音は入れた順に数えて元の時刻に戻す */
   const inp=[];let err=null;const outs=[];
   const dec=new AudioDecoder({output:d=>outs.push(d),error:e=>{err=e}});dec.configure(A.cfg);
@@ -5060,7 +5066,7 @@ function xcFrame0(x,W,H){const R=xcR(x);while(R.st.length)x.restore();
   if(R.ca||R.cb||R.cx)x.reset();else{const D=XCx.def;for(const p in D)if(x[p]!==D[p])x[p]=D[p];if(x.getLineDash().length)x.setLineDash([]);x.setTransform(1,0,0,1,0,0);x.beginPath()}
   x.clearRect(0,0,W,H)}
 /* 1コマの指紋(使い回せないコマは null) */
-function xcSig(x,W,H){const R=xcR(x);if(XC.RB||R.uc||!R.k||R.cx)return null;XH[0]=R.a;XH[1]=R.b;xh(W);xh(H);return [XH[0],XH[1]]}
+function xcSig(x,W,H){/* v648: 記録を止めた後に描いた物は指紋にしない */if(!XC.on)return null;const R=xcR(x);if(XC.RB||R.uc||!R.k||R.cx)return null;XH[0]=R.a;XH[1]=R.b;xh(W);xh(H);return [XH[0],XH[1]]}
 /* 元動画のコマの印をキャンバスに付ける(描いた中身の代わり) */
 function xcTok(cv,t){const R=xcRc(cv);R.k=true;R.a=t[0];R.b=t[1];R.tn=true;R.uc=false}
 const xcCK=c=>String(c&&c.key||'').replace(/#\d+$/,'');
@@ -5095,11 +5101,11 @@ async function xcOpen(o){const {prof,vc,W,H,XFPS,G,need,clips}=o;
   const dir=await (await xcRoot()).getDirectoryHandle('xcache_'+prof,{create:true}),gk=xcGK(vc,XFPS,G,prof),gkh=xcHex(gk[0],gk[1]);
   let meta=null;try{meta=JSON.parse(await (await (await dir.getFileHandle('meta.json')).getFile()).text())}catch(e){}
   const xc={dir,gk,gkh,files:new Set(),used:new Set(),dcJ:null,dims:{},canW:true,doSig:false,clips:new Set(clips),st:{hit:0,miss:0,mis:0,unc:0,wr:0,wb:0,we:0,rd:0,rf:0,nst:0},
-    wq:Promise.resolve(),wn:0,wp:new Map(),gm:new Map(),pg:null,inN:0,outN:0,nx:null,hitAny:false,dead:false,err:''};
+    wq:Promise.resolve(),wn:0,wp:new Map(),gm:new Map(),pg:null,inN:0,outN:0,nx:null,hitAny:false,dead:false,err:'',inv:false};
   const names=await xcNames(dir);
   if(!meta||meta.gk!==gkh||meta.v!==1){for(const n of names)try{await dir.removeEntry(n)}catch(e){}}
   else{xc.dims=meta.dims||{};for(const n of names)if(n[0]==='g')xc.files.add(n);
-    if(xc.files.size&&meta.dc){const pd=await xcProbe(vc,W,H);if(pd&&pd===JSON.stringify(meta.dc)){xc.dcJ=pd;xc.doSig=(meta.clips||[]).some(k=>xc.clips.has(k))}else xc.files.clear()}else xc.files.clear()}
+    if(xc.files.size&&meta.dc){const pd=await xcProbe(vc,W,H);if(pd&&pd===JSON.stringify(meta.dc)){xc.dcJ=pd;xc.doSig=(meta.clips||[]).some(k=>xc.clips.has(k))}else{xc.files.clear();xc.inv=true}}else{if(xc.files.size)xc.inv=true;xc.files.clear()}}
   try{const e=await navigator.storage.estimate(),free=(e.quota||0)-(e.usage||0);if(free<need*1.2+(2<<30))xc.canW=false}catch(e){}
   return xc}
 async function xcRd(xc,name){const w=xc.wp.get(name);if(w)await w;const f=await (await xc.dir.getFileHandle(name)).getFile(),ab=await f.arrayBuffer();
@@ -5149,69 +5155,75 @@ function xcAWr(au,name,parts){if(!au.canW)return;au.files.add(name);au.used.add(
     catch(e){au.st.we++;au.canW=false;au.files.delete(name);au.used.delete(name);try{await au.dir.removeEntry(name)}catch(_){}}};
   const p=au.wq.then(job).finally(()=>{if(au.pend.get(name)===p)au.pend.delete(name)});au.wq=p;au.pend.set(name,p)}
 /* 1回分のサンプル(並び L)を、取っておいた物から出す(d)。無い・読めない時は d が無く、読んだ物を keep に集めて後で取っておく(xcAWr) */
-async function xcAGet(ck,S,L){const au=XCA;if(!au||!ck||!L.length)return {};const name=xcAKey(ck,S,L);
+async function xcAGet(ck,S,L,pre){const au=pre?pre.au:XCA;if(!au||!ck||!L.length)return {};const name=xcAKey(ck,S,L);
+  /* v648: 裏の準備は、有れば読まずに印だけ付ける */if(pre&&au.files.has(name)){au.used.add(name);au.st.h++;return {d:true}}
   if(au.files.has(name)){try{const d=await xcARd(au,name,S,L);au.used.add(name);au.st.h++;return {d}}catch(e){au.st.rf++;au.files.delete(name)}}
   au.st.m++;return {au,name,keep:[]}}
 /* 書き出しの終わり: 保存を待って、最後の2回で使わなかった物を消す */
 async function xcAEnd(au){try{await au.wq;for(const n of await xcNames(au.dir))if(n!=='meta.json'&&!au.used.has(n)&&!au.prev.has(n))try{await au.dir.removeEntry(n)}catch(e){}
   const w=await (await au.dir.getFileHandle('meta.json',{create:true})).createWritable();await w.write(JSON.stringify({v:1,last:[...au.used],t:Date.now()}));await w.close()}catch(e){}}
 /* v646: 使い回しのデータが今の圧縮と合わない時は、使い回さずにもう一度書き出す */
-async function exportX(PV){const r=await exportX0(PV,false);if(r!=='xcRetry')return r;say('前回の分が今の圧縮と合わなかったので、使い回さずに書き出し直します');await xSleep(600);return exportX0(PV,true)}
-async function exportX0(PV,noC){
+async function exportX(PV){/* v648: 書き出しの間は裏の準備を止める(動いていれば止まるのを待つ) */XBG.hold++;try{await xbgHalt();const r=await exportX0(PV,false);if(r!=='xcRetry')return r;say('前回の分が今の圧縮と合わなかったので、使い回さずに書き出し直します');await xSleep(600);return await exportX0(PV,true)}finally{XBG.hold--;XBG.last=performance.now();xbgShow()}}
+async function exportX0(PV,noC,BG){
+  /* v648: BG=裏で書き出しておく(画面を止めない・ファイルを作らない・音を作らない。2秒ごとの圧縮データを取っておくだけ) */if(!BG)await xbgHalt();
   if(!segs.length||busy)return false;
-  const say0=PV?PV.say:say,sayX=(t,c)=>{say0(t,c);xLock.msg(t)};
-  if(!xOK()){if(PV)return doExport(PV);say('この端末は新しい書き出しに対応していないため、今までの方式で書き出します');return doExport()}
+  const say0=BG?()=>{}:PV?PV.say:say,sayX=BG?()=>{}:(t,c)=>{say0(t,c);xLock.msg(t)};
+  if(!xOK()){if(BG)return 'bg-no';if(PV)return doExport(PV);say('この端末は新しい書き出しに対応していないため、今までの方式で書き出します');return doExport()}
   /* 読めない動画(形式)がある時は今までの方式で書き出す */
-  {const XR=PV?PV.r:exRange();let o=0;const cs=new Set();for(const q of segs){const d=segD(q);if(q.clip&&o+d>XR.a+1e-4&&o<XR.b-1e-4)cs.add(q.clip);o+=d}
+  {const XR=PV?PV.r:exRange(!!BG);let o=0;const cs=new Set();for(const q of segs){const d=segD(q);if(q.clip&&o+d>XR.a+1e-4&&o<XR.b-1e-4)cs.add(q.clip);o+=d}
    items.forEach(it=>{if(it.lane===8&&it.end>XR.a&&it.start<XR.b){const c=ovClip(it);if(c)cs.add(c)}});
-   try{for(const c of cs)await xOpen(c)}catch(e){sayX('この動画は新しい書き出しが使えないため、今までの方式で書き出します（'+(e&&e.message||e)+'）');await xSleep(1500);return doExport(PV||undefined)}}
-  closeEd();pausePreview();busy=true;xAbort=false;xLock.on();xS('準備');$('export').disabled=true;if(!PV)resetOut();sayX('書き出しの準備中…');
-  let lastMsg='';const wd=setInterval(()=>{if(Date.now()-xAt>6000)xLock.msg(lastMsg+'\n（'+Math.round((Date.now()-xAt)/1000)+'秒止まっています: '+xSt+'）')},1000);
-  let wake=null;try{wake=await navigator.wakeLock.request('screen')}catch(e){}
+   try{for(const c of cs)await xOpen(c)}catch(e){if(BG)return 'bg-no';sayX('この動画は新しい書き出しが使えないため、今までの方式で書き出します（'+(e&&e.message||e)+'）');await xSleep(1500);return doExport(PV||undefined)}}
+  if(!BG){closeEd();pausePreview();busy=true;xAbort=false;xLock.on()}xS('準備');if(!BG){$('export').disabled=true;if(!PV)resetOut()}sayX('書き出しの準備中…');
+  let lastMsg='';const wd=BG?0:setInterval(()=>{if(Date.now()-xAt>6000)xLock.msg(lastMsg+'\n（'+Math.round((Date.now()-xAt)/1000)+'秒止まっています: '+xSt+'）')},1000);
+  let wake=null;if(!BG)try{wake=await navigator.wakeLock.request('screen')}catch(e){}
   const vr=new Map(),vo=new Map(),cleanup=()=>{vr.forEach(r=>r.close());vr.clear();vo.forEach(r=>r.close());vo.clear();ovX=null};
-  let xc=null,xcNote='';
+  let xc=null,xcNote='',vEnc=null;
   try{
-    const S0=xSet(PV?'pv':'main'),XFPS=S0.fps,H=S0.h,W=XRES.find(r=>r[0]===H)[1];
+    const S0=xSet(PV?'pv':'main',!!BG),XFPS=S0.fps,H=S0.h,W=XRES.find(r=>r[0]===H)[1];
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
     const fc=document.createElement('canvas'),fg=fc.getContext('2d');
     await Promise.all([...new Set(items.map(o=>o.text))].map(fontFor));
-    await Promise.all(items.filter(o=>(o.lane===5||o.lane===6)&&o.akey).map(o=>ensureNar(o.akey)));
-    const XR=PV?PV.r:exRange(),all=Math.max(0.01,XR.b-XR.a);
-    if(window.subTLPrep){sayX('字幕の準備中…');try{await window.subTLPrep(segs,XR.a)}catch(e){}}
-    const ex=[];{let o=0;for(const s of segs){const d=segD(s),sa=o,sb=o+d;o+=d;if(sb<=XR.a+1e-4||sa>=XR.b-1e-4)continue;ex.push({s,sa,sb})}}
+    if(!BG)await Promise.all(items.filter(o=>(o.lane===5||o.lane===6)&&o.akey).map(o=>ensureNar(o.akey)));
+    const XR=PV?PV.r:exRange(!!BG),all=Math.max(0.01,XR.b-XR.a);
+    /* v648: 裏の準備では字幕を読み直させない(変わっていれば読む)・SEや再生の状態に触らない */
+    if(BG){if(window.subTLFonts)try{await window.subTLFonts(segs)}catch(e){}if(BG.stop()){BG.at=BG.f0;return 'bg-stop'}}
+    else if(window.subTLPrep){sayX('字幕の準備中…');try{await window.subTLPrep(segs,XR.a)}catch(e){}}
+    const xv0=xbgVer,ex=xExOf(XR);
     for(const q of ex)if(q.s.clip)await xOpen(q.s.clip);
     /* 圧縮の設定(使える物を上から順に) */
     const br=S0.br*1e6;let vc=null;const big=W*H>2560*1440&&XFPS>30;
     /* v635: ライト版は「固定ビットレート」を先に試す(スマホでは設定の0.2Mbpsより何倍も大きいファイルになっていた) */
-    for(const bm of (xLiteRun?['constant','']:[''])){if(vc)break;
+    for(const bm of (xLiteRun&&!BG?['constant','']:[''])){if(vc)break;
     for(const codec of (big?['avc1.640034']:[]).concat(['avc1.640033','avc1.640028','avc1.4d0033','avc1.4d0028','avc1.42e033','avc1.42e028','avc1.42001f'])){const c={codec,width:W,height:H,bitrate:br,framerate:XFPS,avc:{format:'avc'},...(bm?{bitrateMode:bm}:{})};
       /* v628: 小さい画面(360p以下)は専用回路を使わずソフトで圧縮した方が速いことが多い(待ち時間の大半が圧縮だった) */if(H<=360){const c2={...c,hardwareAcceleration:'prefer-software'};const s2=await VideoEncoder.isConfigSupported(c2).catch(()=>({supported:false}));if(s2.supported){vc=c2;break}}
       const s=await VideoEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){vc=c;break}}}
     if(!vc)throw new Error('この端末はこの設定('+W+'×'+H+'・'+XFPS+'fps)の圧縮に対応していません。設定を下げてください');
     let ac=null,acod='aac';
-    for(const [codec,m] of [['mp4a.40.2','aac'],['opus','opus']]){const c={codec,sampleRate:XSR,numberOfChannels:2,bitrate:192000};
+    for(const [codec,m] of (BG?[]:[['mp4a.40.2','aac'],['opus','opus']])){const c={codec,sampleRate:XSR,numberOfChannels:2,bitrate:192000};
       const s=await AudioEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){ac=c;acod=m;break}}
-    if(!ac)throw new Error('この端末は音の圧縮に対応していません');
+    if(!ac&&!BG)throw new Error('この端末は音の圧縮に対応していません');
     /* v646: 直した所だけ書き出し直す(前回の圧縮データを2秒ごとに使い回す。本番とライト版で別々に置く) */
     const G=XFPS*2;
     if(!PV&&!noC&&xcWant()){if(!xcOK())xcNote='この端末では使い回しが使えません';else{xS('使い回しの準備');sayX('前回の書き出しを確かめています…');
       try{const cks=new Set(ex.filter(q=>q.s.clip).map(q=>xcCK(q.s.clip)));items.forEach(it=>{if(it.lane===8&&it.end>XR.a&&it.start<XR.b){const c=ovClip(it);if(c)cks.add(xcCK(c))}});
-        xc=await xcOpen({prof:xLiteRun?'lite':'main',vc,W,H,XFPS,G,need:S0.br*1e6/8*all,clips:[...cks]})}catch(e){xc=null;xcNote='使い回しの準備に失敗しました（'+(e&&e.message||e)+'）'}
-      /* v647: 音の使い回し(元の動画から読んだ音のデータ) */if(xc)try{xc.au=XCA=await xcAOpen()}catch(e){xc.au=XCA=null}}}
+        xc=await xcOpen({prof:xLiteRun&&!BG?'lite':'main',vc,W,H,XFPS,G,need:S0.br*1e6/8*all,clips:[...cks]})}catch(e){xc=null;xcNote='使い回しの準備に失敗しました（'+(e&&e.message||e)+'）'}
+      /* v647: 音の使い回し(元の動画から読んだ音のデータ) */if(xc&&!BG)try{xc.au=XCA=await xcAOpen()}catch(e){xc.au=XCA=null}}}
+    /* v648: 裏の準備は、保存できる時だけ。前の分が今の圧縮と合わない時は先に消す(後で混ざらないように) */
+    if(BG){if(!xc||!xc.canW)return 'bg-no';BG.used=xc.used;if(xc.inv){for(const n of await xcNames(xc.dir))if(n[0]==='g')try{await xc.dir.removeEntry(n)}catch(e){}xc.inv=false}if(BG.stop()){BG.at=BG.f0;return 'bg-stop'}}
     /* MP4 を少しずつ作る(大きな動画でもメモリを使いすぎない) */
     const HM=1<<20,head=new Uint8Array(HM);let headLen=0,cursor=0;const parts=[];
     const onData=(data,pos)=>{let d=data,p=pos;
       if(p<HM){const n=Math.min(d.length,HM-p);head.set(d.subarray(0,n),p);headLen=Math.max(headLen,p+n);d=d.subarray(n);p+=n;if(!d.length){cursor=Math.max(cursor,p);return}}
       if(p!==Math.max(cursor,HM))throw new Error('書き出しの順番が乱れました');parts.push(new Blob([d.slice()]));cursor=p+d.length};
-    const mux=new Mp4Muxer.Muxer({target:new Mp4Muxer.StreamTarget({onData}),video:{codec:'avc',width:W,height:H,frameRate:XFPS},audio:{codec:acod,numberOfChannels:2,sampleRate:XSR},fastStart:false,firstTimestampBehavior:'offset'});
+    const mux=BG?null:new Mp4Muxer.Muxer({target:new Mp4Muxer.StreamTarget({onData}),video:{codec:'avc',width:W,height:H,frameRate:XFPS},audio:{codec:acod,numberOfChannels:2,sampleRate:XSR},fastStart:false,firstTimestampBehavior:'offset'});
     let eErr=null;
-    let vAny=false;const venc=new VideoEncoder({output:(c,m)=>{try{mux.addVideoChunk(c,m);vAny=true}catch(e){eErr=eErr||e}if(xc)try{xcOut(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});venc.configure(vc);
+    let vAny=false;const venc=new VideoEncoder({output:(c,m)=>{try{if(mux)mux.addVideoChunk(c,m);vAny=true}catch(e){eErr=eErr||e}if(xc)try{xcOut(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});venc.configure(vc);vEnc=venc;
     /* v640: 圧縮の順番待ちは「空いた」合図(dequeue)ですぐ続ける。前は2msごとに見に行っていたが、実際は1回4ms以上空き、その間はスマホの圧縮の下ごしらえ(1コマずつ順番に進む)も止まっていた。
        合図が来ない端末では前と同じく2msごとに見る(合図が来ないまま空いたのが3回続いたら切り替える) */
     let eW=null,eEv='ondequeue' in VideoEncoder.prototype,eMiss=0;if(eEv)venc.addEventListener('dequeue',()=>{eMiss=0;if(eW){const w=eW;eW=null;w()}});
     const eWait=()=>new Promise(r=>{eW=r;setTimeout(()=>{if(eW!==r)return;eW=null;if(eEv&&venc.encodeQueueSize<=10&&++eMiss>=3)eEv=false;r()},eEv?50:2)});
-    const aenc=new AudioEncoder({output:(c,m)=>{try{mux.addAudioChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});aenc.configure(ac);
-    const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0,w:0,s:0,c:0},pn=()=>performance.now();window.__xPF=PF;
+    const aenc=BG?null:new AudioEncoder({output:(c,m)=>{try{mux.addAudioChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});if(aenc)aenc.configure(ac);
+    const N=Math.max(1,Math.round(all*XFPS));let fi=BG?Math.max(0,Math.min(N,BG.f0)):0;const NE=BG?Math.min(N,BG.f1):N;if(BG){BG.n=N;BG.G=XFPS*2;BG.ly=performance.now()}const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0,w:0,s:0,c:0},pn=()=>performance.now();window.__xPF=PF;
     const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e+PF.w+PF.s+PF.c),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e+PF.w)+'（うち待ち'+f(PF.w)+'）'+(PF.s+PF.c>T*0.005?' 指紋'+f(PF.s)+' 使い回し'+f(PF.c):'')};
     const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};let lastF=null,src0=0;const spH=[];XDC.n=0;XRC.n=0;XRC.ms=0;XRC.sum=0;const rdS=()=>' / 読込 '+XRC.n+'回・'+(XRC.ms/1000).toFixed(0)+'秒'+(XRC.n?'・1回'+Math.round(XRC.sum/XRC.n)+'ms':'');
     /* v631: 元動画の大きさ・コマ数と、1コマ作るのに読んだ元のコマ数(多いほど遅い) */const xSrcS=(q,fi)=>{const c=q&&q.s.clip,X=c&&c._x;if(!X)return '';const V=X.V,w=V.t.video.width,h=V.t.video.height,d=V.S.length?(V.S[V.S.length-1].cts-V.S[0].cts)/V.ts:0,f=d>0?Math.round((V.S.length-1)/d):0;return '\n元 '+w+'×'+h+'・'+f+'fps・'+String(V.t.codec).slice(0,4)+'・'+spdOf(q.s)+'倍の所 / 読んだコマ '+(XDC.n/Math.max(1,fi)).toFixed(1)+'枚/1コマ'+rdS()};
@@ -5229,10 +5241,11 @@ async function exportX0(PV,noC){
       const it=ovAt(T);if(it){const c=ovClip(it),X=await xOpen(c),ts=xcFrTs(X,Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start))));if(ts==null)return null;ovX={it,f:xcPh(sov,c,X,ts,xcDm(c,X))}}else ovX={f:null};
       try{xcFrame0(gS,W,H);drawFrame(gS,W,H,src||{videoWidth:0,videoHeight:0},T);return xcSig(gS,W,H)}finally{ovX=null}};
     const xcSigG=async f0=>{const n=Math.min(G,N-f0),o={f0,n,sig:null,name:null,hit:false,rp:null};if(!xc.doSig||!xc.files.size)return o;
-      const s0=pn(),sig=[];try{for(let i=0;i<n;i++){const s=await xcSigF(f0+i);if(!s){xc.st.unc++;return o}sig.push(s)}}finally{PF.s+=pn()-s0}
+      const s0=pn(),sig=[];try{for(let i=0;i<n;i++){if(BG)await xbgYield(BG);const s=await xcSigF(f0+i);if(!s){xc.st.unc++;return o}sig.push(s)}}finally{PF.s+=pn()-s0}
       o.sig=sig;o.name=xcName(xc.gk,sig);o.hit=xc.files.has(o.name);return o};
     /* 2秒分: 前回と同じなら前の圧縮データを入れて、次の頭のコマ番号を返す(違えば0。そのまま圧縮する) */
     const xcGop=async f0=>{const o=xc.nx&&xc.nx.f0===f0?xc.nx:await xcSigG(f0);xc.nx=null;
+      if(o.hit&&BG){xc.used.add(o.name);xc.st.hit++;return f0+o.n}/* 裏: 有る所は読まずに飛ばす */
       if(o.hit){const rp=o.rp||xcRd(xc,o.name);rp.catch(()=>{});
         /* 読み込んでいる間に次の2秒の指紋を作っておく */if(f0+o.n<N){const nx=await xcSigG(f0+o.n);if(nx.hit){nx.rp=xcRd(xc,nx.name);nx.rp.catch(()=>{})}xc.nx=nx}
         let ch=null;try{ch=await rp}catch(e){xc.st.rf++}
@@ -5244,26 +5257,27 @@ async function exportX0(PV,noC){
           xc.used.add(o.name);xc.st.hit++;xc.hitAny=true;return f0+o.n}}
       xc.st.miss++;const gi=Math.floor(f0/G);xc.gm.set(gi,{gi,n:o.n,sig:o.sig,real:[]});return 0};
     /* 圧縮して出てきたデータを2秒ごとに集める。圧縮の設定(SPS/PPS)が前回と違えば、使い回した後なら最初から(使い回さずに)やり直す */
-    const xcOut=(c,m)=>{xc.outN++;if(m&&m.decoderConfig){const j=JSON.stringify(xcDcJ(m.decoderConfig));if(!xc.dcJ)xc.dcJ=j;else if(j!==xc.dcJ){if(xc.hitAny)throw xcRetryErr('圧縮の設定が前回と違いました');xc.files.clear();xc.dcJ=j}}
+    const xcOut=(c,m)=>{xc.outN++;if(m&&m.decoderConfig){const j=JSON.stringify(xcDcJ(m.decoderConfig));if(!xc.dcJ)xc.dcJ=j;else if(j!==xc.dcJ){if(xc.hitAny||BG)throw xcRetryErr('圧縮の設定が前回と違いました');xc.files.clear();xc.dcJ=j}}
       if(xc.dead)return;const k=Math.round(c.timestamp*XFPS/1e6),gi=Math.floor(k/G);let P=xc.pg;
       if(!P||P.gi!==gi){if(P)xcFin(xc,P);P=xc.pg=xc.gm.get(gi)||{gi,bad:1};P.ch=[]}
       if(P.bad)return;const d=new Uint8Array(c.byteLength);c.copyTo(d);P.ch.push({k:k-gi*G,t:c.type,d:c.duration==null?Math.round(1e6/XFPS):c.duration,b:d})};
     /* 進み具合の表示 */
-    const upd=q=>{const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
+    const upd=q=>{if(BG){if(BG.prog)BG.prog(fi);return}const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
       const now=performance.now(),el=(now-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);/* v631: 今の速さ(直近3秒)も出す。どこで遅くなるか分かるように */spH.push([now,fi]);while(spH.length>2&&now-spH[1][0]>3000)spH.shift();const sn=spH.length>1?((fi-spH[0][1])/XFPS)/Math.max(0.05,(now-spH[0][0])/1000):sp;
       lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍・今 '+sn.toFixed(1)+'倍）'+'\n'+pfS()+xSrcS(q,fi)+(xc&&xc.st.hit+xc.st.miss?'\n使い回し '+xc.st.hit+'/'+(xc.st.hit+xc.st.miss)+'（2秒ごと）':'');sayX(lastMsg)};
     /* v635: 次の10秒の音は、今の10秒の映像を作っている間に裏で作っておく(音と映像を同時に進める。前は音を作り終わるまで映像が止まっていた) */
-    const audAt=a=>{XAS=a.toFixed(0)+'秒〜';const p=xAudWin(ex,a,Math.min(XR.b,a+XWIN),XR);p.catch(()=>{});return p};let audP=audAt(XR.a);
+    const audAt=a=>{XAS=a.toFixed(0)+'秒〜';const p=xAudWin(ex,a,Math.min(XR.b,a+XWIN),XR);p.catch(()=>{});return p};let audP=BG?null:audAt(XR.a);
+    try{
     for(let A=XR.a;A<XR.b-1e-6;A+=XWIN){const B=Math.min(XR.b,A+XWIN);
       /* 音(10秒ずつ) */
-      xS('音の作成('+XAS+')');let _t=pn();const buf=await audP;audP=A+XWIN<XR.b-1e-6?audAt(A+XWIN):null;PF.a+=pn()-_t;const L=buf.length,cL=buf.getChannelData(0),cR=buf.getChannelData(1);
+      if(!BG){xS('音の作成('+XAS+')');let _t=pn();const buf=await audP;audP=A+XWIN<XR.b-1e-6?audAt(A+XWIN):null;PF.a+=pn()-_t;const L=buf.length,cL=buf.getChannelData(0),cR=buf.getChannelData(1);
       for(let p=0;p<L;p+=4800){const n=Math.min(4800,L-p),d=new Float32Array(n*2);d.set(cL.subarray(p,p+n),0);d.set(cR.subarray(p,p+n),n);
-        const ad=new AudioData({format:'f32-planar',sampleRate:XSR,numberOfFrames:n,numberOfChannels:2,timestamp:Math.round((A-XR.a+p/XSR)*1e6),data:d});aenc.encode(ad);ad.close()}
+        const ad=new AudioData({format:'f32-planar',sampleRate:XSR,numberOfFrames:n,numberOfChannels:2,timestamp:Math.round((A-XR.a+p/XSR)*1e6),data:d});aenc.encode(ad);ad.close()}}
       /* 映像(1コマずつ) */
-      while(fi<N){const T=XR.a+fi/XFPS;if(T>=B-1e-9&&B<XR.b-1e-6)break;
-        if(eErr)throw eErr;if(xAbort)throw new Error('中止しました');xS('映像 '+fi+'/'+N+'コマ');
+      while(fi<NE){const T=XR.a+fi/XFPS;if(T>=B-1e-9&&B<XR.b-1e-6)break;
+        if(eErr)throw eErr;if(xAbort&&!BG)throw new Error('中止しました');if(BG){await xbgYield(BG);if(xc.dead)throw new Error('使い回しが止まりました（'+xc.err+'）')}xS('映像 '+fi+'/'+N+'コマ');
         /* v646: 2秒の頭で、前回と同じなら前の圧縮データを入れて飛ばす */
-        if(xc&&!xc.dead&&fi%G===0){const _c=pn(),s0=PF.s;let r=0;try{r=await xcGop(fi)}catch(e){if(e&&e.xcRetry)throw e;xcKill(e)}PF.c+=pn()-_c-(PF.s-s0);if(r){fi=r;upd(null);continue}}
+        if(xc&&!xc.dead&&fi%G===0){const _c=pn(),s0=PF.s;let r=0;try{r=await xcGop(fi)}catch(e){if(e&&(e.xcRetry||e.xbgStop))throw e;xcKill(e)}PF.c+=pn()-_c-(PF.s-s0);if(r){fi=r;upd(null);continue}}
         const q=segOf(T);let src=null;let _v=pn();
         if(q&&q.s.clip){const c=q.s.clip;let r=vr.get(c);if(!r){vr.forEach(x=>x.close());vr.clear();r=new XVR(await xOpen(c));vr.set(c,r)}
           const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8||S0.kf?await r.keyAt(ct,{step:K/XFPS,end:q.s.end-0.001}):await r.frameAt(ct);
@@ -5272,16 +5286,20 @@ async function exportX0(PV,noC){
             fg.save();fg.translate(ow/2,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();
             fc.videoWidth=ow;fc.videoHeight=oh;if(xc&&!xc.dead){const ck=xcCK(c);xcTok(fc,xcVT(ck,f.timestamp,rot,ow,oh));xc.dims[ck]=[fw,fh]}src=fc}}
         PF.v+=pn()-_v;_v=pn();ovX=await ovXFrame(vo,T,W,H);if(xc&&!xc.dead&&ovX.f){const ck=xcCK(ovX.c);xcTok(ovC,xcVT(ck,ovX.ts,ovX.rot,ovC.width,ovC.height));xc.dims[ck]=[ovX.fw,ovX.fh]}PF.o+=pn()-_v;_v=pn();
-        if(xc&&!xc.dead){XC.RB=false;xcFrame0(g,W,H)}drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);if(xc&&!xc.dead){const P=xc.gm.get(Math.floor(fi/G));if(P)P.real.push(xcSig(g,W,H))}PF.d+=pn()-_v;_v=pn();
+        if(xc&&!xc.dead){XC.RB=false;xcFrame0(g,W,H)}drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);if(xc&&!xc.dead){const P=xc.gm.get(Math.floor(fi/G));if(P)P.real.push(xcSig(g,W,H))}ovX=null;PF.d+=pn()-_v;_v=pn();
         const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;if(xc)xc.inN++;
-        PF.e+=pn()-_v;_v=pn();{const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await eWait()}}PF.w+=pn()-_v;if(xc&&xc.wn>3)await xc.wq;
+        PF.e+=pn()-_v;_v=pn();{const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await eWait();if(BG&&BG.stop())break}}PF.w+=pn()-_v;if(xc&&xc.wn>3)await xc.wq;
         if(fi%10===0)upd(q)}
     }
-    cleanup();lastMsg='仕上げ中…';sayX(lastMsg);xS('映像の圧縮(最後)');await xTO(venc.flush(),8000);xS('音の圧縮(最後)');await xTO(aenc.flush(),8000);if(eErr)throw eErr;
+    }catch(e){if(!(BG&&e&&e.xbgStop))throw e;
+      /* 裏: 触られたので止める。描き終わった2秒分だけ出し切って取っておく(途中の2秒分は捨てる) */
+      xcEnd();cleanup();try{await xTO(venc.flush(),3000)}catch(_){}try{venc.close()}catch(_){}if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}await xc.wq;if(!xc.dead)await xcMeta(xc);BG.at=fi;return 'bg-stop'}
+    cleanup();lastMsg='仕上げ中…';sayX(lastMsg);xS('映像の圧縮(最後)');await xTO(venc.flush(),8000);xS('音の圧縮(最後)');if(aenc)await xTO(aenc.flush(),8000);if(eErr)throw eErr;
     /* v646: 最後の2秒分を保存して、今回使わなかった前の分を消す */
-    let xcInf='';if(xc){if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}xS('使い回しの保存');await xc.wq;if(!xc.dead){await xcMeta(xc);xcGC(xc)}const Au=xc.au;if(Au){XCA=null;await xcAEnd(Au)}const AS=Au?Au.st:{h:0,m:0,rf:0,we:0,wb:0,rd:0};
+    let xcInf='';if(xc){if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}xS('使い回しの保存');await xc.wq;if(!xc.dead){await xcMeta(xc);if(!BG)xcGC(xc)}if(BG){try{venc.close()}catch(e){}return 'bg-done'}const Au=xc.au;if(Au){XCA=null;await xcAEnd(Au)}const AS=Au?Au.st:{h:0,m:0,rf:0,we:0,wb:0,rd:0};
       const S=xc.st,tot=S.hit+S.miss;xcInf='\n使い回し '+S.hit+'/'+tot+'（2秒ごと）'+(AS.h+AS.m?'・音 '+AS.h+'/'+(AS.h+AS.m):'')+(AS.rf?'・音の読めなかった所 '+AS.rf:'')+(AS.we?'・音の保存の失敗 '+AS.we:'')+(S.nst?'・使えない所 '+S.nst:'')+(S.mis?'・指紋ちがい '+S.mis:'')+(S.rf?'・読めなかった所 '+S.rf:'')+(S.we?'・保存の失敗 '+S.we:'')+(xc.canW?'・保存 '+xcMB(S.wb+S.rd+AS.wb+AS.rd):'・空きが少ないので保存していません')+(xc.dead?'・途中で使い回しを止めました（'+xc.err+'）':'')+(XC.err?'・記録の失敗 '+XC.err:'')}
     else if(xcNote)xcInf='\n'+xcNote;
+    /* v648: 本番の書き出しで全部そろったので、裏の準備は済み */if(!PV&&!xLiteRun&&xc&&!xc.dead&&xc.canW&&xbgVer===xv0)xbgMark(xv0);
     try{venc.close()}catch(e){}try{aenc.close()}catch(e){}xS('MP4にまとめる');mux.finalize();
     const blob=new Blob([head.subarray(0,Math.min(HM,Math.max(headLen,0))),...parts],{type:'video/mp4'});
     const sec=(performance.now()-t0)/1000,inf=W+'×'+H+'・'+S0.br+'Mbps・'+XFPS+'fps / '+sec.toFixed(1)+'秒（速さ '+(all/Math.max(0.1,sec)).toFixed(1)+'倍）・'+(blob.size/1048576).toFixed(1)+'MB'+(vc.hardwareAcceleration==='prefer-software'?'・ソフト圧縮':'')+(vc.bitrateMode==='constant'?'・固定ビットレート':'')+'\n'+pfS()+rdS()+xcInf;
@@ -5289,9 +5307,92 @@ async function exportX0(PV,noC){
     outBlob=blob;outExt='mp4';outLite=!!xLiteRun;{const sm=$('saveMsg');if(sm)sm.textContent=''}
     const r=$('result');r.src=URL.createObjectURL(outBlob);r.hidden=false;$('save').hidden=!dl;$('prog').style.width='100%';
     say('できました（'+inf+'）','ok');return true;
-  }catch(err){cleanup();xcEnd();XCA=null;if(err&&err.xcRetry){/* v646: 前回の分は消して、使い回さずにやり直す */try{if(xc)for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'xcRetry'}sayX('失敗:'+(err&&err.message||err),'err');return null}
-  finally{xcEnd();XCA=null;clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
+  }catch(err){cleanup();xcEnd();if(BG){XBG.lastErr=String(err&&err.message||err).slice(0,120);/* 前の分が今の圧縮と合わない: 全部消して次は最初から */if(err&&err.xcRetry&&xc)try{for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'bg-err'}XCA=null;if(err&&err.xcRetry){/* v646: 前回の分は消して、使い回さずにやり直す */try{if(xc)for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'xcRetry'}sayX('失敗:'+(err&&err.message||err),'err');return null}
+  finally{xcEnd();ovX=null;try{if(vEnc&&vEnc.state!=='closed')vEnc.close()}catch(e){}if(BG)cleanup();else{XCA=null;clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}}
 }
+/* ===== v648: 編集中に裏で書き出しておく =====
+   手を止めて4秒たったら、書き出し(exportX0 と同じ描き方・同じ圧縮)を裏で少しずつ進めて、2秒ごとの圧縮データを「使い回し」の所に取っておく。
+   本番の書き出しはそれを使い回すので速い(画質・音は同じ)。元の動画から音を読む所も先に読んでおく(ほどく・混ぜる・圧縮は本番で毎回)。
+   触る・再生する・画面が消える・書き出しを始める と、すぐ止める(描いている途中の2秒分は捨てる・読み込みの器は閉じる)。8msごとに画面の処理に順番を譲る(固まらない)。
+   再生位置の辺りから順に進め、最後まで行ったら頭に戻る。電池が20%未満で充電していない時・字幕ページが処理中の時は動かない。
+   正しさは本番の書き出しの指紋で決まる(裏で作った物が今の内容と違えば使わない)ので、ここでの「変わったか」の判断が外れても、出来る動画は変わらない */
+const XBG={run:null,stop:false,hold:0,last:performance.now(),down:false,cyc:null,prev:null,nextT:0,err:0,lastErr:'',el:null,bat:null,n:0};
+const xbgStopErr=()=>{const e=new Error('裏の準備を止めました');e.xbgStop=true;return e};
+/* 順番を譲る(使えれば「後回しでよい仕事」として。画面の処理が先に動く) */
+const xYield=()=>window.scheduler&&typeof scheduler.postTask==='function'?scheduler.postTask(()=>{},{priority:'background'}):new Promise(r=>{const c=new MessageChannel();c.port1.onmessage=()=>{c.port1.close();r()};c.port2.postMessage(0)});
+async function xbgYield(B){if(B.stop())throw xbgStopErr();if(performance.now()-B.ly<8)return;await xYield();B.ly=performance.now();if(B.stop())throw xbgStopErr()}
+const xbgWant=()=>{try{return localStorage.getItem('xbg')!=='0'}catch(e){return true}};
+const xbgStopQ=()=>XBG.stop||XBG.hold>0||busy||playing||document.hidden||!!(window.subBusy&&window.subBusy());
+async function xbgHalt(){if(!XBG.run)return;XBG.stop=true;try{await XBG.run}catch(e){}}
+window.xbgBump=()=>{xbgVer=(xbgVer|0)+1};
+const xbgKey=()=>{const S=xSet('main',true),R=exRange(true);return S.h+'|'+S.br+'|'+S.fps+'|'+(+R.a).toFixed(3)+'|'+(+R.b).toFixed(3)};
+/* 書き出す範囲に入る区間(書き出しと裏の準備で同じ物を使う) */
+function xExOf(XR){const ex=[];let o=0;for(const s of segs){const d=segD(s),sa=o,sb=o+d;o+=d;if(sb<=XR.a+1e-4||sa>=XR.b-1e-4)continue;ex.push({s,sa,sb})}return ex}
+/* 本番の書き出しで全部そろった時は、裏の準備も済み */
+function xbgMark(ver){XBG.cyc={key:xbgKey(),ver,N:0,G:0,nG:0,start:0,pos:0,wrap:true,adone:true,ap:1,vdone:true,done:true,used:new Set(),nd:0,gc:true};xbgShow()}
+const xbgDoneG=(c,p)=>c.wrap?(c.nG-c.start)+p:p-c.start;
+/* 右下の小さな表示 */
+function xbgShow(){const c=XBG.cyc;let t='';
+  if(c&&!XBG.hold&&xbgWant()&&xcWant()){if(c.done)t='書き出しの準備OK';else if(XBG.run||c.nd||c.ap){const p=Math.floor(((c.adone?1:c.ap||0)*0.05+Math.max(0,c.nd||0)/Math.max(1,c.nG)*0.95)*100);t='書き出しの準備 '+Math.max(0,Math.min(99,p))+'%'}}
+  let el=XBG.el;if(!t){if(el&&!el.hidden)el.hidden=true;return}
+  if(!el){el=XBG.el=document.createElement('div');el.id='xbgSt';el.style.cssText='position:fixed;right:40px;bottom:4px;font:10px/1 sans-serif;color:var(--muted);opacity:.75;pointer-events:none;z-index:99';document.body.appendChild(el)}
+  if(el.hidden)el.hidden=false;if(el.textContent!==t)el.textContent=t}
+/* 触った・動かした・打った・画面が消えた → 止める(手が止まって4秒たつまで始めない) */
+{const o={capture:true,passive:true},P=new Set(),poke=()=>{XBG.last=performance.now();if(XBG.run){XBG.stop=true;/* 描き込みの記録はすぐ止める(画面の描き込みを遅くしない。止めた後に描いた2秒分は使わない) */xcEnd()}};
+  addEventListener('pointerdown',e=>{if(e.isPrimary)P.clear();P.add(e.pointerId);XBG.down=true;poke()},o);
+  const up=e=>{P.delete(e.pointerId);XBG.down=P.size>0;poke()};addEventListener('pointerup',up,o);addEventListener('pointercancel',up,o);
+  ['pointermove','touchstart','touchmove','touchend','keydown','wheel','input','compositionstart','compositionupdate','focusin','scroll'].forEach(t=>addEventListener(t,poke,o));
+  document.addEventListener('visibilitychange',()=>{P.clear();XBG.down=false;poke()})}
+try{if(navigator.getBattery)navigator.getBattery().then(b=>{XBG.bat=b}).catch(()=>{})}catch(e){}
+const xbgBatOK=()=>{const b=XBG.bat;return !b||b.charging||!(b.level<0.2)};
+/* 音: 元の動画から読む所だけ先に読んで取っておく(書き出しの音と同じ区切り・同じ名前) */
+async function xbgAud(c,XR,stop){let au=null;try{au=await xcAOpen()}catch(e){return 'done'}if(!au.canW)return 'done';
+  const pre={au,ly:0,stop},ex=xExOf(XR),T=Math.max(0.01,XR.b-XR.a);
+  try{for(let A=XR.a;A<XR.b-1e-6;A+=XWIN){const B=Math.min(XR.b,A+XWIN);
+      for(let k=0;k<ex.length;k++){const {s,sa,sb}=ex[k];if(!s.clip||sb<=A||sa>=B)continue;
+        const K=spdOf(s),ga=Math.max(A,sa),gb=Math.min(B,sb),c0=s.start+(ga-sa)*K,c1=s.start+(gb-sa)*K;if(K>=101)continue;
+        await xbgYield(pre);const X=await xOpen(s.clip);if(K>=8)await xAudSp(X,c0,c1,K,xcCK(s.clip),pre);else await xAud(X,c0,c1,xcCK(s.clip),pre)}
+      c.ap=Math.min(1,(B-XR.a)/T);xbgShow()}}
+  catch(e){await au.wq;if(e&&e.xbgStop)return 'stop';XBG.lastErr='音: '+String(e&&e.message||e).slice(0,100);return 'skip'}
+  await xcAEnd(au);return 'done'}
+/* 1回分: 続きから進める(止められたら、そこまでで終わる) */
+async function xbgRun(){
+  const S=xSet('main',true),fps=S.fps,G=fps*2,R=exRange(true),N=Math.max(1,Math.round(Math.max(0.01,R.b-R.a)*fps)),nG=Math.ceil(N/G),key=xbgKey();
+  let c=XBG.cyc,old=null;
+  if(!c||c.key!==key||c.ver!==xbgVer||c.N!==N||c.G!==G){old=c||XBG.prev;XBG.prev=null;const f=Math.max(0,Math.min(N-1,Math.round(((+gt||0)-R.a)*fps))),s=Math.max(0,Math.min(nG-1,Math.floor(f/G)));
+    c=XBG.cyc={key,ver:xbgVer,N,G,nG,start:s,pos:s,wrap:false,adone:false,ap:0,vdone:false,done:false,used:new Set(),nd:0,gc:false}}
+  const stop=()=>xbgStopQ()||c.ver!==xbgVer||XBG.cyc!==c;
+  xbgShow();
+  /* 何度も直して古い分がたまった時(今の長さの1.5倍より多い)は、前の準備で確かめた分だけ残して消す(スマホの中を使いすぎないように) */
+  if(old&&old.used&&old.used.size&&old.key===key)try{const dir=await (await xcRoot()).getDirectoryHandle('xcache_main'),ns=(await xcNames(dir)).filter(n=>n[0]==='g');
+    if(ns.length>nG*1.5+10)for(const n of ns){if(stop())return;if(!old.used.has(n))try{await dir.removeEntry(n)}catch(e){}}}catch(e){}
+  if(!c.adone){const r=await xbgAud(c,R,stop);if(r==='stop')return;c.adone=true;c.ap=1;xbgShow()}
+  /* 映像: 2秒ごと。最後まで行ったら頭から、始めた所まで */
+  while(!c.vdone){if(stop())return;
+    const f0=c.pos*G,f1=c.wrap?Math.min(N,c.start*G):N;
+    if(f0>=f1){if(!c.wrap&&c.start>0){c.wrap=true;c.pos=0;continue}c.vdone=true;break}
+    const B={f0,f1,n:0,G:0,ly:0,at:f0,used:null,stop,prog:fi=>{c.nd=xbgDoneG(c,Math.floor(fi/G));xbgShow()}};
+    const r=await exportX0(null,false,B);
+    if(B.used)for(const n of B.used)c.used.add(n);
+    if(XBG.cyc!==c)return;
+    if(B.n&&B.n!==N){XBG.cyc=null;return}/* 長さが変わった */
+    if(r==='bg-done'){c.pos=Math.ceil(f1/G);c.nd=xbgDoneG(c,c.pos);XBG.err=0;continue}
+    if(r==='bg-stop'){c.pos=Math.max(c.pos,Math.floor(B.at/G));c.nd=xbgDoneG(c,c.pos);return}
+    /* 使えない・失敗した時は、しばらく待ってから */
+    if(r!=='bg-no'&&r!==false)XBG.err++;XBG.nextT=performance.now()+(r===false?5e3:r==='bg-no'?120e3:Math.min(600e3,30e3*2**Math.min(5,XBG.err-1)));return}
+  /* 今の内容で使わない古い分を消す(最後まで確かめた時だけ) */
+  if(!c.gc){try{const dir=await (await xcRoot()).getDirectoryHandle('xcache_main');for(const n of await xcNames(dir)){if(stop())return;if(n[0]==='g'&&!c.used.has(n))try{await dir.removeEntry(n)}catch(e){}}}catch(e){}c.gc=true}
+  c.done=true;XBG.err=0;xbgShow()}
+/* 1秒ごと: 手が止まって4秒たったら始める */
+function xbgTick(){const c=XBG.cyc;
+  if(c&&!XBG.run&&!XBG.hold&&(c.ver!==xbgVer||c.key!==xbgKey())){XBG.prev=c;XBG.cyc=null}
+  xbgShow();
+  if(XBG.run||XBG.hold||XBG.down||!xbgWant()||!xcWant()||xbgStopQ()||!restored||!segs.length)return;
+  const now=performance.now();if(now-XBG.last<4000||now<XBG.nextT||!xbgBatOK()||!xOK()||!xcOK())return;
+  if(XBG.cyc&&XBG.cyc.done)return;
+  XBG.n++;
+  XBG.run=xbgRun().catch(e=>{XBG.lastErr=String(e&&e.message||e).slice(0,120);XBG.err++;XBG.nextT=performance.now()+Math.min(600e3,30e3*2**Math.min(5,XBG.err-1))}).finally(()=>{XBG.run=null;XBG.stop=false;xbgShow()})}
+setInterval(xbgTick,1000);
 
 /* 保存 */
 let dl=null;
@@ -5677,7 +5778,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v647';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v648';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5748,6 +5849,7 @@ setInterval(async()=>{
   if(!restored||playing)return;/* v408: 再生中は自動保存しない(止めた時に保存) */
   const st=snapshot(),sig=JSON.stringify(st);
   if(sig===lastSig)return;lastSig=sig;
+  /* v648: 書き出しに関わる所が変わったら、裏の準備をやり直す(再生位置・開いている画面は除く) */try{const {gt:_g,page:_p,screen:_s,cur:_c,...o}=st,es=JSON.stringify(o);if(es!==xbgES){xbgES=es;xbgVer=(xbgVer|0)+1}}catch(e){}
   try{await idbPut('state','project',st)}catch(e){}
   /* v632: 作品を最後に触った日(30日のお知らせ用) */
   try{if(curProj&&curProj.id){const T=JSON.parse(localStorage.getItem('pjTouch')||'{}');T[curProj.id]=Date.now();localStorage.setItem('pjTouch',JSON.stringify(T))}}catch(e){}
@@ -7677,7 +7779,7 @@ async function getAudio(){if(audio)return audio;
   audio={pcm,dur:N/SR,pk,parts:pi};return audio}
 
 /* 処理中は画面をスリープさせない */
-let wake=null,working=false;
+let wake=null,working=false;window.subBusy=()=>working;/* v648: 字幕ページが処理中の間は裏の準備をしない */
 /* v469: アプリ(箱 ver6〜)なら閉じても続くので、そう案内する */const BGTIP=window.BakuApp&&window.BakuApp.bgStart?'\n画面を消したり閉じたりしても大丈夫です(通知の間は続きます)':'\n終わるまで画面を消さないでください';
 /* v467: 時間がかかる作業(書き出し・文字起こし)の間は、アプリ(箱 ver6〜)に「処理中」の通知を出してもらい、画面を消しても・ホームに戻っても続ける */
 /* v469: フリーズしていないか分かるように、作業中は右上に毎秒進む時計と経過時間を出す(止まったら固まっている)。通知にも進み具合と更新時刻を出す */
@@ -9399,6 +9501,7 @@ async function renderJob(){const MIMES=[['video/mp4;codecs=avc1.42E01E,mp4a.40.2
    き・奥はキャンバス(subPaint)、太はDOMを画面外で組んで、その見た目をキャンバスに描き写す */
 const seL=()=>(TL.seList||[]).concat(window.tltSeList?window.tltSeList():[]);window.seAll=()=>SE.map(x=>({id:x.id,n:x.n}));
 const TL={keys:'',rows:{},list:[],grps:[],seList:[],sig:'',dirty:true,busy:null,cache:new Map(),host:null,imgs:{},seT:null};
+/* v648: 字幕が変わった印(dirty)が付いたら、裏の書き出しの準備もやり直す */{let d=TL.dirty;Object.defineProperty(TL,'dirty',{get:()=>d,set:v=>{d=v;if(v)try{window.xbgBump&&window.xbgBump()}catch(e){}},enumerable:true,configurable:true})}
 async function tlLoad(segs){
   /* v477: もう1本として入れた動画(key#2)は元の動画の文字起こしを使う */const BK=k=>String(k||'').replace(/#\d+$/,'');
   const keys=[...new Set(segs.filter(s=>s.clip).map(s=>BK(s.clip.key)))];
@@ -9630,16 +9733,23 @@ window.subTLDraw=(g,W,H,t,segs)=>{
   /* v540: タイムラインの再生画面で動かした字幕の位置と大きさ */const X=window.subXfAt(t),xf=X&&(X.zm||X.px||X.py);if(xf){g.save();g.translate(W/2+(X.px||0)*W,H/2+(X.py||0)*H);g.scale(X.zm||1,X.zm||1);g.translate(-W/2,-H/2)}
   try{if(k[0]==='r'&&tlDrawA(g,e,TL.list[+k.slice(1)],t,H))return;tlDrawE(g,e)}finally{if(xf)g.restore()}};
 /* v540: 今映っている字幕(位置・大きさを動かす相手)と、その保存 */window.subXfAt=t=>TL.list.find(x=>!x.nar&&t>=x.a&&t<x.b&&!x.se)||TL.list.find(x=>t>=x.a&&t<x.b&&!x.se)||null;
-let xfSv=0;window.subXfSet=(X,v)=>{const put=o=>{['px','py','zm'].forEach(k=>{if(v[k]==null||(k==='zm'?v[k]===1:!v[k]))delete o[k];else o[k]=v[k]})};put(X);if(X._src)put(X._src);
+let xfSv=0;window.subXfSet=(X,v)=>{/* v648 */try{window.xbgBump&&window.xbgBump()}catch(e){}const put=o=>{['px','py','zm'].forEach(k=>{if(v[k]==null||(k==='zm'?v[k]===1:!v[k]))delete o[k];else o[k]=v[k]})};put(X);if(X._src)put(X._src);
   const R=TL.res&&TL.res[X._K];if(R){clearTimeout(xfSv);xfSv=setTimeout(()=>{kv(R.key,R.r).catch(()=>{})},600)}};
 /* 書き出しの前に: 字幕・フォント・SEの準備 */
-window.subTLPrep=async(segs,t0)=>{await (TL.busy||Promise.resolve());TL.dirty=true;await tlLoad(segs);TL.cache.clear();tlHost(16,16);
-  const fams=new Set(['"Shippori Mincho"','"Yusei Magic"','"Noto Sans JP"']);TL.list.forEach(g=>{const f=fk(g);if(f&&window.PFAM&&window.PFAM[f])fams.add(window.PFAM[f].split(',')[0])});
+const tlFonts=async()=>{const fams=new Set(['"Shippori Mincho"','"Yusei Magic"','"Noto Sans JP"']);TL.list.forEach(g=>{const f=fk(g);if(f&&window.PFAM&&window.PFAM[f])fams.add(window.PFAM[f].split(',')[0])});
   const txt=[...new Set(TL.list.map(g=>g.t+(g.ttl||'')).join('')+'❖･・●❧☙✦')].join('');
-  try{await Promise.all([...fams].flatMap(f=>['400','600','700','900'].map(w=>document.fonts.load(w+' 40px '+f,txt).catch(()=>{}))))}catch(e){}
+  try{await Promise.all([...fams].flatMap(f=>['400','600','700','900'].map(w=>document.fonts.load(w+' 40px '+f,txt).catch(()=>{}))))}catch(e){}};
+window.subTLPrep=async(segs,t0)=>{await (TL.busy||Promise.resolve());TL.dirty=true;await tlLoad(segs);TL.cache.clear();tlHost(16,16);
+  await tlFonts();
   await Promise.all(Object.keys(TL.imgs).map(u=>{const m=TL.imgs[u];return m.complete?0:new Promise(r=>{m.onload=m.onerror=r})}));
   await Promise.all([...new Set(seL().map(g=>g.se))].map(id=>seLoad(id).catch(()=>null)));
   TL.seT=t0-0.05;return TL.list.length};
+/* v648: 裏の準備用。読み直しを強いない(変わった時だけ読む)・SE や再生の状態には触らない。フォントと画像を待つだけ(画像は3秒まで) */
+window.subTLFonts=async segs=>{await (TL.busy||Promise.resolve());
+  if(TL.dirty||tlSig(segs)!==TL.sig||[...new Set(segs.filter(s=>s.clip).map(s=>String(s.clip.key).replace(/#\d+$/,'')))].join('|')!==TL.keys){TL.busy=tlLoad(segs).catch(()=>{}).then(()=>{TL.busy=null;window._tlRedraw&&window._tlRedraw()});await TL.busy}
+  await tlFonts();
+  await Promise.race([Promise.all(Object.keys(TL.imgs).map(u=>{const m=TL.imgs[u];return m.complete?0:new Promise(r=>{m.addEventListener('load',r,{once:true});m.addEventListener('error',r,{once:true})})})),new Promise(r=>setTimeout(r,3000))]);
+  return TL.list.length};
 /* 頭(a)が前回〜今の間に来た行のSEを鳴らす(飛んだ時は鳴らさない) */
 window.subTLSeReset=t=>{TL.seT=t-0.05};
 window.subTLSe=(ac,dest,t)=>{if(TL.seT==null||t<TL.seT||t-TL.seT>0.6){TL.seT=t;return}
