@@ -1110,6 +1110,7 @@ const clips=[]; let cur=null, segs=[], segMan=false, inT=null, outBlob=null, out
 /* v522: 速度。segs の各要素の spd=倍率(無い=1)。タイムライン上の長さ=(end-start)/spd */const spdOf=q=>q&&q.spd>0?q.spd:1,segD=q=>(q.end-q.start)/spdOf(q),spdTx=q=>spdOf(q)!==1?' ×'+spdOf(q):'';
 let thr=5, auto=true, hist=[], delArm=false, delTimer=null, tpl=null, pps=28;
 let cutMode=false,selMode=false,selA=null,selB=null;
+/* v614: タイムラインの動画クリップのサムネイルを出すか(⚙パフォーマンス)。入れ替え画面は常に出す */let tlThumb=true;try{tlThumb=localStorage.getItem('tlThumb')!=='0'}catch(e){}
 let selVid=null;/* v541: タップで選んだ動画ブロック */
 let actLane=null, items=[], itemId=1, selItem=null, workMade=false, gt=0, playing=false, playTok=0, seekTok=0, ph=null, svClip=null;
 
@@ -3404,7 +3405,7 @@ function renderLanes(){
       if(s.clip&&inRun[k]){b.style.background='transparent';b.style.zIndex='1';const sp=document.createElement('span');sp.textContent=num(s.clip)+spdTx(s);b.appendChild(sp)}
       else if(s.clip){/* v367: 動画レーンは波形ではなくサムネイルを並べる(フィルムストリップ) */
         const fs=document.createElement('div');fs.className='fstrip';const bw=d*pps,th=laneH(0)-6,tw=Math.max(24,th*16/9),n=Math.max(1,Math.min(16,Math.ceil(bw/tw)));
-        /* v419: サムネは画面に見えた時に作る(lzAdd) */lzAdd(b,x,d,()=>{for(let k=0;k<n;k++){const im=document.createElement('img');im.style.left=(k*tw)+'px';im.style.width=tw+'px';fs.appendChild(im);
+        /* v419: サムネは画面に見えた時に作る(lzAdd) */lzAdd(b,x,d,()=>{if(!tlThumb)return;for(let k=0;k<n;k++){const im=document.createElement('img');im.style.left=(k*tw)+'px';im.style.width=tw+'px';fs.appendChild(im);
           /* v425: サムネの時刻は1秒単位に丸める(ズームのたびに別の時刻のサムネを作り直していたため) */const tt=Math.min(s.end-0.05,Math.round(s.start+(k*tw+tw/2)/pps*spdOf(s)));thumb(s.clip,Math.max(s.start,tt)).then(u=>{if(u)im.src=u})}});
         b.appendChild(fs);const sp=document.createElement('span');sp.textContent=num(s.clip)+spdTx(s);b.appendChild(sp)}
       else{b.classList.add('gap');const sp=document.createElement('span');sp.textContent='空白';b.appendChild(sp)}
@@ -3417,7 +3418,7 @@ function renderLanes(){
         if(e>k){/* v474: まとまり全体のサムネ帯(指は下のブロックが受ける) */let x0=0;for(let j=0;j<k;j++)x0+=segD(segs[j]);const L=segs.slice(k,e+1),D=L.reduce((a,q)=>a+segD(q),0);
           if(!(cview&&(x0+D<=V.a+1e-3||x0>=V.b-1e-3))){const fs=document.createElement('div');fs.className='fstrip vrun';fs.style.cssText='position:absolute;top:4px;bottom:4px;border-radius:6px;overflow:hidden;pointer-events:none;z-index:0;background:var(--ok);left:'+(x0*pps)+'px;width:'+(D*pps)+'px';
             const bw=D*pps,th=laneH(0)-6,tw=Math.max(24,th*16/9),n=Math.max(1,Math.min(Math.ceil(bw/tw),200));
-            lzAdd(fs,x0,D,()=>{for(let j=0;j<n;j++){const im=document.createElement('img');im.style.left=(j*tw)+'px';im.style.width=tw+'px';fs.appendChild(im);
+            lzAdd(fs,x0,D,()=>{if(!tlThumb)return;for(let j=0;j<n;j++){const im=document.createElement('img');im.style.left=(j*tw)+'px';im.style.width=tw+'px';fs.appendChild(im);
               let o=(j*tw+tw/2)/pps,q=L[L.length-1];for(const z of L){const d=segD(z);if(o<=d){q=z;break}o-=d}if(!q.clip){im.remove();continue}const c=q.clip;
               const tt=Math.min(q.end-0.05,Math.round(q.start+Math.min(o*spdOf(q),q.end-q.start)));thumb(c,Math.max(q.start,tt)).then(u=>{if(u)im.src=u})}});ln.appendChild(fs)}}
         if(e>k)for(let m=k;m<=e;m++){const b=videoBlks[m];if(!b)continue;b.style.borderColor='var(--ok)';if(b.classList.contains('xsel')){const A='var(--accent)',sh=['inset 0 3px 0 '+A,'inset 0 -3px 0 '+A];if(m===k)sh.push('inset 3px 0 0 '+A);if(m===e)sh.push('inset -3px 0 0 '+A);b.style.outline='none';b.style.boxShadow=sh.join(',')}
@@ -4964,7 +4965,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v613';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v614';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6691,7 +6692,10 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
       const nt=document.createElement('div');nt.textContent='軽くするほど早くできますが、波形が粗くなります。変えた後に作る波形から効きます（字幕の生成には影響しません）';nt.style.cssText='font-size:12px;color:var(--muted)';
       const cl=document.createElement('label');cl.style.cssText='display:flex;align-items:center;gap:10px;font-size:15px;min-height:44px';cl.innerHTML='<input type="checkbox" style="width:22px;height:22px"><span>動画を選んだ後、裏で波形を先に作る</span>';
       const cb=cl.querySelector('input');cb.checked=wfPre;cb.onchange=()=>{wfPre=cb.checked;try{localStorage.setItem('wfPre',cb.checked?'1':'0')}catch(e){}if(wfPre)wfPrefetch()};
-      w.append(r,nt,cl);return w})();
+      const tr=document.createElement('label');tr.style.cssText='display:flex;align-items:center;gap:10px;font-size:15px;min-height:44px';tr.innerHTML='<input type="checkbox" style="width:22px;height:22px"><span>サムネイルの表示（タイムライン）</span>';
+      const tb=tr.querySelector('input');tb.checked=tlThumb;tb.onchange=()=>{tlThumb=tb.checked;try{localStorage.setItem('tlThumb',tb.checked?'1':'0')}catch(e){}const sc=$('scr'),x=sc?sc.scrollLeft:0;try{renderLanes();if(sc)sc.scrollLeft=x}catch(e){}};
+      const tn=document.createElement('div');tn.textContent='オフにすると動画クリップの絵を出さず軽くなります（入れ替え画面では常に出ます）';tn.style.cssText='font-size:12px;color:var(--muted)';
+      w.append(r,nt,cl,tr,tn);return w})();
     const secs=[['表示・色',[col,fs]],['パフォーマンス',[perf]],['テンプレート',[pt,tlb]],['字幕画面',[(()=>{const b=document.createElement('button');b.id='tzBtn';b.textContent='字幕画面の設定';b.style.cssText=pt.style.cssText;b.onclick=()=>{window.tzOpen&&window.tzOpen()};return b})()]],['SE（効果音）',[seD]],['音声認識の準備',[$('t_setup')]],['フォント',[(()=>{const t=$('t_fIn').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='字幕のフォントを追加';return t})()]],['AI',[window.apiBox(),(()=>{const t=$('t_fx').closest('.tsec');const h=t.querySelector('h2');if(h)h.textContent='結果をくらべる（Claude仕上げ）';return t})(),$('t_txD')]]];
     let open=-1;const H=[];
     secs.forEach(([t,els],k)=>{const h=document.createElement('button');h.className='sh';h.innerHTML='<i class="dot"></i><span></span><i class="ar"></i>';h.children[1].textContent=t;
