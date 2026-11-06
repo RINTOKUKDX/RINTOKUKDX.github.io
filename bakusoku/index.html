@@ -4638,7 +4638,7 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
     cb.onclick=async()=>{if(busy)return;cb.disabled=true;cb.textContent='消しています…';XBG.hold++;try{await xbgHalt();XBG.cyc=null;await xcClearAll()}finally{XBG.hold--}cb.textContent='消しました';xbgShow()};c.appendChild(cb);
     /* v648: 編集中に裏で書き出しておく(押すと切り替わる) */const bb=document.createElement('button');bb.id='xbgTgl';bb.type='button';bb.style.cssText='display:block;width:100%;margin:10px 0 4px';
     const bst=()=>{bb.textContent=(bgOn?'✓ ':'')+'編集中に裏で書き出しておく';bb.className=bgOn?'primary':'no';bb.setAttribute('aria-pressed',String(bgOn))};bst();bb.onclick=()=>{bgOn=!bgOn;bst()};c.appendChild(bb);
-    const bn=document.createElement('p');bn.style.cssText='font-size:12px;opacity:.75;margin:4px 0';bn.textContent=xcOK()?'手を止めて4秒たつと、書き出しの圧縮を裏で先に進めておきます（右下に「書き出しの準備」と出ます）。本番の書き出しは、出来ている所を使い回すので速くなります（画質は同じ）。触る・再生する・画面が消えるとすぐ止まり、続きは次に手を止めた時に進めます。電池が20%未満で充電していない時は動きません。動いている間は電池を使い、スマホが温かくなることがあります。上の「直した所だけ書き出し直す」がオンの時だけ動きます。':'この端末では使えません';c.appendChild(bn)}
+    const bn=document.createElement('p');bn.style.cssText='font-size:12px;opacity:.75;margin:4px 0';bn.textContent=xcOK()?'手を止めて4秒たつと、書き出しの圧縮を裏で先に進めておきます（右下に「書き出しの準備」と出ます）。本番の書き出しは、出来ている所を使い回すので速くなります（画質は同じ）。触る・再生するとすぐ止まり、続きは次に手を止めた時に進めます。アプリでは、画面を消した時や他のアプリを使っている間も続けます（その間は「書き出しの準備中」の通知が出ます。アプリに戻ると止まります）。Chromeでは画面が消えると止まります。電池が20%未満で充電していない時は動きません。動いている間は電池を使い、スマホが温かくなることがあります。上の「直した所だけ書き出し直す」がオンの時だけ動きます。':'この端末では使えません';c.appendChild(bn)}
   const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
   const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
   const ok=document.createElement('button');ok.className='primary';ok.textContent='保存';ok.onclick=()=>{const nv={h:+sh.value,br:+sb.value,fps:+sf.value};try{localStorage.setItem('xset_'+k,JSON.stringify(nv))}catch(e){}
@@ -5316,13 +5316,13 @@ async function exportX0(PV,noC,BG){
    触る・再生する・画面が消える・書き出しを始める と、すぐ止める(描いている途中の2秒分は捨てる・読み込みの器は閉じる)。8msごとに画面の処理に順番を譲る(固まらない)。
    再生位置の辺りから順に進め、最後まで行ったら頭に戻る。電池が20%未満で充電していない時・字幕ページが処理中の時は動かない。
    正しさは本番の書き出しの指紋で決まる(裏で作った物が今の内容と違えば使わない)ので、ここでの「変わったか」の判断が外れても、出来る動画は変わらない */
-const XBG={run:null,stop:false,hold:0,last:performance.now(),down:false,cyc:null,prev:null,nextT:0,err:0,lastErr:'',el:null,bat:null,n:0};
+const XBG={run:null,stop:false,hold:0,last:performance.now(),down:false,cyc:null,prev:null,nextT:0,err:0,lastErr:'',el:null,bat:null,n:0,fg:false};
 const xbgStopErr=()=>{const e=new Error('裏の準備を止めました');e.xbgStop=true;return e};
 /* 順番を譲る(使えれば「後回しでよい仕事」として。画面の処理が先に動く) */
-const xYield=()=>window.scheduler&&typeof scheduler.postTask==='function'?scheduler.postTask(()=>{},{priority:'background'}):new Promise(r=>{const c=new MessageChannel();c.port1.onmessage=()=>{c.port1.close();r()};c.port2.postMessage(0)});
+/* v650: 画面が消えている間(アプリで続けている時)は、後回しにされないよう MessageChannel の方を使う */const xYield=()=>!document.hidden&&window.scheduler&&typeof scheduler.postTask==='function'?scheduler.postTask(()=>{},{priority:'background'}):new Promise(r=>{const c=new MessageChannel();c.port1.onmessage=()=>{c.port1.close();r()};c.port2.postMessage(0)});
 async function xbgYield(B){if(B.stop())throw xbgStopErr();if(performance.now()-B.ly<8)return;await xYield();B.ly=performance.now();if(B.stop())throw xbgStopErr()}
 const xbgWant=()=>{try{return localStorage.getItem('xbg')!=='0'}catch(e){return true}};
-const xbgStopQ=()=>XBG.stop||XBG.hold>0||busy||playing||document.hidden||!!(window.subBusy&&window.subBusy());
+const xbgStopQ=()=>XBG.stop||XBG.hold>0||busy||playing||document.hidden&&(!XBG.fg||!xbgBatOK())||!!(window.subBusy&&window.subBusy());
 async function xbgHalt(){if(!XBG.run)return;XBG.stop=true;try{await XBG.run}catch(e){}}
 window.xbgBump=()=>{xbgVer=(xbgVer|0)+1};
 const xbgKey=()=>{const S=xSet('main',true),R=exRange(true);return S.h+'|'+S.br+'|'+S.fps+'|'+(+R.a).toFixed(3)+'|'+(+R.b).toFixed(3)};
@@ -5332,8 +5332,9 @@ function xExOf(XR){const ex=[];let o=0;for(const s of segs){const d=segD(s),sa=o
 function xbgMark(ver){XBG.cyc={key:xbgKey(),ver,N:0,G:0,nG:0,start:0,pos:0,wrap:true,adone:true,ap:1,vdone:true,done:true,used:new Set(),nd:0,gc:true};xbgShow()}
 const xbgDoneG=(c,p)=>c.wrap?(c.nG-c.start)+p:p-c.start;
 /* 右下の小さな表示 */
+const xbgPct=c=>Math.max(0,Math.min(99,Math.floor(((c.adone?1:c.ap||0)*0.05+Math.max(0,c.nd||0)/Math.max(1,c.nG)*0.95)*100)));
 function xbgShow(){const c=XBG.cyc;let t='';
-  if(c&&!XBG.hold&&xbgWant()&&xcWant()){if(c.done)t='書き出しの準備OK';else if(XBG.run||c.nd||c.ap){const p=Math.floor(((c.adone?1:c.ap||0)*0.05+Math.max(0,c.nd||0)/Math.max(1,c.nG)*0.95)*100);t='書き出しの準備 '+Math.max(0,Math.min(99,p))+'%'}}
+  if(c&&!XBG.hold&&xbgWant()&&xcWant()){if(c.done)t='書き出しの準備OK';else if(XBG.run||c.nd||c.ap)t='書き出しの準備 '+xbgPct(c)+'%'}
   let el=XBG.el;if(!t){if(el&&!el.hidden)el.hidden=true;return}
   if(!el){el=XBG.el=document.createElement('div');el.id='xbgSt';el.style.cssText='position:fixed;right:40px;bottom:4px;font:10px/1 sans-serif;color:var(--muted);opacity:.75;pointer-events:none;z-index:99';document.body.appendChild(el)}
   if(el.hidden)el.hidden=false;if(el.textContent!==t)el.textContent=t}
@@ -5342,9 +5343,17 @@ function xbgShow(){const c=XBG.cyc;let t='';
   addEventListener('pointerdown',e=>{if(e.isPrimary)P.clear();P.add(e.pointerId);XBG.down=true;poke()},o);
   const up=e=>{P.delete(e.pointerId);XBG.down=P.size>0;poke()};addEventListener('pointerup',up,o);addEventListener('pointercancel',up,o);
   ['pointermove','touchstart','touchmove','touchend','keydown','wheel','input','compositionstart','compositionupdate','focusin','scroll'].forEach(t=>addEventListener(t,poke,o));
-  document.addEventListener('visibilitychange',()=>{P.clear();XBG.down=false;poke()})}
+  document.addEventListener('visibilitychange',()=>{P.clear();XBG.down=false;
+    /* v650: アプリ(箱)なら、画面を消した時・他のアプリを使っている間も続ける。Android は裏に回ったすぐ後(5秒以内)でないと「処理中」の通知(画面が消えても止まらない仕組み)を始めさせないので、ここで始める */
+    if(document.hidden&&xbgHidOK()){XBG.fg=true;XBG.last=Math.min(XBG.last,performance.now()-3000);/* 1秒ほどで始める */xbgFgOn();return}
+    XBG.fg=false;poke()})}
 try{if(navigator.getBattery)navigator.getBattery().then(b=>{XBG.bat=b}).catch(()=>{})}catch(e){}
 const xbgBatOK=()=>{const b=XBG.bat;return !b||b.charging||!(b.level<0.2)};
+/* v650: アプリ(箱)で、画面が消えた時・他のアプリの間も準備を続けてよいか(まだ済んでいない・待ち時間中でない・電池が足りる) */
+const xbgHidOK=()=>{const A=window.BakuApp,c=XBG.cyc;return !!(A&&A.bgStart&&A.bgStop)&&xbgWant()&&xcWant()&&!!restored&&segs.length>0&&!busy&&!playing&&!XBG.hold&&performance.now()>=XBG.nextT&&xbgBatOK()&&xOK()&&xcOK()&&!(c&&c.done&&c.ver===xbgVer&&c.key===xbgKey())};
+/* v650: 「処理中」の通知に出す文。裏で準備している間だけ(済んだ・続けられない時は空=通知を消す) */
+window.xbgFgMsg=()=>{if(!XBG.fg)return '';if(!document.hidden||!XBG.run&&!xbgHidOK()){XBG.fg=false;return ''}const c=XBG.cyc;return '書き出しの準備中 '+(c&&!c.done?xbgPct(c):0)+'%'};
+function xbgFgOn(){const A=window.BakuApp;try{A.bgStart(window.xbgFgMsg()||'書き出しの準備中');window._bgOn=true}catch(e){}}
 /* 音: 元の動画から読む所だけ先に読んで取っておく(書き出しの音と同じ区切り・同じ名前) */
 async function xbgAud(c,XR,stop){let au=null;try{au=await xcAOpen()}catch(e){return 'done'}if(!au.canW)return 'done';
   const pre={au,ly:0,stop},ex=xExOf(XR),T=Math.max(0.01,XR.b-XR.a);
@@ -5778,7 +5787,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v648';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v650';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -7790,9 +7799,10 @@ setInterval(()=>{const A=window.BakuApp,on=!!(window.isBusy&&isBusy()||working||
   const el=Math.floor((Date.now()-t0)/1000),es=Math.floor(el/60)+':'+String(el%60).padStart(2,'0');
   if(hb)hb.textContent=(now.getSeconds()%2?'●':'○')+' 動作中 '+hm+'（経過 '+es+'）';
   if(!A||!A.bgStart)return;
-  if(!on){if(window._bgOn){window._bgOn=false;try{A.bgStop()}catch(e){}}return}
-  const msg=((working?($('rSt')&&$('rSt').textContent):(($('pvMsg')&&$('pvMsg').textContent)||($('msg')&&$('msg').textContent)))||(working?'文字起こし中…':'書き出し中…')).split('\n')[0];
-  const n=msg+'　更新 '+hm+'（経過 '+es+'）';
+  /* v650: 書き出しの準備を裏で続けている間(画面を消した時・他のアプリの間)も通知を出す */const bp=on?'':(window.xbgFgMsg&&window.xbgFgMsg())||'';
+  if(!on&&!bp){if(window._bgOn){window._bgOn=false;try{A.bgStop()}catch(e){}}return}
+  const msg=bp||((working?($('rSt')&&$('rSt').textContent):(($('pvMsg')&&$('pvMsg').textContent)||($('msg')&&$('msg').textContent)))||(working?'文字起こし中…':'書き出し中…')).split('\n')[0];
+  const n=bp?bp+'　更新 '+hm:msg+'　更新 '+hm+'（経過 '+es+'）';
   if(!window._bgOn||Date.now()-lastS>=5000&&n!==lastN){window._bgOn=true;lastN=n;lastS=Date.now();try{A.bgStart(n)}catch(e){}}},1000)}
 async function wakeOn(){try{if(working&&navigator.wakeLock&&document.visibilityState==='visible')wake=await navigator.wakeLock.request('screen')}catch(e){}}
 document.addEventListener('visibilitychange',wakeOn);
@@ -12052,6 +12062,7 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
 #tplStudio .tsChoices{display:flex;flex-direction:column;gap:8px}
 #tplStudio .tsNote{color:var(--muted);font-size:12px;line-height:1.6}
 #tplStudio .tsPane[hidden]{display:none}
+/* v649: クリップ同士の境目をはっきり(左右に暗い線を重ねる・選択中は除く) */#cv .blk.v::before,#cv .blk.wvb::before{content:'';position:absolute;inset:0;border-left:2px solid rgba(0,0,0,.75);border-right:2px solid rgba(0,0,0,.75);pointer-events:none;z-index:5;box-sizing:border-box}#cv .blk.thin::before{display:none}
 </style>
 <main id="tplStudio" hidden>
   <div class="tsHead"><button id="tsBack">← 戻る</button><h1>字幕テンプレート設定</h1></div>
