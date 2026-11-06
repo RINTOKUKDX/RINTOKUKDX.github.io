@@ -1900,7 +1900,7 @@ function resetOut(){outBlob=null;$('result').hidden=true;$('save').hidden=true;$
 
 /* ================= テロップ・字幕の描画(プレビューと書き出しで共通) ================= */
 const FONT=px=>'700 '+px+'px "Noto Sans JP",sans-serif';
-const fontFor=t=>document.fonts?Promise.all([...['gothic','serif','shippori'].map(f=>document.fonts.load(PFONT(40,f),(t||'')+'サンプル字幕')),document.fonts.load('700 40px "Noto Sans JP"',t||' '),document.fonts.load(PFONT(40,PT.font),(t||'')+'サンプルテキスト'),document.fonts.load(LFONT(40),PT.label||'A'),document.fonts.load('40px Rye',"JUNKRAFT KINKIN'S"+(PT.chT1||'')+(PT.chT3||'')+(t||'')),document.fonts.load('40px "Zen Antique"','きんきんの我楽苦多部屋'+(PT.chT2||'')+(t||''))]).catch(()=>{}):Promise.resolve();
+const fontFor=t=>document.fonts?Promise.all([...['gothic','serif','shippori'].map(f=>document.fonts.load(PFONT(40,f),(t||'')+'サンプル字幕')),document.fonts.load('700 40px "Noto Sans JP"',t||' '),document.fonts.load(PFONT(40,PT.font),(t||'')+'サンプルテキスト'),document.fonts.load(LFONT(40),PT.label||'A'),document.fonts.load('40px Rye',"JUNKRAFT KINKIN'S"+(PT.chT1||'')+(PT.chT3||'')+(t||'')),document.fonts.load('40px "Zen Antique"','きんきんの我楽苦多部屋'+(PT.chT2||'')+(t||'')),/* v646: 我楽苦多部屋のCHの文字(書き出しの最初の数コマが別の字体になっていた) */document.fonts.load('40px '+GKF,'我楽苦多部屋'+(PT.chT2||'')+(t||''))]).catch(()=>{}):Promise.resolve();
 function rr(g,x,y,w,h,r){g.beginPath();if(g.roundRect)g.roundRect(x,y,w,h,r);else g.rect(x,y,w,h)}
 
 /* 左上:チャンネル名(紺のパネル+オレンジの帯) */
@@ -2473,7 +2473,7 @@ async function ovXFrame(vo,T,W,H){const it=ovAt(T);if(!it)return{f:null};const c
   const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
   const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(ovC.width!==ow||ovC.height!==oh){ovC.width=ow;ovC.height=oh}
   ovG.save();ovG.translate(ow/2,oh/2);ovG.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);ovG.drawImage(f,-dw/2,-dh/2,dw,dh);ovG.restore();
-  ovC.videoWidth=ow;ovC.videoHeight=oh;return{it,f:ovC}}
+  ovC.videoWidth=ow;ovC.videoHeight=oh;return{it,f:ovC,c,ts:f.timestamp,rot,fw,fh}}
 /* 重ねる動画を選ぶ(プロジェクトの動画 or スマホから) */
 function ovPick(t,it){pausePreview();
   cdlg((it?'入れ替える動画':fmt(t)+' に重ねる動画')+'を選んでください',clips.map(c=>['動画'+num(c)+' '+c.name+'（'+fmt(c.d)+'）',()=>ovPut(c,t,it)]).concat([['ほかの動画をスマホから選ぶ',()=>ovFile(c=>ovPut(c,t,it))],['閉じる']]))}
@@ -4628,9 +4628,17 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
   const sb=mk('ビットレート',XBR,v.br,b=>b+' Mbps'+(b===8?' (標準)':''));
   const sf=mk('フレームレート',XFP,v.fps,f=>f+' fps'+(f===30?' (標準)':''));
   const n=document.createElement('p');n.style.cssText='font-size:12px;opacity:.75;margin:6px 0';n.textContent='目安: フルHDは8Mbps、4Kは40Mbps前後。大きいほど時間がかかります';c.appendChild(n);
+  /* v646: 直した所だけ書き出し直す(押すと切り替わる)・使い回しのデータを消す */let xcOn=xcWant();
+  if(k==='main'){const tb=document.createElement('button');tb.id='xcTgl';tb.type='button';tb.style.cssText='display:block;width:100%;margin:10px 0 4px';
+    const st=()=>{tb.textContent=(xcOn?'✓ ':'')+'直した所だけ書き出し直す';tb.className=xcOn?'primary':'no';tb.setAttribute('aria-pressed',String(xcOn))};st();tb.onclick=()=>{xcOn=!xcOn;st()};c.appendChild(tb);
+    const nt=document.createElement('p');nt.style.cssText='font-size:12px;opacity:.75;margin:4px 0';nt.textContent=xcOK()?'2回目からは、前回と同じ所の圧縮を飛ばして速く書き出します（画質は同じ）。前回の分をスマホの中に置きます（フルHD・8Mbpsなら10分で約600MB）。カットなどで長さが変わると、その後ろは作り直しになります。本番とライト版は別々です。':'この端末では使えません';c.appendChild(nt);
+    const cb=document.createElement('button');cb.id='xcClr';cb.type='button';cb.className='no';cb.style.cssText='display:block;width:100%;margin:4px 0 8px';cb.textContent='使い回しのデータを消す';
+    xcSize().then(s=>{if(s!=null&&cb.isConnected&&!cb.disabled)cb.textContent='使い回しのデータを消す（今 '+xcMB(s)+'）'});
+    cb.onclick=async()=>{if(busy)return;cb.disabled=true;cb.textContent='消しています…';await xcClearAll();cb.textContent='消しました'};c.appendChild(cb)}
   const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
   const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
   const ok=document.createElement('button');ok.className='primary';ok.textContent='保存';ok.onclick=()=>{const nv={h:+sh.value,br:+sb.value,fps:+sf.value};try{localStorage.setItem('xset_'+k,JSON.stringify(nv))}catch(e){}
+    if(k==='main'){try{localStorage.setItem('xcache',xcOn?'1':'0')}catch(e){}}
     if(k==='main'){const q=$('exq');const best=[...q.options].map(o=>+o.value).reduce((a,b)=>Math.abs(b-nv.br)<Math.abs(a-nv.br)?b:a,8);q.value=String(best);try{localStorage.setItem('exq',q.value)}catch(e){}}
     w.remove();after&&after()};
   row.append(no,ok);c.appendChild(row);w.appendChild(c);document.body.appendChild(w)}
@@ -4920,7 +4928,199 @@ async function xAudWin(ex,A,B,XR){
   if(B>=XR.b-1e-6){const e=B-A;mg.gain.setValueAtTime(1,Math.max(0,e-FD));mg.gain.linearRampToValueAtTime(0,e)}
   XAS=A.toFixed(0)+'秒〜';return await ctx.startRendering()}
 /* PV={r,say,p,done,end,w} で書き出しプレビュー(小さい画面) */
-async function exportX(PV){
+/* ===== v646: 直した所だけ書き出し直す(書き出しの使い回し) =====
+   2秒(キーフレームの間)ごとに、描いた内容から「指紋」を作る。前回の書き出しと指紋が同じ所は、前に圧縮したデータをそのまま使う(画質は同じ・圧縮しない分だけ速い)。
+   指紋 = キャンバスへの描き込みを順に混ぜた値(命令・位置・その時の色や変形などの状態・使った画像やキャンバスの中身)。
+   元動画のコマは「どのファイルの何秒のコマか」で表す(指紋を作る時は読み込み・デコードしない)。
+   元動画の絵を読み戻して使う描き方(1点ずつの色の調整・モザイクの丸など)が入ったコマは使い回さない。
+   データはスマホの中(OPFS)に、最後の書き出しの分だけ置く。設定の[直した所だけ書き出し直す]で止められる */
+const XC={on:false,RB:false,err:0,nk:0};
+const XCF=new Float64Array(1),XCU=new Uint32Array(XCF.buffer),XH=new Int32Array(2);let XD=null;/* 混ぜた値は型付き配列に置く(普通の変数だと1回ごとに数の入れ物が作られて遅い) */
+/* 2本の32ビットの混ぜ方(合わせて64ビット) */
+function xh(x){x|=0;let a=XH[0],b=XH[1],k=Math.imul(x,0xcc9e2d51);k=(k<<15)|(k>>>17);a^=Math.imul(k,0x1b873593);a=(a<<13)|(a>>>19);a=(Math.imul(a,5)+0xe6546b64)|0;
+  b=Math.imul(b^x,0x2c1b3c6d);b^=b>>>15;b=Math.imul(b,0x297a2d39);b^=b>>>15;XH[0]=a;XH[1]=b}
+function xhN(v){XCF[0]=v;xh(XCU[0]);xh(XCU[1])}
+function xhU(u){let a=XH[0],b=XH[1];for(let i=0;i<u.length;i++){const x=u[i]|0;let k=Math.imul(x,0xcc9e2d51);k=(k<<15)|(k>>>17);a^=Math.imul(k,0x1b873593);a=(a<<13)|(a>>>19);a=(Math.imul(a,5)+0xe6546b64)|0;
+  b=Math.imul(b^x,0x2c1b3c6d);b^=b>>>15;b=Math.imul(b,0x297a2d39);b^=b>>>15}XH[0]=a;XH[1]=b}
+function xhS(s){const n=s.length;let a=XH[0],b=XH[1];for(let i=-1;i<n;i++){const x=i<0?n+0x3c00:s.charCodeAt(i);let k=Math.imul(x,0xcc9e2d51);k=(k<<15)|(k>>>17);a^=Math.imul(k,0x1b873593);a=(a<<13)|(a>>>19);a=(Math.imul(a,5)+0xe6546b64)|0;
+  b=Math.imul(b^x,0x2c1b3c6d);b^=b>>>15;b=Math.imul(b,0x297a2d39);b^=b>>>15}XH[0]=a;XH[1]=b}
+function xhV(v){switch(typeof v){case 'number':xh(1);xhN(v);return;case 'string':xh(2);xhS(v);return;case 'boolean':xh(v?3:4);return;case 'undefined':xh(5);return;
+  case 'object':if(v===null){xh(6);return}xhO(v);return;default:xh(7);xhS(String(v))}}
+let XCc=new WeakMap(),XCm=new WeakMap(),XCg=new WeakMap(),XCft=new Map();const XCi=new WeakMap();
+const XID0=0x1d2e3f40,XID1=0x51627384;/* 変形なし(単位行列)の印 */
+const XBL0=0x0b1c2d3e,XBL1=0x4f506172;/* 透明(何も描いていない)の印 */
+const XCO={};/* 元の関数 */const XCx={ex:[],def:{}};
+/* キャンバス1つの記録: k=中身が分かっている a,b=中身の指紋 tn=元動画の絵が入っている uc=中身が分からない(使い回さない)
+   ta,tb=変形 ca,cb=切り抜き(0=なし) cx=変形や切り抜きが分からない pa,pb=描いている途中の線 pu=線が分からない st=save の積み重ね ex=最初から追えている */
+function xcRc(cv){let R=XCc.get(cv);if(!R){R={cv,k:false,a:0,b:0,tn:false,uc:false,ti:false,ta:XID0,tb:XID1,ca:0,cb:0,cx:false,pa:0,pb:0,pu:true,st:[],ex:false};XCc.set(cv,R)}return R}
+function xcClr(R,a,b){R.k=true;R.a=a;R.b=b;R.tn=false;R.uc=false}
+function xcRst(R){xcClr(R,XBL0,XBL1);R.ti=true;R.ta=XID0;R.tb=XID1;R.ca=0;R.cb=0;R.cx=false;R.pa=0;R.pb=0;R.pu=false;R.st.length=0;R.ex=true}
+function xcR(x){let R=XCm.get(x);if(R)return R;R=xcRc(x.canvas);XCm.set(x,R);if(!R.ti){R.ti=true;xcTI(R,x)}return R}
+function xcTI(R,x){const sa=XH[0],sb=XH[1];try{const m=XCO.getTransform.call(x);if(m.a===1&&m.b===0&&m.c===0&&m.d===1&&m.e===0&&m.f===0){R.ta=XID0;R.tb=XID1}
+  else{XH[0]=0x6a09e667;XH[1]=0x3c6ef372;xh(15);xhN(m.a);xhN(m.b);xhN(m.c);xhN(m.d);xhN(m.e);xhN(m.f);R.ta=XH[0];R.tb=XH[1]}}catch(e){R.cx=true}finally{XH[0]=sa;XH[1]=sb}}
+/* 前から有ったキャンバスの中身は、1回だけ読み戻して指紋にする */
+function xcKnow(R){if(R.k)return;R.k=true;R.tn=false;R.uc=false;const sa=XH[0],sb=XH[1],sd=XD;
+  try{const cv=R.cv,w=cv.width,h=cv.height;XH[0]=0x243f6a88;XH[1]=0x85a308d3;xh(w);xh(h);
+    if(w&&h){const x=cv.getContext('2d');if(!x){R.uc=true;return}const d=XCO.getImageData.call(x,0,0,w,h).data,u=new Uint32Array(d.buffer,d.byteOffset,d.byteLength>>2);xhU(u);XC.nk++}
+    R.a=XH[0];R.b=XH[1]}catch(e){R.uc=true}finally{XH[0]=sa;XH[1]=sb;XD=sd}}
+/* 画像の中身の指紋(画像は同じ src なら変わらないので1回だけ) */
+function xcImg(im){const s=im.currentSrc||im.src||'',sa=XH[0],sb=XH[1];
+  if(!im.complete||!im.naturalWidth){XH[0]=7;XH[1]=8;xhS(s);const r=[XH[0],XH[1],0];XH[0]=sa;XH[1]=sb;return r}
+  const w=im.naturalWidth,h=im.naturalHeight,c0=XCi.get(im);if(c0&&c0.s===s&&c0.w===w&&c0.h===h)return c0.v;
+  let v;try{const c=document.createElement('canvas');XCO.cw.call(c,w);XCO.ch.call(c,h);const x=c.getContext('2d');XCO.drawImage.call(x,im,0,0);
+    const d=XCO.getImageData.call(x,0,0,w,h).data,u=new Uint32Array(d.buffer,d.byteOffset,d.byteLength>>2);XH[0]=0x9216d5d9;XH[1]=0x8979fb1b;xh(w);xh(h);xhU(u);v=[XH[0],XH[1],0]}
+  catch(e){v=[0,0,1]}finally{XH[0]=sa;XH[1]=sb}
+  XCi.set(im,{s,w,h,v});return v}
+/* 物の指紋(キャンバス=中身・画像=中身・グラデーション/パターン=作り方)。分からない物は「使い回さない」印 */
+function xhO(v){
+  if(v instanceof HTMLCanvasElement){const R=xcRc(v);if(!R.k)xcKnow(R);xh(8);xh(R.a);xh(R.b);xh(v.width);xh(v.height);if(XD){if(R.tn)XD.tn=true;if(R.uc)XD.uc=true}return}
+  if(v instanceof HTMLImageElement){const t=xcImg(v);xh(9);xh(t[0]);xh(t[1]);if(t[2]&&XD)XD.uc=true;return}
+  const gt=XCg.get(v);if(gt){xh(10);xh(gt.a);xh(gt.b);if(XD){if(gt.tn)XD.tn=true;if(gt.uc)XD.uc=true}return}
+  if(Array.isArray(v)){xh(11);xh(v.length);for(let i=0;i<v.length;i++)xhV(v[i]);return}
+  if(v instanceof ImageData){xh(12);xh(v.width);xh(v.height);const d=v.data,u=new Uint32Array(d.buffer,d.byteOffset,d.byteLength>>2);xhU(u);return}
+  if(typeof v.x==='number'&&typeof v.y==='number'&&!(v instanceof Element)){xh(13);xhN(v.x);xhN(v.y);return}
+  if(XD)XD.uc=true;xh(14)}
+/* 描く時の状態 */
+function xhC(x){xhN(x.globalAlpha);xhV(x.globalCompositeOperation);const f=x.filter;xhV(f);if(typeof f==='string'&&f.indexOf('url(')>=0&&XD)XD.uc=true;
+  xhN(x.shadowBlur);xhV(x.shadowColor);xhN(x.shadowOffsetX);xhN(x.shadowOffsetY)}
+function xhY(s){if(typeof s==='string'){xh(30);xhS(s)}else xhV(s)}
+function xhK(x){xhN(x.lineWidth);xhV(x.lineCap);xhV(x.lineJoin);xhN(x.miterLimit);xhN(x.lineDashOffset);const d=x.getLineDash();xh(d.length);for(let i=0;i<d.length;i++)xhN(d[i])}
+function xcFt(x,txt){const f=x.font;let M=XCft.get(f);if(M&&M.has(txt))return 1;let ok=1;try{ok=document.fonts&&!document.fonts.check(f,String(txt))?0:1}catch(e){ok=2}if(ok===1){if(!M)XCft.set(f,M=new Set());M.add(txt)}return ok}
+function xhT(x,txt){xhV(x.font);xhV(x.textAlign);xhV(x.textBaseline);xhV(x.direction);xhV(x.letterSpacing);xhV(x.wordSpacing);xhV(x.fontKerning);xhV(x.fontStretch);xhV(x.fontVariantCaps);xhV(x.textRendering);xhV(x.lang);xh(xcFt(x,txt))}
+function xhI(x){xh(x.imageSmoothingEnabled?1:0);xhV(x.imageSmoothingQuality)}
+/* 描き込み1回。kd: 1=塗り 2=線 4=文字 8=画像 16=途中の線を使う / 0=状態を使わない(消す・貼る) */
+function xcD(x,op,a,kd){const R=xcR(x);if(XC.RB||R.cx){R.k=true;R.uc=true;return}
+  if(kd&&x.globalCompositeOperation==='copy'&&!R.ca&&!R.cb&&!XCx.ex.length){XH[0]=0x2545f491;XH[1]=0x9e3779b9;R.tn=false;R.uc=false}/* 「置き換え」で描く時は前の中身に関係ない */
+  else{if(!R.k)xcKnow(R);if(R.uc)return;XH[0]=R.a;XH[1]=R.b}
+  XD=R;xh(op);for(let i=0;i<a.length;i++)xhV(a[i]);xh(R.ta);xh(R.tb);xh(R.ca);xh(R.cb);
+  if(kd&16){if(R.pu)R.uc=true;else{xh(R.pa);xh(R.pb)}}
+  if(kd){xhC(x);if(kd&1)xhY(x.fillStyle);if(kd&2){xhY(x.strokeStyle);xhK(x)}if(kd&4)xhT(x,a[0]);if(kd&8)xhI(x)}
+  for(const p of XCx.ex){const v=x[p];xhV(v)}
+  R.a=XH[0];R.b=XH[1];R.k=true;XD=null}
+const xcCov=(cv,x,y,w,h)=>{x=+x;y=+y;w=+w;h=+h;if(!(isFinite(x)&&isFinite(y)&&isFinite(w)&&isFinite(h)))return false;if(w<0){x+=w;w=-w}if(h<0){y+=h;h=-h}return x<=0&&y<=0&&x+w>=cv.width&&y+h>=cv.height};
+const xcPlain=R=>!XC.RB&&!R.cx&&R.ta===XID0&&R.tb===XID1&&!R.ca&&!R.cb&&!XCx.ex.length;
+function xcE(x){XC.err++;XD=null;try{const R=xcR(x);R.k=true;R.uc=true;R.cx=true}catch(e){}}
+function xcU(x){const R=xcR(x);R.k=true;R.uc=true}
+function xcPath(x,op,a){const R=xcR(x);if(R.pu)return;XH[0]=R.pa^0x5851f42d;XH[1]=R.pb^0x4c957f2d;xh(op);for(let i=0;i<a.length;i++)xhV(a[i]);xh(R.ta);xh(R.tb);R.pa=XH[0];R.pb=XH[1]}
+function xcTf(x,op,a){const R=xcR(x);XH[0]=R.ta;XH[1]=R.tb;xh(op);for(let i=0;i<a.length;i++)xhN(+a[i]);R.ta=XH[0];R.tb=XH[1]}
+function xcSetT(x,a){const R=xcR(x);let v;if(a.length>=6)v=[0,1,2,3,4,5].map(i=>+a[i]);else if(a[0]&&typeof a[0]==='object'){const m=a[0],g=(p,q,d)=>m[p]!=null?+m[p]:m[q]!=null?+m[q]:d;v=[g('a','m11',1),g('b','m12',0),g('c','m21',0),g('d','m22',1),g('e','m41',0),g('f','m42',0)]}else v=[1,0,0,1,0,0];
+  if(!v.every(isFinite))return;if(v[0]===1&&v[1]===0&&v[2]===0&&v[3]===1&&v[4]===0&&v[5]===0){R.ta=XID0;R.tb=XID1;return}XH[0]=0x7137449;XH[1]=0x3956c25b;xh(64);v.forEach(xhN);R.ta=XH[0];R.tb=XH[1]}
+/* 書き出しの間だけ、キャンバスの描き込みを記録する */
+function xcBegin(){if(XC.on)return;const P=CanvasRenderingContext2D.prototype,O=XCO;XCc=new WeakMap();XCm=new WeakMap();XCg=new WeakMap();XCft=new Map();XC.RB=false;XC.err=0;XC.nk=0;XD=null;
+  /* 元の関数は1回だけ取っておく(包んだ物を包まないように) */if(!O._ok){for(const k of Object.getOwnPropertyNames(P)){const d=Object.getOwnPropertyDescriptor(P,k);if(typeof d.value==='function'&&k!=='constructor')O[k]=d.value}
+    O.addColorStop=CanvasGradient.prototype.addColorStop;O.patT=CanvasPattern.prototype.setTransform;O.dw=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,'width');O.dh=Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype,'height');O.cw=O.dw.set;O.ch=O.dh.set;O._ok=true}
+  const dw=O.dw,dh=O.dh;
+  /* 状態の初めの値と、知らない状態(新しいブラウザで増えた物は全部の描き込みに混ぜる) */
+  const KN=new Set(['fillStyle','strokeStyle','globalAlpha','globalCompositeOperation','filter','shadowBlur','shadowColor','shadowOffsetX','shadowOffsetY','lineWidth','lineCap','lineJoin','miterLimit','lineDashOffset','font','textAlign','textBaseline','direction','letterSpacing','wordSpacing','fontKerning','fontStretch','fontVariantCaps','textRendering','lang','imageSmoothingEnabled','imageSmoothingQuality']);
+  const t=document.createElement('canvas').getContext('2d');XCx.ex=[];XCx.def={};
+  for(const k of Object.getOwnPropertyNames(P)){const d=Object.getOwnPropertyDescriptor(P,k);if(!d.set||k==='canvas')continue;XCx.def[k]=t[k];if(!KN.has(k))XCx.ex.push(k)}
+  const W=(k,f)=>{if(O[k])P[k]=f};
+  const pre=(k,fn)=>W(k,function(...a){if(XC.on)try{fn(this,a)}catch(e){xcE(this)}return O[k].apply(this,a)});
+  const post=(k,fn)=>W(k,function(...a){const r=O[k].apply(this,a);if(XC.on)try{fn(this,a,r)}catch(e){xcE(this)}return r});
+  pre('fillRect',(x,a)=>{const R=xcR(x);if(xcPlain(R)&&x.globalAlpha===1&&x.globalCompositeOperation==='source-over'&&x.filter==='none'&&xcCov(R.cv,a[0],a[1],a[2],a[3])){const fs=x.fillStyle;
+    if(typeof fs==='string'&&fs[0]==='#'){XH[0]=0x7f4a7c15;XH[1]=0x1b873593;xhS(fs);xcClr(R,XH[0],XH[1]);return}}xcD(x,41,a,1)});
+  pre('clearRect',(x,a)=>{const R=xcR(x);if(xcPlain(R)&&xcCov(R.cv,a[0],a[1],a[2],a[3])){xcClr(R,XBL0,XBL1);return}xcD(x,40,a,0)});
+  pre('strokeRect',(x,a)=>xcD(x,42,a,2));
+  pre('fill',(x,a)=>{if(a[0]&&typeof a[0]==='object'){xcU(x);return}xcD(x,43,a,1|16)});
+  pre('stroke',(x,a)=>{if(a[0]&&typeof a[0]==='object'){xcU(x);return}xcD(x,44,a,2|16)});
+  pre('fillText',(x,a)=>xcD(x,45,a,1|4));pre('strokeText',(x,a)=>xcD(x,46,a,2|4));
+  pre('drawImage',(x,a)=>{const s=a[0];if(!(s instanceof HTMLCanvasElement||s instanceof HTMLImageElement)){xcU(x);return}/* 動画・VideoFrame など中身が分からない物(前の中身も読まない) */xcD(x,47,a,8)});
+  pre('putImageData',(x,a)=>{const R=xcR(x),im=a[0];if(a.length===3&&im instanceof ImageData&&!XC.RB&&xcCov(R.cv,a[1],a[2],im.width,im.height)){XH[0]=0x3c6ef372;XH[1]=0xa54ff53a;xhO(im);xh(+a[1]);xh(+a[2]);xcClr(R,XH[0],XH[1]);return}xcD(x,48,a,0)});
+  pre('drawFocusIfNeeded',x=>xcU(x));
+  pre('getImageData',x=>{const R=xcR(x);if(!R.k)xcKnow(R);if(R.tn||R.uc)XC.RB=true});
+  pre('beginPath',x=>{const R=xcR(x);R.pu=false;R.pa=0;R.pb=0});
+  [['closePath',90],['moveTo',91],['lineTo',92],['quadraticCurveTo',93],['bezierCurveTo',94],['arc',95],['arcTo',96],['ellipse',97],['rect',98],['roundRect',99]].forEach(([k,op])=>pre(k,(x,a)=>xcPath(x,op,a)));
+  [['translate',60],['rotate',61],['scale',62],['transform',63]].forEach(([k,op])=>post(k,(x,a)=>xcTf(x,op,a)));
+  post('setTransform',(x,a)=>xcSetT(x,a));post('resetTransform',x=>{const R=xcR(x);R.ta=XID0;R.tb=XID1});
+  pre('save',x=>{const R=xcR(x);R.st.push([R.ta,R.tb,R.ca,R.cb,R.cx])});
+  post('restore',x=>{const R=xcR(x);if(R.st.length){const s=R.st.pop();R.ta=s[0];R.tb=s[1];R.ca=s[2];R.cb=s[3];R.cx=s[4]}else if(!R.ex){xcTI(R,x);R.cx=true}});
+  post('reset',x=>xcRst(xcR(x)));
+  post('clip',(x,a)=>{const R=xcR(x);if(a[0]&&typeof a[0]==='object'||R.pu){R.cx=true;return}XH[0]=R.ca^0x5bd1e995;XH[1]=R.cb^0x27d4eb2f;xh(70);xh(R.pa);xh(R.pb);xhV(a[0]);R.ca=XH[0]||1;R.cb=XH[1]});
+  const gr=(k,op)=>W(k,function(...a){const g=O[k].apply(this,a);if(XC.on&&g)try{XH[0]=0x3243f6a8;XH[1]=0x85a308d3;xh(op);for(const v of a)xhN(+v);XCg.set(g,{a:XH[0],b:XH[1],tn:false,uc:false})}catch(e){XC.err++}return g});
+  gr('createLinearGradient',80);gr('createRadialGradient',81);gr('createConicGradient',82);
+  W('createPattern',function(...a){const p=O.createPattern.apply(this,a);if(XC.on&&p)try{const T={tn:false,uc:false},sd=XD;XD=T;XH[0]=0x13198a2e;XH[1]=0x3707344;xh(83);xhV(a[0]);xhV(a[1]);XD=sd;XCg.set(p,{a:XH[0],b:XH[1],tn:T.tn,uc:T.uc})}catch(e){XC.err++}return p});
+  CanvasGradient.prototype.addColorStop=function(o,c){const r=O.addColorStop.call(this,o,c);if(XC.on){const t=XCg.get(this);if(t){XH[0]=t.a;XH[1]=t.b;xh(84);xhN(+o);xhV(String(c));t.a=XH[0];t.b=XH[1]}}return r};
+  CanvasPattern.prototype.setTransform=function(m){const r=O.patT.call(this,m);if(XC.on){const t=XCg.get(this);if(t){XH[0]=t.a;XH[1]=t.b;xh(85);if(m)['a','b','c','d','e','f'].forEach(k=>xhN(+(m[k]!=null?m[k]:NaN)));t.a=XH[0];t.b=XH[1]}}return r};
+  /* 大きさを変えると中身も状態も消える */
+  Object.defineProperty(HTMLCanvasElement.prototype,'width',{configurable:true,enumerable:dw.enumerable,get:dw.get,set(v){dw.set.call(this,v);if(XC.on)xcRst(xcRc(this))}});
+  Object.defineProperty(HTMLCanvasElement.prototype,'height',{configurable:true,enumerable:dh.enumerable,get:dh.get,set(v){dh.set.call(this,v);if(XC.on)xcRst(xcRc(this))}});
+  XC.on=true}
+function xcEnd(){if(!XC.on)return;XC.on=false;const P=CanvasRenderingContext2D.prototype,O=XCO;
+  for(const k of Object.getOwnPropertyNames(P)){const d=Object.getOwnPropertyDescriptor(P,k);if(typeof d.value==='function'&&O[k]&&P[k]!==O[k])P[k]=O[k]}
+  CanvasGradient.prototype.addColorStop=O.addColorStop;CanvasPattern.prototype.setTransform=O.patT;
+  Object.defineProperty(HTMLCanvasElement.prototype,'width',O.dw);Object.defineProperty(HTMLCanvasElement.prototype,'height',O.dh)}
+/* 1コマの始め: 状態を初めの値に戻して消す(前のコマの描き方に左右されないように。普段の描き方は毎回この状態から始まる) */
+function xcFrame0(x,W,H){const R=xcR(x);while(R.st.length)x.restore();
+  if(R.ca||R.cb||R.cx)x.reset();else{const D=XCx.def;for(const p in D)if(x[p]!==D[p])x[p]=D[p];if(x.getLineDash().length)x.setLineDash([]);x.setTransform(1,0,0,1,0,0);x.beginPath()}
+  x.clearRect(0,0,W,H)}
+/* 1コマの指紋(使い回せないコマは null) */
+function xcSig(x,W,H){const R=xcR(x);if(XC.RB||R.uc||!R.k||R.cx)return null;XH[0]=R.a;XH[1]=R.b;xh(W);xh(H);return [XH[0],XH[1]]}
+/* 元動画のコマの印をキャンバスに付ける(描いた中身の代わり) */
+function xcTok(cv,t){const R=xcRc(cv);R.k=true;R.a=t[0];R.b=t[1];R.tn=true;R.uc=false}
+const xcCK=c=>String(c&&c.key||'').replace(/#\d+$/,'');
+function xcVT(ck,ts,rot,ow,oh){XH[0]=0x452821e6;XH[1]=0x38d01377;xhS(ck);xhN(ts);xh(rot);xh(ow);xh(oh);return [XH[0],XH[1]]}
+/* 元動画の t 秒で使うコマの時刻(XVR.frameAt / keyAt と同じ選び方。デコードしない) */
+function xcPT(X){if(X._pt)return X._pt;const V=X.V,S=V.S,a=new Float64Array(S.length);for(let i=0;i<S.length;i++)a[i]=Math.round((S[i].cts/V.ts+V.sh)*1e6);a.sort();return X._pt=a}
+function xcFrTs(X,t){const a=xcPT(X);if(!a.length)return null;let lo=0,hi=a.length-1,r=-1;while(lo<=hi){const m=(lo+hi)>>1;if(a[m]/1e6<=t+0.004){r=m;lo=m+1}else hi=m-1}return r<0?a[0]:a[r]}
+function xcKeyTs(X,t){const V=X.V,S=V.S;if(!X._ki){X._ki=[];for(let i=0;i<S.length;i++)if(S[i].is_sync)X._ki.push(i)}const KI=X._ki;if(!KI.length)return xcFrTs(X,t);
+  let lo=0,hi=KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}const s=S[KI[k]];return Math.round((s.cts/V.ts+V.sh)*1e6)}
+/* ---- 保存(OPFS) ---- */
+const XCV='xc1';/* 保存の形の版 */
+const xcWant=()=>{try{return localStorage.getItem('xcache')!=='0'}catch(e){return true}};
+const xcOK=()=>!!(navigator.storage&&navigator.storage.getDirectory&&CanvasRenderingContext2D.prototype.reset&&window.VideoEncoder&&window.FileSystemFileHandle&&FileSystemFileHandle.prototype.createWritable);
+const xcHex=(a,b)=>(a>>>0).toString(16).padStart(8,'0')+(b>>>0).toString(16).padStart(8,'0');
+const xcRetryErr=m=>{const e=new Error(m);e.xcRetry=true;return e};
+function xcB64(d){const b=d instanceof Uint8Array?d:ArrayBuffer.isView(d)?new Uint8Array(d.buffer,d.byteOffset,d.byteLength):new Uint8Array(d);let s='';for(let i=0;i<b.length;i++)s+=String.fromCharCode(b[i]);return btoa(s)}
+function xcUnB64(s){const t=atob(s),u=new Uint8Array(t.length);for(let i=0;i<t.length;i++)u[i]=t.charCodeAt(i);return u}
+function xcDcJ(dc){const o={codec:dc.codec,w:dc.codedWidth||0,h:dc.codedHeight||0,d:dc.description?xcB64(dc.description):''};const c=dc.colorSpace;if(c)o.cs=[c.primaries||null,c.transfer||null,c.matrix||null,c.fullRange==null?null:!!c.fullRange];
+  if(dc.displayAspectWidth)o.aw=dc.displayAspectWidth;if(dc.displayAspectHeight)o.ah=dc.displayAspectHeight;return o}
+function xcDcO(o){const d={codec:o.codec,codedWidth:o.w,codedHeight:o.h};if(o.d)d.description=xcUnB64(o.d);if(o.cs){const c={};['primaries','transfer','matrix','fullRange'].forEach((k,i)=>{if(o.cs[i]!=null)c[k]=o.cs[i]});d.colorSpace=c}
+  if(o.aw)d.displayAspectWidth=o.aw;if(o.ah)d.displayAspectHeight=o.ah;return d}
+function xcGK(vc,XFPS,G,prof){XH[0]=1;XH[1]=2;xhS(XCV);xhS(prof);xhS((document.getElementById('ver')||{}).textContent||'');xhS(navigator.userAgent);
+  xhS(JSON.stringify({c:vc.codec,w:vc.width,h:vc.height,b:vc.bitrate,f:vc.framerate,m:vc.bitrateMode||'',hw:vc.hardwareAcceleration||'',av:vc.avc&&vc.avc.format||''}));xh(XFPS);xh(G);return [XH[0],XH[1]]}
+function xcName(gk,sig){XH[0]=gk[0];XH[1]=gk[1];xh(sig.length);for(const s of sig){xh(s[0]);xh(s[1])}return 'g'+xcHex(XH[0],XH[1])}
+const xcRoot=()=>navigator.storage.getDirectory();
+async function xcNames(dir){const n=[];for await(const [k,h] of dir.entries())if(h.kind==='file')n.push(k);return n}
+/* 今の圧縮の設定で1コマだけ圧縮して、圧縮の設定(SPS/PPS)を確かめる */
+async function xcProbe(vc,W,H){let dc=null;const e=new VideoEncoder({output:(c,m)=>{if(m&&m.decoderConfig&&!dc)dc=m.decoderConfig},error:()=>{}});
+  try{e.configure(vc);const c=document.createElement('canvas');c.width=W;c.height=H;c.getContext('2d').fillRect(0,0,W,H);const f=new VideoFrame(c,{timestamp:0,duration:Math.round(1e6/(vc.framerate||30))});e.encode(f,{keyFrame:true});f.close();await xTO(e.flush(),6000)}catch(x){}
+  finally{try{e.close()}catch(x){}}return dc?JSON.stringify(xcDcJ(dc)):null}
+async function xcOpen(o){const {prof,vc,W,H,XFPS,G,need,clips}=o;
+  const dir=await (await xcRoot()).getDirectoryHandle('xcache_'+prof,{create:true}),gk=xcGK(vc,XFPS,G,prof),gkh=xcHex(gk[0],gk[1]);
+  let meta=null;try{meta=JSON.parse(await (await (await dir.getFileHandle('meta.json')).getFile()).text())}catch(e){}
+  const xc={dir,gk,gkh,files:new Set(),used:new Set(),dcJ:null,dims:{},canW:true,doSig:false,clips:new Set(clips),st:{hit:0,miss:0,mis:0,unc:0,wr:0,wb:0,we:0,rd:0,rf:0,nst:0},
+    wq:Promise.resolve(),wn:0,wp:new Map(),gm:new Map(),pg:null,inN:0,outN:0,nx:null,hitAny:false,dead:false,err:''};
+  const names=await xcNames(dir);
+  if(!meta||meta.gk!==gkh||meta.v!==1){for(const n of names)try{await dir.removeEntry(n)}catch(e){}}
+  else{xc.dims=meta.dims||{};for(const n of names)if(n[0]==='g')xc.files.add(n);
+    if(xc.files.size&&meta.dc){const pd=await xcProbe(vc,W,H);if(pd&&pd===JSON.stringify(meta.dc)){xc.dcJ=pd;xc.doSig=(meta.clips||[]).some(k=>xc.clips.has(k))}else xc.files.clear()}else xc.files.clear()}
+  try{const e=await navigator.storage.estimate(),free=(e.quota||0)-(e.usage||0);if(free<need*1.2+(2<<30))xc.canW=false}catch(e){}
+  return xc}
+async function xcRd(xc,name){const w=xc.wp.get(name);if(w)await w;const f=await (await xc.dir.getFileHandle(name)).getFile(),ab=await f.arrayBuffer();
+  if(ab.byteLength<8)throw new Error('短い');const h=new Uint32Array(ab,0,2);if(h[0]!==0x314b4342)throw new Error('形が違う');const n=h[1];if(8+n*16>ab.byteLength)throw new Error('短い');
+  const Hd=new Uint32Array(ab,8,n*4);let p=8+n*16;const out=[];for(let i=0;i<n;i++){const len=Hd[i*4+3];if(p+len>ab.byteLength)throw new Error('短い');out.push({t:Hd[i*4]?'key':'delta',k:Hd[i*4+1],d:Hd[i*4+2],b:new Uint8Array(ab,p,len)});p+=len}
+  if(p!==ab.byteLength)throw new Error('長さが違う');xc.st.rd+=ab.byteLength;return out}
+const xcChk=(ch,n)=>ch.length===n&&ch[0].t==='key'&&ch.every((c,i)=>c.k===i&&Number.isFinite(c.d));
+function xcWr(xc,name,ch){xc.wn++;const job=async()=>{if(!xc.canW){xc.files.delete(name);xc.used.delete(name);return}
+    try{const n=ch.length,h=new Uint32Array(2+n*4);h[0]=0x314b4342;h[1]=n;let sz=8+n*16;ch.forEach((c,i)=>{h[2+i*4]=c.t==='key'?1:0;h[3+i*4]=c.k;h[4+i*4]=Math.max(0,Math.round(c.d));h[5+i*4]=c.b.byteLength;sz+=c.b.byteLength});
+      const fh=await xc.dir.getFileHandle(name,{create:true}),w=await fh.createWritable();await w.write(new Blob([h,...ch.map(c=>c.b)]));await w.close();xc.st.wr++;xc.st.wb+=sz}
+    catch(e){xc.st.we++;xc.canW=false;xc.files.delete(name);xc.used.delete(name);try{await xc.dir.removeEntry(name)}catch(_){}}};
+  const p=xc.wq.then(job).finally(()=>{xc.wn--;if(xc.wp.get(name)===p)xc.wp.delete(name)});xc.wq=p;xc.wp.set(name,p)}
+/* 2秒分の圧縮データがそろったら保存する(全部のコマの指紋があって、最初がキーフレームの時だけ) */
+function xcFin(xc,P){xc.gm.delete(P.gi);if(P.bad||!P.ch||xc.dead)return;const n=P.n;
+  if(P.ch.length!==n||P.real.length!==n||P.real.some(s=>!s)||P.ch[0].t!=='key'||P.ch.some((c,i)=>c.k!==i)){xc.st.nst++;return}
+  const name=xcName(xc.gk,P.real);if(P.sig&&xcName(xc.gk,P.sig)!==name)xc.st.mis++;
+  xc.used.add(name);if(xc.files.has(name)||!xc.canW)return;xc.files.add(name);xcWr(xc,name,P.ch)}
+async function xcMeta(xc){if(!xc.dcJ)return;try{const fh=await xc.dir.getFileHandle('meta.json',{create:true}),w=await fh.createWritable();
+  await w.write(JSON.stringify({v:1,gk:xc.gkh,dc:JSON.parse(xc.dcJ),dims:xc.dims,clips:[...xc.clips],t:Date.now()}));await w.close()}catch(e){}}
+/* 今回使わなかった物を消す(最後の書き出しの分だけ残す) */
+async function xcGC(xc){try{const names=await xcNames(xc.dir);for(const n of names)if(n!=='meta.json'&&!xc.used.has(n))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}}
+async function xcSize(){if(!xcOK())return null;let s=0;try{const r=await xcRoot();for await(const [k,h] of r.entries()){if(h.kind!=='directory'||!/^xcache_/.test(k))continue;for await(const [,f] of h.entries())if(f.kind==='file')try{s+=(await f.getFile()).size}catch(e){}}}catch(e){return null}return s}
+async function xcClearAll(){try{const r=await xcRoot();const ns=[];for await(const [k,h] of r.entries())if(h.kind==='directory'&&/^xcache_/.test(k))ns.push(k);for(const k of ns)try{await r.removeEntry(k,{recursive:true})}catch(e){}}catch(e){}}
+const xcMB=b=>b>=1<<30?(b/(1<<30)).toFixed(1)+'GB':Math.round(b/1048576)+'MB';
+/* v646: 使い回しのデータが今の圧縮と合わない時は、使い回さずにもう一度書き出す */
+async function exportX(PV){const r=await exportX0(PV,false);if(r!=='xcRetry')return r;say('前回の分が今の圧縮と合わなかったので、使い回さずに書き出し直します');await xSleep(600);return exportX0(PV,true)}
+async function exportX0(PV,noC){
   if(!segs.length||busy)return false;
   const say0=PV?PV.say:say,sayX=(t,c)=>{say0(t,c);xLock.msg(t)};
   if(!xOK()){if(PV)return doExport(PV);say('この端末は新しい書き出しに対応していないため、今までの方式で書き出します');return doExport()}
@@ -4932,6 +5132,7 @@ async function exportX(PV){
   let lastMsg='';const wd=setInterval(()=>{if(Date.now()-xAt>6000)xLock.msg(lastMsg+'\n（'+Math.round((Date.now()-xAt)/1000)+'秒止まっています: '+xSt+'）')},1000);
   let wake=null;try{wake=await navigator.wakeLock.request('screen')}catch(e){}
   const vr=new Map(),vo=new Map(),cleanup=()=>{vr.forEach(r=>r.close());vr.clear();vo.forEach(r=>r.close());vo.clear();ovX=null};
+  let xc=null,xcNote='';
   try{
     const S0=xSet(PV?'pv':'main'),XFPS=S0.fps,H=S0.h,W=XRES.find(r=>r[0]===H)[1];
     const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');
@@ -4954,6 +5155,11 @@ async function exportX(PV){
     for(const [codec,m] of [['mp4a.40.2','aac'],['opus','opus']]){const c={codec,sampleRate:XSR,numberOfChannels:2,bitrate:192000};
       const s=await AudioEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){ac=c;acod=m;break}}
     if(!ac)throw new Error('この端末は音の圧縮に対応していません');
+    /* v646: 直した所だけ書き出し直す(前回の圧縮データを2秒ごとに使い回す。本番とライト版で別々に置く) */
+    const G=XFPS*2;
+    if(!PV&&!noC&&xcWant()){if(!xcOK())xcNote='この端末では使い回しが使えません';else{xS('使い回しの準備');sayX('前回の書き出しを確かめています…');
+      try{const cks=new Set(ex.filter(q=>q.s.clip).map(q=>xcCK(q.s.clip)));items.forEach(it=>{if(it.lane===8&&it.end>XR.a&&it.start<XR.b){const c=ovClip(it);if(c)cks.add(xcCK(c))}});
+        xc=await xcOpen({prof:xLiteRun?'lite':'main',vc,W,H,XFPS,G,need:S0.br*1e6/8*all,clips:[...cks]})}catch(e){xc=null;xcNote='使い回しの準備に失敗しました（'+(e&&e.message||e)+'）'}}}
     /* MP4 を少しずつ作る(大きな動画でもメモリを使いすぎない) */
     const HM=1<<20,head=new Uint8Array(HM);let headLen=0,cursor=0;const parts=[];
     const onData=(data,pos)=>{let d=data,p=pos;
@@ -4961,16 +5167,53 @@ async function exportX(PV){
       if(p!==Math.max(cursor,HM))throw new Error('書き出しの順番が乱れました');parts.push(new Blob([d.slice()]));cursor=p+d.length};
     const mux=new Mp4Muxer.Muxer({target:new Mp4Muxer.StreamTarget({onData}),video:{codec:'avc',width:W,height:H,frameRate:XFPS},audio:{codec:acod,numberOfChannels:2,sampleRate:XSR},fastStart:false,firstTimestampBehavior:'offset'});
     let eErr=null;
-    const venc=new VideoEncoder({output:(c,m)=>{try{mux.addVideoChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});venc.configure(vc);
+    let vAny=false;const venc=new VideoEncoder({output:(c,m)=>{try{mux.addVideoChunk(c,m);vAny=true}catch(e){eErr=eErr||e}if(xc)try{xcOut(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});venc.configure(vc);
     /* v640: 圧縮の順番待ちは「空いた」合図(dequeue)ですぐ続ける。前は2msごとに見に行っていたが、実際は1回4ms以上空き、その間はスマホの圧縮の下ごしらえ(1コマずつ順番に進む)も止まっていた。
        合図が来ない端末では前と同じく2msごとに見る(合図が来ないまま空いたのが3回続いたら切り替える) */
     let eW=null,eEv='ondequeue' in VideoEncoder.prototype,eMiss=0;if(eEv)venc.addEventListener('dequeue',()=>{eMiss=0;if(eW){const w=eW;eW=null;w()}});
     const eWait=()=>new Promise(r=>{eW=r;setTimeout(()=>{if(eW!==r)return;eW=null;if(eEv&&venc.encodeQueueSize<=10&&++eMiss>=3)eEv=false;r()},eEv?50:2)});
     const aenc=new AudioEncoder({output:(c,m)=>{try{mux.addAudioChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});aenc.configure(ac);
-    const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0,w:0},pn=()=>performance.now();window.__xPF=PF;
-    const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e+PF.w),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e+PF.w)+'（うち待ち'+f(PF.w)+'）'};
+    const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0,w:0,s:0,c:0},pn=()=>performance.now();window.__xPF=PF;
+    const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e+PF.w+PF.s+PF.c),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e+PF.w)+'（うち待ち'+f(PF.w)+'）'+(PF.s+PF.c>T*0.005?' 指紋'+f(PF.s)+' 使い回し'+f(PF.c):'')};
     const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};let lastF=null,src0=0;const spH=[];XDC.n=0;XRC.n=0;XRC.ms=0;XRC.sum=0;const rdS=()=>' / 読込 '+XRC.n+'回・'+(XRC.ms/1000).toFixed(0)+'秒'+(XRC.n?'・1回'+Math.round(XRC.sum/XRC.n)+'ms':'');
     /* v631: 元動画の大きさ・コマ数と、1コマ作るのに読んだ元のコマ数(多いほど遅い) */const xSrcS=(q,fi)=>{const c=q&&q.s.clip,X=c&&c._x;if(!X)return '';const V=X.V,w=V.t.video.width,h=V.t.video.height,d=V.S.length?(V.S[V.S.length-1].cts-V.S[0].cts)/V.ts:0,f=d>0?Math.round((V.S.length-1)/d):0;return '\n元 '+w+'×'+h+'・'+f+'fps・'+String(V.t.codec).slice(0,4)+'・'+spdOf(q.s)+'倍の所 / 読んだコマ '+(XDC.n/Math.max(1,fi)).toFixed(1)+'枚/1コマ'+rdS()};
+    /* v646: 使い回し(指紋を作る・前回の分を入れる・今回の分を保存する) */
+    let gS=null,sfc=null,sov=null;
+    if(xc){xcBegin();const c=document.createElement('canvas');c.width=W;c.height=H;gS=c.getContext('2d');sfc=document.createElement('canvas');sov=document.createElement('canvas')}
+    const xcKill=e=>{if(!xc||xc.dead)return;xc.dead=true;xc.err=String(e&&e.message||e).slice(0,80);xcEnd();ovX=null};
+    const xcDm=(c,X)=>xc.dims[xcCK(c)]||[X.V.t.video.width,X.V.t.video.height];
+    /* 元動画のコマの代わり(読み込まない。大きさと「どのコマか」の印だけ) */
+    const xcPh=(cv,c,X,ts,dm)=>{const rot=X.V.rot,fw=dm[0],fh=dm[1],rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh),ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));
+      if(cv.width!==ow||cv.height!==oh){cv.width=ow;cv.height=oh}cv.videoWidth=ow;cv.videoHeight=oh;xcTok(cv,xcVT(xcCK(c),ts,rot,ow,oh));return cv};
+    /* 1コマの指紋(書き出しと同じ描き方で、別のキャンバスに描く) */
+    const xcSigF=async fi=>{const T=XR.a+fi/XFPS,q=segOf(T);XC.RB=false;let src=null;
+      if(q&&q.s.clip){const c=q.s.clip,X=await xOpen(c),K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K),ts=K>=8||S0.kf?xcKeyTs(X,ct):xcFrTs(X,ct);if(ts==null)return null;src=xcPh(sfc,c,X,ts,xcDm(c,X))}
+      const it=ovAt(T);if(it){const c=ovClip(it),X=await xOpen(c),ts=xcFrTs(X,Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start))));if(ts==null)return null;ovX={it,f:xcPh(sov,c,X,ts,xcDm(c,X))}}else ovX={f:null};
+      try{xcFrame0(gS,W,H);drawFrame(gS,W,H,src||{videoWidth:0,videoHeight:0},T);return xcSig(gS,W,H)}finally{ovX=null}};
+    const xcSigG=async f0=>{const n=Math.min(G,N-f0),o={f0,n,sig:null,name:null,hit:false,rp:null};if(!xc.doSig||!xc.files.size)return o;
+      const s0=pn(),sig=[];try{for(let i=0;i<n;i++){const s=await xcSigF(f0+i);if(!s){xc.st.unc++;return o}sig.push(s)}}finally{PF.s+=pn()-s0}
+      o.sig=sig;o.name=xcName(xc.gk,sig);o.hit=xc.files.has(o.name);return o};
+    /* 2秒分: 前回と同じなら前の圧縮データを入れて、次の頭のコマ番号を返す(違えば0。そのまま圧縮する) */
+    const xcGop=async f0=>{const o=xc.nx&&xc.nx.f0===f0?xc.nx:await xcSigG(f0);xc.nx=null;
+      if(o.hit){const rp=o.rp||xcRd(xc,o.name);rp.catch(()=>{});
+        /* 読み込んでいる間に次の2秒の指紋を作っておく */if(f0+o.n<N){const nx=await xcSigG(f0+o.n);if(nx.hit){nx.rp=xcRd(xc,nx.name);nx.rp.catch(()=>{})}xc.nx=nx}
+        let ch=null;try{ch=await rp}catch(e){xc.st.rf++}
+        if(ch&&!xcChk(ch,o.n)){ch=null;xc.st.rf++}if(!ch)xc.files.delete(o.name);/* 読めない物は作り直して上書きする */
+        if(ch){
+          /* 圧縮中のコマを出し切ってから入れる(順番どおりに) */if(xc.inN>xc.outN){xS('映像の圧縮(区切り)');await xTO(venc.flush(),8000);if(eErr)throw eErr;if(xc.inN>xc.outN)throw xcRetryErr('圧縮の区切りで止まりました')}
+          if(xc.pg){xcFin(xc,xc.pg);xc.pg=null}
+          for(const c of ch){mux.addVideoChunkRaw(c.b,c.t,Math.round((f0+c.k)*1e6/XFPS),c.d,vAny?undefined:{decoderConfig:xcDcO(JSON.parse(xc.dcJ))});vAny=true}
+          xc.used.add(o.name);xc.st.hit++;xc.hitAny=true;return f0+o.n}}
+      xc.st.miss++;const gi=Math.floor(f0/G);xc.gm.set(gi,{gi,n:o.n,sig:o.sig,real:[]});return 0};
+    /* 圧縮して出てきたデータを2秒ごとに集める。圧縮の設定(SPS/PPS)が前回と違えば、使い回した後なら最初から(使い回さずに)やり直す */
+    const xcOut=(c,m)=>{xc.outN++;if(m&&m.decoderConfig){const j=JSON.stringify(xcDcJ(m.decoderConfig));if(!xc.dcJ)xc.dcJ=j;else if(j!==xc.dcJ){if(xc.hitAny)throw xcRetryErr('圧縮の設定が前回と違いました');xc.files.clear();xc.dcJ=j}}
+      if(xc.dead)return;const k=Math.round(c.timestamp*XFPS/1e6),gi=Math.floor(k/G);let P=xc.pg;
+      if(!P||P.gi!==gi){if(P)xcFin(xc,P);P=xc.pg=xc.gm.get(gi)||{gi,bad:1};P.ch=[]}
+      if(P.bad)return;const d=new Uint8Array(c.byteLength);c.copyTo(d);P.ch.push({k:k-gi*G,t:c.type,d:c.duration==null?Math.round(1e6/XFPS):c.duration,b:d})};
+    /* 進み具合の表示 */
+    const upd=q=>{const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
+      const now=performance.now(),el=(now-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);/* v631: 今の速さ(直近3秒)も出す。どこで遅くなるか分かるように */spH.push([now,fi]);while(spH.length>2&&now-spH[1][0]>3000)spH.shift();const sn=spH.length>1?((fi-spH[0][1])/XFPS)/Math.max(0.05,(now-spH[0][0])/1000):sp;
+      lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍・今 '+sn.toFixed(1)+'倍）'+'\n'+pfS()+xSrcS(q,fi)+(xc&&xc.st.hit+xc.st.miss?'\n使い回し '+xc.st.hit+'/'+(xc.st.hit+xc.st.miss)+'（2秒ごと）':'');sayX(lastMsg)};
     /* v635: 次の10秒の音は、今の10秒の映像を作っている間に裏で作っておく(音と映像を同時に進める。前は音を作り終わるまで映像が止まっていた) */
     const audAt=a=>{XAS=a.toFixed(0)+'秒〜';const p=xAudWin(ex,a,Math.min(XR.b,a+XWIN),XR);p.catch(()=>{});return p};let audP=audAt(XR.a);
     for(let A=XR.a;A<XR.b-1e-6;A+=XWIN){const B=Math.min(XR.b,A+XWIN);
@@ -4981,30 +5224,35 @@ async function exportX(PV){
       /* 映像(1コマずつ) */
       while(fi<N){const T=XR.a+fi/XFPS;if(T>=B-1e-9&&B<XR.b-1e-6)break;
         if(eErr)throw eErr;if(xAbort)throw new Error('中止しました');xS('映像 '+fi+'/'+N+'コマ');
+        /* v646: 2秒の頭で、前回と同じなら前の圧縮データを入れて飛ばす */
+        if(xc&&!xc.dead&&fi%G===0){const _c=pn(),s0=PF.s;let r=0;try{r=await xcGop(fi)}catch(e){if(e&&e.xcRetry)throw e;xcKill(e)}PF.c+=pn()-_c-(PF.s-s0);if(r){fi=r;upd(null);continue}}
         const q=segOf(T);let src=null;let _v=pn();
         if(q&&q.s.clip){const c=q.s.clip;let r=vr.get(c);if(!r){vr.forEach(x=>x.close());vr.clear();r=new XVR(await xOpen(c));vr.set(c,r)}
           const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8||S0.kf?await r.keyAt(ct,{step:K/XFPS,end:q.s.end-0.001}):await r.frameAt(ct);
           /* v631: 前のコマと同じ絵なら描き直さない(ライト版の等速は同じキーフレームが続く) */if(f&&f===lastF&&fc.width&&src0){src=fc}else if(f){lastF=f;src0=1;const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
             const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(fc.width!==ow||fc.height!==oh){fc.width=ow;fc.height=oh}
             fg.save();fg.translate(ow/2,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();
-            fc.videoWidth=ow;fc.videoHeight=oh;src=fc}}
-        PF.v+=pn()-_v;_v=pn();ovX=await ovXFrame(vo,T,W,H);PF.o+=pn()-_v;_v=pn();drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);PF.d+=pn()-_v;_v=pn();
-        const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;
-        PF.e+=pn()-_v;_v=pn();{const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await eWait()}}PF.w+=pn()-_v;
-        if(fi%10===0){const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
-          const now=performance.now(),el=(now-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);/* v631: 今の速さ(直近3秒)も出す。どこで遅くなるか分かるように */spH.push([now,fi]);while(spH.length>2&&now-spH[1][0]>3000)spH.shift();const sn=spH.length>1?((fi-spH[0][1])/XFPS)/Math.max(0.05,(now-spH[0][0])/1000):sp;
-          lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍・今 '+sn.toFixed(1)+'倍）'+'\n'+pfS()+xSrcS(q,fi);sayX(lastMsg)}}
+            fc.videoWidth=ow;fc.videoHeight=oh;if(xc&&!xc.dead){const ck=xcCK(c);xcTok(fc,xcVT(ck,f.timestamp,rot,ow,oh));xc.dims[ck]=[fw,fh]}src=fc}}
+        PF.v+=pn()-_v;_v=pn();ovX=await ovXFrame(vo,T,W,H);if(xc&&!xc.dead&&ovX.f){const ck=xcCK(ovX.c);xcTok(ovC,xcVT(ck,ovX.ts,ovX.rot,ovC.width,ovC.height));xc.dims[ck]=[ovX.fw,ovX.fh]}PF.o+=pn()-_v;_v=pn();
+        if(xc&&!xc.dead){XC.RB=false;xcFrame0(g,W,H)}drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);if(xc&&!xc.dead){const P=xc.gm.get(Math.floor(fi/G));if(P)P.real.push(xcSig(g,W,H))}PF.d+=pn()-_v;_v=pn();
+        const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;if(xc)xc.inN++;
+        PF.e+=pn()-_v;_v=pn();{const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await eWait()}}PF.w+=pn()-_v;if(xc&&xc.wn>3)await xc.wq;
+        if(fi%10===0)upd(q)}
     }
     cleanup();lastMsg='仕上げ中…';sayX(lastMsg);xS('映像の圧縮(最後)');await xTO(venc.flush(),8000);xS('音の圧縮(最後)');await xTO(aenc.flush(),8000);if(eErr)throw eErr;
+    /* v646: 最後の2秒分を保存して、今回使わなかった前の分を消す */
+    let xcInf='';if(xc){if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}xS('使い回しの保存');await xc.wq;if(!xc.dead){await xcMeta(xc);xcGC(xc)}
+      const S=xc.st,tot=S.hit+S.miss;xcInf='\n使い回し '+S.hit+'/'+tot+'（2秒ごと）'+(S.nst?'・使えない所 '+S.nst:'')+(S.mis?'・指紋ちがい '+S.mis:'')+(S.rf?'・読めなかった所 '+S.rf:'')+(S.we?'・保存の失敗 '+S.we:'')+(xc.canW?'・保存 '+xcMB(S.wb+S.rd):'・空きが少ないので保存していません')+(xc.dead?'・途中で使い回しを止めました（'+xc.err+'）':'')+(XC.err?'・記録の失敗 '+XC.err:'')}
+    else if(xcNote)xcInf='\n'+xcNote;
     try{venc.close()}catch(e){}try{aenc.close()}catch(e){}xS('MP4にまとめる');mux.finalize();
     const blob=new Blob([head.subarray(0,Math.min(HM,Math.max(headLen,0))),...parts],{type:'video/mp4'});
-    const sec=(performance.now()-t0)/1000,inf=W+'×'+H+'・'+S0.br+'Mbps・'+XFPS+'fps / '+sec.toFixed(1)+'秒（速さ '+(all/Math.max(0.1,sec)).toFixed(1)+'倍）・'+(blob.size/1048576).toFixed(1)+'MB'+(vc.hardwareAcceleration==='prefer-software'?'・ソフト圧縮':'')+(vc.bitrateMode==='constant'?'・固定ビットレート':'')+'\n'+pfS()+rdS();
+    const sec=(performance.now()-t0)/1000,inf=W+'×'+H+'・'+S0.br+'Mbps・'+XFPS+'fps / '+sec.toFixed(1)+'秒（速さ '+(all/Math.max(0.1,sec)).toFixed(1)+'倍）・'+(blob.size/1048576).toFixed(1)+'MB'+(vc.hardwareAcceleration==='prefer-software'?'・ソフト圧縮':'')+(vc.bitrateMode==='constant'?'・固定ビットレート':'')+'\n'+pfS()+rdS()+xcInf;
     if(PV){PV.done(blob,inf);return true}
     outBlob=blob;outExt='mp4';outLite=!!xLiteRun;{const sm=$('saveMsg');if(sm)sm.textContent=''}
     const r=$('result');r.src=URL.createObjectURL(outBlob);r.hidden=false;$('save').hidden=!dl;$('prog').style.width='100%';
     say('できました（'+inf+'）','ok');return true;
-  }catch(err){cleanup();sayX('失敗:'+(err&&err.message||err),'err');return null}
-  finally{clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
+  }catch(err){cleanup();xcEnd();if(err&&err.xcRetry){/* v646: 前回の分は消して、使い回さずにやり直す */try{if(xc)for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'xcRetry'}sayX('失敗:'+(err&&err.message||err),'err');return null}
+  finally{xcEnd();clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
 }
 
 /* 保存 */
@@ -5391,7 +5639,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v645';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v646';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
