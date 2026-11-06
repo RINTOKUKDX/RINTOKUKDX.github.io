@@ -4608,34 +4608,58 @@ async function xOpen(c){
   return c._x={V,A,read,readD};
 }
 /* 1コマずつ読む係(時間の順に frameAt を呼ぶ) */
+const XDC={n:0};/* v631: 読んだ(デコードした)元のコマ数 */
 class XVR{
-  constructor(X){this.X=X;this.q=[];this.cur=null;this.dec=null;this.err=null;this.lastT=-1e9;this.wk=null}
+  constructor(X){this.X=X;this.q=[];this.cur=null;this.dec=null;this.err=null;this.lastT=-1e9;this.wk=null;this.km=new Map();this.kp=new Set();this.kts=new Map();this.kf=null;this.kk=-1;this.kd=null;this.kw=null;this.feeding=null}
   close(){try{this.dec&&this.dec.state!=='closed'&&this.dec.close()}catch(e){}this.q.forEach(f=>f.close());this.q=[];if(this.cur)this.cur.close();this.cur=null;this.dec=null;this.kClose()}
-  kClose(){try{this.kd&&this.kd.state!=='closed'&&this.kd.close()}catch(e){}this.kd=null;(this.kq||[]).forEach(f=>f.close());this.kq=[];if(this.kf)this.kf.close();this.kf=null;this.kk=-1}
-  /* v625: 速い速度(8倍以上)の時は、t より前の一番近いキーフレームだけを読む。間のコマを全部読むと 30倍なら30倍の手間になり、書き出しが極端に遅く・熱くなっていた */
-  async keyAt(t){const V=this.X.V,S=V.S;if(!this.KI){this.KI=[];for(let i=0;i<S.length;i++)if(S[i].is_sync)this.KI.push(i)}if(!this.KI.length)return this.frameAt(t);
-    let lo=0,hi=this.KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[this.KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}
+  kClose(){try{this.kd&&this.kd.state!=='closed'&&this.kd.close()}catch(e){}this.kd=null;this.km.forEach(f=>f.close());this.km.clear();this.kp.clear();this.kts.clear();if(this.kf)this.kf.close();this.kf=null;this.kk=-1}
+  /* キーフレームの一覧(KI=サンプル番号)と、t 以前で一番近いキーフレームの番号 */
+  kIdx(t){const V=this.X.V,S=V.S;if(!this.KI){this.KI=[];for(let i=0;i<S.length;i++)if(S[i].is_sync)this.KI.push(i)}
+    let lo=0,hi=this.KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[this.KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}return k}
+  /* v631: キーフレーム k を読みに出す(まだなら) */
+  async kQ(k){if(this.kp.has(k)||this.km.has(k)||(this.kk===k&&this.kf))return;const V=this.X.V,S=V.S;
+    if(!this.kd||this.kd.state==='closed'){this.kd=new VideoDecoder({output:f=>{const j=this.kts.get(f.timestamp);if(j==null||!this.kp.has(j)){f.close()}else{this.kp.delete(j);this.km.set(j,f)}if(this.kw){const w=this.kw;this.kw=null;w()}},error:e=>{this.err=e;if(this.kw){const w=this.kw;this.kw=null;w()}}});this.kd.configure(V.cfg)}
+    const s=S[this.KI[k]],ts=Math.round((s.cts/V.ts+V.sh)*1e6),d=await this.X.readD(s.offset,s.size);
+    this.kp.add(k);this.kts.set(ts,k);XDC.n++;this.kd.decode(new EncodedVideoChunk({type:'key',timestamp:ts,duration:Math.round(s.duration/V.ts*1e6),data:d}))}
+  /* v625: 速い速度の時は、t より前の一番近いキーフレームだけを読む。
+     v631: 次に使うキーフレームを先に読みに出しておく(o={step:1コマで進む元動画の秒数,end:区間の終わり})。前は1枚ごとに flush(出し切り)で待っていて、スマホでは特に遅かった */
+  async keyAt(t,o){if(this.kIdx(t)==null||!this.KI.length)return this.frameAt(t);const k=this.kIdx(t);
+    if(!(this.kk===k&&this.kf))await this.kQ(k);
+    if(o&&o.step>0){let n=0,last=k;for(let i=1;i<=600&&n<3;i++){const ti=t+o.step*i;if(ti>o.end)break;const j=this.kIdx(ti);if(j>last){last=j;n++;await this.kQ(j)}}}
     if(this.kk===k&&this.kf)return this.kf;
-    if(!this.kd||this.kd.state==='closed'){this.kq=[];this.kd=new VideoDecoder({output:f=>this.kq.push(f),error:e=>{this.err=e}});this.kd.configure(V.cfg)}
-    const s=S[this.KI[k]],d=await this.X.readD(s.offset,s.size);
-    this.kd.decode(new EncodedVideoChunk({type:'key',timestamp:Math.round((s.cts/V.ts+V.sh)*1e6),duration:Math.round(s.duration/V.ts*1e6),data:d}));
-    await xTO(this.kd.flush(),4000);if(this.err)throw this.err;
-    const f=this.kq.pop();this.kq.forEach(x=>x.close());this.kq=[];if(!f)return this.kf||null;if(this.kf)this.kf.close();this.kf=f;this.kk=k;return f}
-  start(t0){this.close();const V=this.X.V,S=V.S;let k=0;
-    for(let i=0;i<S.length;i++){const t=S[i].cts/V.ts+V.sh;if(S[i].is_sync&&t<=t0+1e-4)k=i;if(S[i].dts/V.ts+V.sh>t0+2)break}
-    this.i=k;this.flushed=false;this.ok=Date.now();
+    const t0=Date.now();let fl=false;
+    while(!this.km.has(k)){if(this.err)throw this.err;if(xAbort)throw new Error('中止しました');
+      let ahead=false;for(const j of this.kp)if(j>k){ahead=true;break}
+      if(!fl&&(!ahead||Date.now()-t0>40)){fl=true;await xTO(this.kd.flush(),4000);continue}
+      if(Date.now()-t0>4000)break;
+      await new Promise(r=>{this.kw=r;setTimeout(()=>{if(this.kw===r){this.kw=null;r()}},fl?30:15)})}
+    if(this.err)throw this.err;
+    const f=this.km.get(k);if(!f)return this.kf||null;this.km.delete(k);if(this.kf)this.kf.close();this.kf=f;this.kk=k;
+    for(const [j,g] of this.km)if(j<k){g.close();this.km.delete(j)}
+    for(const j of this.kp)if(j<k)this.kp.delete(j);
+    if(this.km.size>6)for(const [j,g] of [...this.km].sort((x,y)=>y[0]-x[0]).slice(0,this.km.size-6)){g.close();this.km.delete(j)}
+    if(this.kts.size>64)for(const [ts,j] of this.kts)if(j<k)this.kts.delete(ts);
+    return f}
+  start(t0){this.close();const V=this.X.V,S=V.S;this.kIdx(0);
+    this.i=this.KI.length?this.KI[this.kIdx(t0)]:0;this.flushed=false;this.ok=Date.now();
     this.dec=new VideoDecoder({output:f=>{this.q.push(f);if(this.wk){const w=this.wk;this.wk=null;w()}},error:e=>{this.err=e;if(this.wk){const w=this.wk;this.wk=null;w()}}});
     this.dec.configure(this.X.V.cfg)}
-  async feed(){const V=this.X.V,S=V.S;let n=0;
-    while(this.i<S.length&&n<20&&this.dec.decodeQueueSize<12){const s=S[this.i++];const d=await this.X.read(s.offset,s.size);
-      this.dec.decode(new EncodedVideoChunk({type:s.is_sync?'key':'delta',timestamp:Math.round((s.cts/V.ts+V.sh)*1e6),duration:Math.round(s.duration/V.ts*1e6),data:d}));n++}
-    if(this.i>=S.length&&!this.flushed){this.flushed=true;xS('映像の読み込み(最後)');await xTO(this.dec.flush(),4000)}
+  /* v631: 戻る時は、デコーダーを作り直さず reset して t 以前のキーフレームから。作り直しはスマホでは重い */
+  seekBack(t){const S=this.X.V.S;try{this.dec.reset();this.dec.configure(this.X.V.cfg)}catch(e){return this.start(t)}
+    this.q.forEach(f=>f.close());this.q=[];if(this.cur)this.cur.close();this.cur=null;this.i=this.KI.length?this.KI[this.kIdx(t)]:0;this.flushed=false;this.ok=Date.now()}
+  /* v631: 先に飛ぶ時は、間にキーフレームがあればそこまで飛ばして読む(デコーダーはそのまま) */
+  seekFwd(t){if(!this.KI.length)return;const k=this.KI[this.kIdx(t)];if(k>this.i){this.i=k;this.flushed=false;this.ok=Date.now()}}
+  async feed(mx=20){const V=this.X.V,S=V.S,dec=this.dec;let n=0;
+    while(this.i<S.length&&n<mx&&dec.decodeQueueSize<12){const s=S[this.i];const d=await this.X.read(s.offset,s.size);if(dec!==this.dec||dec.state!=='configured')return n;this.i++;XDC.n++;
+      dec.decode(new EncodedVideoChunk({type:s.is_sync?'key':'delta',timestamp:Math.round((s.cts/V.ts+V.sh)*1e6),duration:Math.round(s.duration/V.ts*1e6),data:d}));n++}
+    if(this.i>=S.length&&!this.flushed&&dec===this.dec){this.flushed=true;xS('映像の読み込み(最後)');await xTO(dec.flush(),4000)}
     return n}
-  async frameAt(t){
-    if(!this.dec||t<this.lastT-1e-3||t>this.lastT+3)this.start(t);this.lastT=t;const eps=0.004;
+  async frameAt(t){if(this.feeding)await this.feeding;
+    if(!this.dec)this.start(t);else if(t<this.lastT-1e-3)this.seekBack(t);else if(t>this.lastT+0.25)this.seekFwd(t);
+    this.lastT=t;const eps=0.004;
     for(let g=0;;g++){if(this.err)throw this.err;
       while(this.q.length&&this.q[0].timestamp/1e6<=t+eps){if(this.cur)this.cur.close();this.cur=this.q.shift()}
-      if(this.q.length)return this.cur||this.q[0];
+      if(this.q.length){/* v631: 返す前に次のコマを読みに出しておく(デコーダーを休ませない) */if(!this.flushed&&this.q.length<6&&this.dec.decodeQueueSize<6)this.feeding=this.feed(6).catch(e=>{this.err=this.err||e}).finally(()=>{this.feeding=null});return this.cur||this.q[0]}
       if(this.flushed)return this.cur;
       if(xAbort)throw new Error('中止しました');
       const n=await this.feed();if(n||this.q.length)this.ok=Date.now();else if(!this.ok)this.ok=Date.now();
@@ -4647,10 +4671,10 @@ class XVR{
 /* 元動画の音を c0〜c1 だけ取り出す */
 async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
   const dec=new AudioDecoder({output:d=>out.push(d),error:e=>err=e});dec.configure(A.cfg);
-  /* v629: 使う音だけ読む。近い音(間が256KB未満)はまとめて1回で読む。前は映像と同じ8MBの入れ物で読み、早送りの所では映像ごと何百MBも読んでいた */
+  /* v629: 使う音だけ読む。近い音(v631: 間が1MB未満・1回8MBまで。細かく読むと回数が増えて遅い)はまとめて1回で読む。前は映像と同じ8MBの入れ物で読み、早送りの所では映像ごと何百MBも読んでいた */
   const tt=i=>S[i].cts/A.ts+A.sh;let lo=0,hi=S.length-1,i0=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=c0-0.12){i0=m;hi=m-1}else lo=m+1}
   for(let i=i0;i<S.length&&!err;){if(tt(i)>c1+0.05)break;let j=i,end=S[i].offset+S[i].size;
-    while(j+1<S.length&&tt(j+1)<=c1+0.05&&S[j+1].offset>=S[i].offset&&S[j+1].offset-end<(256<<10)&&S[j+1].offset+S[j+1].size-S[i].offset<(4<<20)){j++;end=Math.max(end,S[j].offset+S[j].size)}
+    while(j+1<S.length&&tt(j+1)<=c1+0.05&&S[j+1].offset>=S[i].offset&&S[j+1].offset-end<(1<<20)&&S[j+1].offset+S[j+1].size-S[i].offset<(8<<20)){j++;end=Math.max(end,S[j].offset+S[j].size)}
     const buf=await X.readD(S[i].offset,end-S[i].offset);
     for(let k=i;k<=j;k++){const s=S[k],t=tt(k),d=s.duration/A.ts;dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data:buf.subarray(s.offset-S[i].offset,s.offset-S[i].offset+s.size)}))}
     i=j+1;while(dec.decodeQueueSize>64&&!err)await new Promise(r=>setTimeout(r,2))}
@@ -4662,22 +4686,29 @@ async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out
   return{buf:ab,off:c0-t0}}
 /* v630: 早送り(8倍以上)の音。元の音を全部ほどいて縮めると、30倍なら10秒の窓で300秒分をほどく必要があり重い(スマホで「音63%」)。
    代わりに 0.06秒ごとに、元の動画の対応する位置から 0.12秒だけ取り出して重ねる(音程そのまま)。ほどくのは使う所だけ */
-async function xAudSp(X,c0,c1,K){const A=X.A;if(!A)return null;const S=A.S,sr=A.cfg.sampleRate||XSR,tt=i=>S[i].cts/A.ts+A.sh;if(!S.length)return null;
-  const D=(c1-c0)/K,N=Math.max(1,Math.round(D*sr)),Lg=0.12,Hg=0.06,GL=Math.round(Lg*sr),HL=Math.round(Hg*sr);
-  const oL=new Float32Array(N+GL),oR=new Float32Array(N+GL),oW=new Float32Array(N+GL),win=new Float32Array(GL);for(let i=0;i<GL;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/GL);
-  let err=null,got=[];const dec=new AudioDecoder({output:d=>got.push(d),error:e=>{err=e}});dec.configure(A.cfg);
+async function xAudSp(X,c0,c1,K){const A=X.A;if(!A)return null;const S=A.S,tt=i=>S[i].cts/A.ts+A.sh;if(!S.length)return null;
+  let sr=A.cfg.sampleRate||XSR;const D=(c1-c0)/K,Lg=0.12,Hg=0.06;
+  /* v631: 粒ごとに flush(出し切り)せず、まとめてデコーダーに入れて最後に1回だけ flush。出てきた音は入れた順に並んでいるので、何番目の入力の音かを数えて元の時刻を決める */
+  const inp=[];/* {t:元の時刻,d:長さ(秒),g:粒の番号} */let err=null;const outs=[];
+  const dec=new AudioDecoder({output:d=>outs.push(d),error:e=>{err=e}});dec.configure(A.cfg);
   const find=t=>{let lo=0,hi=S.length-1,r=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=t){r=m;hi=m-1}else lo=m+1}return r};
-  try{for(let n=0;n*HL<N&&!err;n++){if(xAbort)throw new Error('中止しました');const p=c0+n*Hg*K;let i=find(p-0.05);if(i>=S.length)break;let j=i;while(j+1<S.length&&tt(j+1)<=p+Lg+0.02)j++;
-      const sp=S[j].offset+S[j].size-S[i].offset,one=sp>0&&sp<(2<<20)&&S[j].offset>=S[i].offset?await X.readD(S[i].offset,sp):null;
+  let prevJ=-1;
+  try{for(let n=0;n*Hg<D-1e-6&&!err;n++){if(xAbort)throw new Error('中止しました');const p=c0+n*Hg*K;let i=Math.max(find(p-0.05),prevJ+1);if(i>=S.length)break;let j=i;while(j+1<S.length&&tt(j+1)<=p+Lg+0.02)j++;if(j<i)continue;prevJ=j;
+      const sp=S[j].offset+S[j].size-S[i].offset,one=sp>0&&sp<(1<<20)&&S[j].offset>=S[i].offset?await X.readD(S[i].offset,sp):null;
       for(let k=i;k<=j;k++){const s=S[k],d=one?one.subarray(s.offset-S[i].offset,s.offset-S[i].offset+s.size):await X.readD(s.offset,s.size);
-        dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(tt(k)*1e6),duration:Math.round(s.duration/A.ts*1e6),data:d}))}
-      await xTO(dec.flush(),4000);if(err)break;
-      let pos=tt(i);const o0=n*HL;
-      for(const d of got){const m=d.numberOfFrames,ch=d.numberOfChannels,x=new Float32Array(m),y=new Float32Array(m);d.copyTo(x,{planeIndex:0,format:'f32-planar'});if(ch>1)d.copyTo(y,{planeIndex:1,format:'f32-planar'});else y.set(x);d.close();
-        const q0=Math.round((pos-p)*sr);for(let q=0;q<m;q++){const g=q0+q;if(g<0||g>=GL)continue;const w=win[g],oi=o0+g;oL[oi]+=x[q]*w;oR[oi]+=y[q]*w;oW[oi]+=w}pos+=m/sr}
-      got=[]}}
-  finally{got.forEach(d=>{try{d.close()}catch(_){}});try{dec.close()}catch(_){}}
-  if(err)throw err;
+        inp.push({t:tt(k),d:s.duration/A.ts});dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(tt(k)*1e6),duration:Math.round(s.duration/A.ts*1e6),data:d}))}
+      while(dec.decodeQueueSize>48&&!err)await new Promise(r=>setTimeout(r,2))}
+    if(!err)await xTO(dec.flush(),8000)}
+  finally{try{dec.close()}catch(_){}}
+  if(err){outs.forEach(d=>{try{d.close()}catch(_){}});throw err}
+  if(outs.length)sr=outs[0].sampleRate||sr;
+  const N=Math.max(1,Math.round(D*sr)),GL=Math.round(Lg*sr),HL=Hg*sr;
+  const oL=new Float32Array(N+GL),oR=new Float32Array(N+GL),oW=new Float32Array(N+GL),win=new Float32Array(GL);for(let i=0;i<GL;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/GL);
+  /* 入力 ii の何サンプル目か(io)を数えながら、出てきた音を元の時刻に戻す */
+  let ii=0,io=0;const plen=k=>Math.max(1,Math.round(inp[k].d*sr));
+  for(const d of outs){const m=d.numberOfFrames,ch=d.numberOfChannels,x=new Float32Array(m),y=new Float32Array(m);d.copyTo(x,{planeIndex:0,format:'f32-planar'});if(ch>1)d.copyTo(y,{planeIndex:1,format:'f32-planar'});else y.set(x);d.close();
+    for(let q=0;q<m;q++){while(ii<inp.length&&io>=plen(ii)){ii++;io=0}if(ii>=inp.length)break;const ts=inp[ii].t+io/sr;io++;
+      /* この時刻が入る粒(近い2つ)に足す */const u=(ts-c0)/(Hg*K);for(let g=Math.max(0,Math.floor(u)-1);g<=Math.floor(u)+1;g++){const rel=ts-(c0+g*Hg*K);if(rel<0||rel>=Lg)continue;const gi=Math.floor(rel*sr);if(gi>=GL)continue;const oi=Math.round(g*HL)+gi;if(oi>=oL.length)continue;const w=win[gi];oL[oi]+=x[q]*w;oR[oi]+=y[q]*w;oW[oi]+=w}}}
   for(let i=0;i<N;i++){const w=oW[i];if(w>0.1){oL[i]/=w;oR[i]/=w}}
   const ab=new AudioBuffer({length:N,numberOfChannels:2,sampleRate:sr});ab.copyToChannel(oL.subarray(0,N),0);ab.copyToChannel(oR.subarray(0,N),1);return{buf:ab,off:0}}
 /* v522: 音程を保ったまま速さを変える(WSOLA)。K=倍率(2=半分の長さ)。40msの窓を半分ずつ重ね、前とつながりの良い位置を±12msで探す */
@@ -4687,7 +4718,10 @@ function tStretch(ab,K){const sr=ab.sampleRate,ch=ab.numberOfChannels,N=ab.lengt
   let g=I[0];if(ch>1){g=new Float32Array(N);for(let i=0;i<N;i++)g[i]=(I[0][i]+I[1][i])*0.5}
   let prev=-1;for(let op=0;op<M;op+=H){const ip=Math.round(op*K);let best=ip;
     if(prev>=0){const ref=prev+H,lo=Math.max(0,ip-S),hi=Math.min(N-W,ip+S);let bc=-Infinity;
-      for(let p=lo;p<=hi;p+=2){let c=0;for(let i=0;i<W;i+=4){const a=ref+i;if(a>=N)break;c+=g[a]*g[p+i]}if(c>bc){bc=c;best=p}}}
+      /* v631: 探し方を2段に(粗く8つおき→その周り±8を1つおき)。前は全部を2つおきに調べていて、4倍速の音で重かった。合わせる精度は前より細かい */
+      const cor=(p,st)=>{let c=0;for(let i=0;i<W;i+=st){const a=ref+i;if(a>=N)break;c+=g[a]*g[p+i]}return c};
+      for(let p=lo;p<=hi;p+=8){const c=cor(p,8);if(c>bc){bc=c;best=p}}
+      const f0=Math.max(lo,best-8),f1=Math.min(hi,best+8);bc=-Infinity;for(let p=f0;p<=f1;p++){const c=cor(p,4);if(c>bc){bc=c;best=p}}}
     best=Math.max(0,Math.min(N-1,best));
     for(let c=0;c<ch;c++){const a=I[c],d=O[c];for(let i=0;i<W&&best+i<N;i++)d[op+i]+=a[best+i]*win[i]}
     for(let i=0;i<W;i++)nr[op+i]+=win[i];prev=best}
@@ -4758,7 +4792,8 @@ async function exportX(PV){
     const aenc=new AudioEncoder({output:(c,m)=>{try{mux.addAudioChunk(c,m)}catch(e){eErr=eErr||e}},error:e=>eErr=e});aenc.configure(ac);
     const N=Math.max(1,Math.round(all*XFPS));let fi=0;const t0=performance.now();/* v627: 時間の内訳(音・映像の読み込み・動画2・描画・圧縮待ち) */const PF={a:0,v:0,o:0,d:0,e:0},pn=()=>performance.now();window.__xPF=PF;
     const pfS=()=>{const T=Math.max(1,PF.a+PF.v+PF.o+PF.d+PF.e),f=x=>Math.round(x/T*100)+'%';return '内訳: 音'+f(PF.a)+' 映像の読込'+f(PF.v)+(PF.o>T*0.02?' 動画2'+f(PF.o):'')+' 描画'+f(PF.d)+' 圧縮'+f(PF.e)};
-    const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};
+    const segOf=T=>{for(const q of ex)if(T>=q.sa-1e-9&&T<q.sb-1e-9)return q;return null};let lastF=null,src0=0;const spH=[];XDC.n=0;
+    /* v631: 元動画の大きさ・コマ数と、1コマ作るのに読んだ元のコマ数(多いほど遅い) */const xSrcS=(q,fi)=>{const c=q&&q.s.clip,X=c&&c._x;if(!X)return '';const V=X.V,w=V.t.video.width,h=V.t.video.height,d=V.S.length?(V.S[V.S.length-1].cts-V.S[0].cts)/V.ts:0,f=d>0?Math.round((V.S.length-1)/d):0;return '\n元 '+w+'×'+h+'・'+f+'fps・'+String(V.t.codec).slice(0,4)+'・'+spdOf(q.s)+'倍の所 / 読んだコマ '+(XDC.n/Math.max(1,fi)).toFixed(1)+'枚/1コマ'};
     for(let A=XR.a;A<XR.b-1e-6;A+=XWIN){const B=Math.min(XR.b,A+XWIN);
       /* 音(10秒ずつ) */
       let _t=pn();const buf=await xAudWin(ex,A,B,XR);PF.a+=pn()-_t;const L=buf.length,cL=buf.getChannelData(0),cR=buf.getChannelData(1);
@@ -4769,8 +4804,8 @@ async function exportX(PV){
         if(eErr)throw eErr;if(xAbort)throw new Error('中止しました');xS('映像 '+fi+'/'+N+'コマ');
         const q=segOf(T);let src=null;let _v=pn();
         if(q&&q.s.clip){const c=q.s.clip;let r=vr.get(c);if(!r){vr.forEach(x=>x.close());vr.clear();r=new XVR(await xOpen(c));vr.set(c,r)}
-          const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8||S0.kf?await r.keyAt(ct):await r.frameAt(ct);
-          if(f){const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
+          const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8||S0.kf?await r.keyAt(ct,{step:K/XFPS,end:q.s.end-0.001}):await r.frameAt(ct);
+          /* v631: 前のコマと同じ絵なら描き直さない(ライト版の等速は同じキーフレームが続く) */if(f&&f===lastF&&fc.width&&src0){src=fc}else if(f){lastF=f;src0=1;const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
             const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(fc.width!==ow||fc.height!==oh){fc.width=ow;fc.height=oh}
             fg.save();fg.translate(ow/2,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();
             fc.videoWidth=ow;fc.videoHeight=oh;src=fc}}
@@ -4778,7 +4813,8 @@ async function exportX(PV){
         const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;
         {const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await xSleep(2)}}PF.e+=pn()-_v;
         if(fi%10===0){const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
-          const el=(performance.now()-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍）'+'\n'+pfS();sayX(lastMsg)}}
+          const now=performance.now(),el=(now-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);/* v631: 今の速さ(直近3秒)も出す。どこで遅くなるか分かるように */spH.push([now,fi]);while(spH.length>2&&now-spH[1][0]>3000)spH.shift();const sn=spH.length>1?((fi-spH[0][1])/XFPS)/Math.max(0.05,(now-spH[0][0])/1000):sp;
+          lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍・今 '+sn.toFixed(1)+'倍）'+'\n'+pfS()+xSrcS(q,fi);sayX(lastMsg)}}
     }
     cleanup();lastMsg='仕上げ中…';sayX(lastMsg);xS('映像の圧縮(最後)');await xTO(venc.flush(),8000);xS('音の圧縮(最後)');await xTO(aenc.flush(),8000);if(eErr)throw eErr;
     try{venc.close()}catch(e){}try{aenc.close()}catch(e){}xS('MP4にまとめる');mux.finalize();
@@ -5099,7 +5135,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v630';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v631';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
