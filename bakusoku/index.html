@@ -501,6 +501,7 @@ body.editing .pgnav{display:none!important}
 #cv .blk .hd{opacity:0}
 #cv .blk.sel .hd,#cv .blk.edit .hd,#cv .blk.msel .hd{opacity:1}
 #cv .blk.wvb{border-color:rgba(255,255,255,.12)}
+#cv .blk.l10{background:color-mix(in srgb,#4caf72 28%,var(--bg));border-color:#4caf72;color:var(--fg);font-weight:700}/* v621 */
 #cv .blk.l9{background:color-mix(in srgb,#9a6cf0 30%,var(--bg));border-color:#9a6cf0;color:var(--fg)}#cv .blk.sbx{opacity:.9;font-weight:700;z-index:0}
 #cv .blk.thin{border-width:0;padding:0}#cv .blk.thin::before{display:none}
 /* v495: 排他的なカット表示。爆速でもプレビュー・波形とその再生は残す */
@@ -2397,7 +2398,9 @@ function sbOver(g,W,H,t){if(t>=segSum()-0.001)return;const L=locate(t),s=L&&segs
 function sbUI(box,tg,M){let pushed=false;const g0=()=>{const l=tg();return(l[0]&&l[0].fx&&l[0].fx.sb)||{}};
   const put=(k,v)=>{if(!pushed){pushed=true;segHist()}tg().forEach(o=>{o.fx=fxC(o.fx)||{};const x=Object.assign({sz:1,sh:50},o.fx.sb||{});x[k]=v;o.fx.sb=x;if(!x.on&&x.sz===1&&x.sh===50)delete o.fx.sb;if(!Object.keys(o.fx).length)delete o.fx});draw();renderPreview();M.upd&&M.upd()};
   const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度表記';
-  const cb=M.btn('',()=>put('on',!g0().on),'flex:1');const ar=M.btn('▼',()=>{pn.hidden=!pn.hidden;ar.textContent=pn.hidden?'▼':'▲'},'flex:none;min-width:44px');ar.setAttribute('aria-label','速度表記の大きさ・シャドウ');
+  const tg0=tg,corn=()=>{const l=tg0(),c=l[0]&&l[0].cn;return c==null||!corners.length?l:segs.filter(q=>q.clip&&q.cn===c)};
+  const onT=v=>{const keep=tg;tg=corn;put('on',v);tg=keep;renderLanes()};
+  const cb=M.btn('',()=>{const v=!g0().on;if(v&&!segs.some(sbOnS))cdlg('レーンを追加します',[['はい',()=>onT(true)],['×']]);else onT(v)},'flex:1');const ar=M.btn('▼',()=>{pn.hidden=!pn.hidden;ar.textContent=pn.hidden?'▼':'▲'},'flex:none;min-width:44px');ar.setAttribute('aria-label','速度表記の大きさ・シャドウ');
   r.append(lb,cb,ar);box.appendChild(r);
   const pn=document.createElement('div');pn.hidden=true;pn.style.cssText='border:1px solid var(--line);border-radius:8px;padding:4px 6px;margin:2px 0 4px';box.appendChild(pn);
   const sl=(t,k,mn,mx,st,fm)=>{const q=document.createElement('div');q.className='r';const l=document.createElement('span');l.textContent=t;const i=document.createElement('input');i.type='range';i.min=mn;i.max=mx;i.step=st;const v=document.createElement('div');v.className='v';
@@ -2859,7 +2862,7 @@ function renderTimeline(){
 }
 const gcol=g=>'hsl('+((g*67)%360)+' 70% 42%)';
 let blkMap={},curGrp=0,pvFill=null,pinching=false,pinchUsed=false,panGuard=false;
-/* v359: 動画の下に動画の音声レーン(7) *//* v475: ナレーション字幕(9)はナレーション(5)の下・同じ括り */const ORDER=[0,7,3,5,9,8,4,6,1,2];/* v620: 動画の枠=動画・動画音声・字幕・ナレ・ナレ字幕。動画2・(T)・BGM・CH/見出しは別の枠 */
+/* v359: 動画の下に動画の音声レーン(7) *//* v475: ナレーション字幕(9)はナレーション(5)の下・同じ括り */const ORDER=[0,10,7,3,5,9,8,4,6,1,2];/* v621: 10=速度表記(動画の下) *//* v620: 動画の枠=動画・動画音声・字幕・ナレ・ナレ字幕。動画2・(T)・BGM・CH/見出しは別の枠 */
 let lowOpen=false;
 let stk=null;
 let ustack=[],segU=[];
@@ -2867,15 +2870,16 @@ const subFocus=()=>actLane===3||actLane===4;
 const chFocus=()=>actLane===1||actLane===2;
 const hidL=new Set();try{(JSON.parse(localStorage.getItem('hidLanes')||'[]')||[]).forEach(x=>hidL.add(x))}catch(e){}
 /* レーンのセット: 今必要なレーンだけ出す */
-/* v424: 動画2(8)は動画音声(7)の下。下のレーンほど画面では上に重なる */const LSETS={va:[0,7,3,5,9],v2:[0,8],tl:[0,4],bgm:[0,6],tel:[0,1,2]};
+/* v424: 動画2(8)は動画音声(7)の下。下のレーンほど画面では上に重なる */const LSETS={va:[0,10,7,3,5,9],v2:[0,8],tl:[0,4],bgm:[0,6],tel:[0,1,2]};
 /* v437: レーンのグループ(きんきんさん)。動画は常に表示。見出しをダブルタップ=そのグループだけ、左上の「全部」=全部 */
-const LGRP={0:'va',7:'va',3:'va',5:'va',9:'va',8:'v2',4:'tl',6:'bgm',1:'tel',2:'tel'},GCOL={va:'#4caf72',v2:'#3b8fd9',tl:'#21a99a',bgm:'#d9468f',tel:'#e08a2e'};
+const LGRP={10:'va',0:'va',7:'va',3:'va',5:'va',9:'va',8:'v2',4:'tl',6:'bgm',1:'tel',2:'tel'},GCOL={va:'#4caf72',v2:'#3b8fd9',tl:'#21a99a',bgm:'#d9468f',tel:'#e08a2e'};
 /* v620: 見出しのワンタップ=選ぶ(複数)。1つでも選ぶと左上が「表示」→押すと選んだレーンだけ(lset='sel')。その間は「全体」で全部に戻る */
 const lblSel=new Set();try{(JSON.parse(localStorage.getItem('laneSel')||'[]')||[]).forEach(x=>lblSel.add(x))}catch(e){}
 const lblSelSave=()=>{try{localStorage.setItem('laneSel',JSON.stringify([...lblSel]))}catch(e){}};
 /* v620: 動画2のレーン(長押しで追加)。中身が無いレーン(字幕・ナレ・ナレ字幕・動画2)は隠す(作ると自動で出る) */
 let v2On=false;try{v2On=localStorage.getItem('v2On')==='1'}catch(e){}
-const laneHas=i=>i===3?items.some(o=>o.lane===3)||!!(window.subTLSubTx&&subTLSubTx().length):i===5?items.some(o=>o.lane===5)||!!(window.subTLNar&&subTLNar().length):i===9?!!(window.subTLNarTx&&subTLNarTx().length):i===8?v2On||items.some(o=>o.lane===8):true;
+const sbOnS=q=>!!(q&&q.clip&&q.fx&&q.fx.sb&&q.fx.sb.on);
+const laneHas=i=>i===10?segs.some(sbOnS):i===3?items.some(o=>o.lane===3)||!!(window.subTLSubTx&&subTLSubTx().length):i===5?items.some(o=>o.lane===5)||!!(window.subTLNar&&subTLNar().length):i===9?!!(window.subTLNarTx&&subTLNarTx().length):i===8?v2On||items.some(o=>o.lane===8):true;
 let lset='all';try{const v=localStorage.getItem('laneSet');if(v&&(LSETS[v]||v==='all'||v==='sel'))lset=v}catch(e){}
 function setLset(k){lset=k;try{localStorage.setItem('laneSet',k)}catch(e){}const L=k==='sel'?[0,...lblSel]:LSETS[k];if(L&&actLane!=null&&!L.includes(actLane)){actLane=null;selItem=null;if(!ed.hidden)closeEd()}renderLanes();drawTW()}
 const lsetName=k=>'全部';
@@ -3442,6 +3446,8 @@ function renderLanes(){
       if(s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk wvb'+(multiMode&&mselV.has(s)?' vmsel':'');b._ss=[s];b.style.left=(x*pps)+'px';b.style.width=(d*pps)+'px';b.style.pointerEvents='none';
         {const x0=x;lzAdd(b,x0,d,()=>clipPeaksR(s.clip,[[s.start,s.end]]).then(p=>{if(p&&b.isConnected)addWave(b,p,s.start,s.end)}))}ln.appendChild(b)}
       /* v448: 空白は動画音声レーンにも黒く出す(動画レーンと揃える) */else if(!s.clip&&!(cview&&(x+d<=V.a+1e-3||x>=V.b-1e-3))){const b=document.createElement('div');b.className='blk v gap';b.style.left=(x*pps)+'px';bW(b,d*pps);b.style.pointerEvents='none';ln.appendChild(b)}x+=d})}
+    else if(i===10){/* v621: 速度表記。速度表記が入っている所(同じコーナーで続く所)を1つの箱。ダブルタップ=速度表記のインスペクタ(laneTap) */let x=0,b=null,bc=null;
+      segs.forEach(s=>{const d=segD(s);if(sbOnS(s)&&b&&bc===s.cn){bW(b,(x+d)*pps-parseFloat(b.style.left))}else if(sbOnS(s)){b=document.createElement('div');b.className='blk it l10';b.style.left=(x*pps)+'px';bW(b,d*pps);b.style.pointerEvents='none';b.textContent='速度表記';ln.appendChild(b);bc=s.cn}else{b=null}x+=d})}
     else if(i===9){/* v437: ナレーションページの文章(見るだけ)。v475: 動画のまとまりごとに1つの箱 */subBoxes(ln,9,V)}
     else items.filter(o=>o.lane===i&&!o.pk&&(o.end-o.start>=0.01||!o.cfid)&&(!cview||(o.end>V.a-1e-3&&o.start<V.b+1e-3&&(cIdx(o.cn)<0||o.cn===cview)))).forEach(it=>{
       const b=document.createElement('div');b.className='blk it l'+i+(it.bold?' fsub':'')+(it===selItem?' sel':'')+(msel.has(it)?' msel':'');blkEl.set(it,b);
@@ -3481,12 +3487,16 @@ function renderLanes(){
   ph=document.createElement('div');ph.className='ph';cv.appendChild(ph);updatePlayhead();renderLbls();renderSelBar();lzRun();try{insMark()}catch(e){}try{if(selA!=null)selDraw()}catch(e){}
   try{window.xfTA&&xfTA()}catch(e){}/* v540 */
 }
+/* v621: 速度表記レーンの箱(時間 t)のインスペクタ = 箱の中の全部のクリップ */
+function sbIns(t){const L=locate(t),k=L&&L.i;if(k==null||!sbOnS(segs[k]))return;const cn=segs[k].cn;let a=k,b=k;while(a>0&&sbOnS(segs[a-1])&&segs[a-1].cn===cn)a--;while(b<segs.length-1&&sbOnS(segs[b+1])&&segs[b+1].cn===cn)b++;
+  segIns(k,'v',segs.slice(a,b+1),{tab:0,open:1})}
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
   const t=(e.clientX-$('cv').getBoundingClientRect().left)/pps;
   /* v360: 動画・動画音声レーンのダブルタップ=動画のインスペクタ */if((i===0||i===7)&&dbl('lane07',e.clientX)){const L=locate(t),q=L&&segs[L.i];if(q&&q.clip){segIns(L.i,i===0?'v':'a');return}}
   if(roAll()){const k=cAt(t);if(k>=0){cornerPick(corners[k].id);return}}
   pausePreview();
+  if(i===10){if(dbl('lane10',e.clientX))sbIns(t);else seekGlobal(t);return}
   if(i===0||i===7||i===9){seekGlobal(t);return}
   /* v412: 上の動画 ダブルタップ=動画を重ねる */if(i===8){seekGlobal(t);if(dbl('lane8',e.clientX))ovPick(t,null);return}
   if(i===6){seekGlobal(t);if(dbl('lane6',e.clientX))bgmAddDlg(t);return}
@@ -3740,7 +3750,7 @@ function resize(d){const it=selItem;if(!it)return;const[,hi]=bounds(it);
 /* 選択中のブロックとレーンの表示 */
 function renderLbls(){
   const t=TPL[tpl];if(!t)return;
-  /* v475: 5=ナレーション(声)、9=ナレーション字幕 */const names=['動画','CH',t.tag,'字幕','(T)','ナレ','BGM','動画<br>音声','動画2','ナレ<br>字幕'];/* v476: 9も「字幕」(ナレの下・紫の括りで区別) */
+  /* v475: 5=ナレーション(声)、9=ナレーション字幕 */const names=['動画','CH',t.tag,'字幕','(T)','ナレ','BGM','動画<br>音声','動画2','ナレ<br>字幕','速度<br>表記'];/* v476: 9も「字幕」(ナレの下・紫の括りで区別) */
   $('lbls').innerHTML='<div class="rl"></div>'+ordNow().map(i=>'<div class="ln'+(actLane===i?' act':'')+(i===3?' g3':i===4?' g4':'')+'" style="height:'+laneH(i)+'px">'+names[i]+'</div>').join('')+(!chRow()?'':'<div class="ln" style="height:26px;font-size:11px">'+(lowOpen?'▾':'▸')+'CH</div>');
   [...$('lbls').children].forEach((el,k)=>{if(!k){const show=lset!=='sel'&&lblSel.size>0;el.textContent=adjLane?'↕':show?'表示':'全体';if(lset==='all'&&!adjLane)el.style.color='var(--fg)';el.style.cssText+=';display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);cursor:pointer';el.onpointerdown=rlDown;el.style.touchAction='none';if(!adjLane&&lsetName(lset).length>3)el.style.fontSize='11px';if(adjLane){el.style.background='var(--accent)';el.style.color='#fff'}else if(show){el.style.background='#ffb300';el.style.color='#111';el.style.fontWeight='700'}return}const i=ordNow()[k-1];if(i===undefined){el.onclick=()=>{lowOpen=!lowOpen;renderLanes()};return}
     if(adjLane)el.style.touchAction='none';
@@ -3751,7 +3761,7 @@ function renderLbls(){
     if(lblSel.has(i)){el.style.background='#ffb300';el.style.color='#111';el.style.fontWeight='700'}
     /* v620: ワンタップ=選ぶ/外す(複数可)。ダブルタップ=今までのワンタップ(このレーンを編集)。選んだレーンだけ表示中は 動画/動画音声/BGM のダブルタップ=インスペクタ */
     el.onclick=e=>{if(lpFlag||adjLane)return;if(dbl('lbl',e.clientY)){if(lblSel.has(i))lblSel.delete(i);else lblSel.add(i);lblSelSave();
-        if((i===0||i===7||i===6)&&lset!=='all'){renderLbls();lblIns(i);return}if(i===7||i===9){renderLbls();return}
+        if((i===0||i===7||i===6)&&lset!=='all'){renderLbls();lblIns(i);return}if(i===7||i===9||i===10){renderLbls();return}
         smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes();return}
       if(lblSel.has(i))lblSel.delete(i);else lblSel.add(i);lblSelSave();renderLbls()}});
 }
@@ -4995,7 +5005,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v620';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v621';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
