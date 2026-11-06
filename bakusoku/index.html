@@ -4628,7 +4628,7 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
   const sb=mk('ビットレート',XBR,v.br,b=>b+' Mbps'+(b===8?' (標準)':''));
   const sf=mk('フレームレート',XFP,v.fps,f=>f+' fps'+(f===30?' (標準)':''));
   const n=document.createElement('p');n.style.cssText='font-size:12px;opacity:.75;margin:6px 0';n.textContent='目安: フルHDは8Mbps、4Kは40Mbps前後。大きいほど時間がかかります';c.appendChild(n);
-  /* v641: 圧縮の速さを測る(本番の設定だけ) */if(k==='main'){const bb=document.createElement('button');bb.id='xBench';bb.textContent='圧縮の速さを測る（約30秒）';bb.style.cssText='width:100%;margin:4px 0';const bo=document.createElement('p');bo.id='xBenchOut';bo.style.cssText='font-size:12px;white-space:pre-wrap;margin:6px 0';
+  /* v641: 圧縮の速さを測る(本番の設定だけ) */if(k==='main'){const bb=document.createElement('button');bb.id='xBench';bb.textContent='圧縮の速さを測る（約40秒）';bb.style.cssText='width:100%;margin:4px 0';const bo=document.createElement('p');bo.id='xBenchOut';bo.style.cssText='font-size:12px;white-space:pre-wrap;margin:6px 0';
     bb.onclick=async()=>{bb.disabled=true;bo.textContent='測っています…（画面を消さずに待ってください）';await xBench(t=>bo.textContent=t);bb.disabled=false};c.append(bb,bo)}
   const row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:8px';
   const no=document.createElement('button');no.className='no';no.textContent='やめる';no.onclick=()=>w.remove();
@@ -4921,18 +4921,25 @@ async function xAudWin(ex,A,B,XR){
   if(window.subTLSeAll)try{window.subTLSeAll(ctx,mg,A,B)}catch(e){}
   if(B>=XR.b-1e-6){const e=B-A;mg.gain.setValueAtTime(1,Math.max(0,e-FD));mg.gain.linearRampToValueAtTime(0,e)}
   XAS=A.toFixed(0)+'秒〜';return await ctx.startRendering()}
-/* v641: 圧縮の速さを測る(本番の設定で)。v641の実機結果: 1つ119・2つ同時135・3つ同時132コマ/秒(1080p) → 圧縮器を増やしても速くならない(共通の所で詰まる)。
-   v642: 次の見極め。①圧縮の「fps設定」を60/120にして(ビットレートも同じ倍率=1コマに使える量は同じ)速くなるか(スマホの圧縮回路は設定のfpsに合わせて力を決めることがある)
-   ②本番と同じく動画を読みながら(等速・早送り)だと何コマ/秒か ③作品のコマ数(速さ別)と元の動画の形式。1コマの平均の大きさ(KB)も出す(画質の目安) */
+/* v641: 圧縮の速さを測る(本番の設定で)。v641の実機結果: 1つ119・2つ同時135・3つ同時132コマ/秒(1080p) → 圧縮器を増やしても速くならない。
+   v642の実機結果: 60/120fps設定も変わらず(119/127)。本番と同じく動画を読みながらだと 等速90・早送り79コマ/秒(どちらも待ち6〜7割)。作品は等速24920コマ・8倍以上6104コマ・元は1080p30 avc1。
+   v643: 動画を読みながらだと圧縮が遅くなる理由の見極め。①圧縮を別スレッド(Worker)で動かす: Chrome は圧縮器を作ったスレッドで「読み戻しが終わった→次のコマ」を回すので、
+   メインスレッドが読み込み・描画で忙しいと圧縮器が待たされている可能性 ②動画をソフトで読む(スマホの動画回路を圧縮だけに使う) */
+const XWK=`let e=null,n=0;
+onmessage=async m=>{const d=m.data;
+  if(d.t==='cfg'){e=new VideoEncoder({output:c=>postMessage({t:'out',n:c.byteLength}),error:x=>postMessage({t:'err',m:String(x&&x.message||x)})});
+    e.addEventListener('dequeue',()=>postMessage({t:'dq',q:e.encodeQueueSize,n}));try{e.configure(d.c)}catch(x){postMessage({t:'err',m:String(x&&x.message||x)})}}
+  else if(d.t==='f'){n++;try{e.encode(d.f,d.o)}catch(x){postMessage({t:'err',m:String(x&&x.message||x)})}try{d.f.close()}catch(x){}}
+  else if(d.t==='flush'){try{await e.flush();postMessage({t:'fl'})}catch(x){postMessage({t:'err',m:String(x&&x.message||x)})}}};`;
 async function xBench(out){
   if(busy)return out('書き出し中は測れません');if(!xOK())return out('この端末では測れません');
   busy=true;const RD=[];const L=[],put=s=>{L.push(s);out(L.join('\n'))},pn=()=>performance.now();
   try{
     const S0=xSet('main'),FPS=S0.fps,H=S0.h,W=XRES.find(r=>r[0]===H)[1],br=S0.br*1e6,big=W*H>2560*1440&&FPS>30;
-    const pick=async(fr,b)=>{for(const codec of (big?['avc1.640034']:[]).concat(['avc1.640033','avc1.640028','avc1.4d0033','avc1.4d0028','avc1.42e033','avc1.42e028','avc1.42001f'])){const c={codec,width:W,height:H,bitrate:b,framerate:fr,avc:{format:'avc'}};
-      if(H<=360){const c2={...c,hardwareAcceleration:'prefer-software'};const s2=await VideoEncoder.isConfigSupported(c2).catch(()=>({supported:false}));if(s2.supported)return c2}
-      const s=await VideoEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported)return c}return null};
-    const vc=await pick(FPS,br);if(!vc)return put('この設定の圧縮に対応していません');
+    let vc=null;for(const codec of (big?['avc1.640034']:[]).concat(['avc1.640033','avc1.640028','avc1.4d0033','avc1.4d0028','avc1.42e033','avc1.42e028','avc1.42001f'])){const c={codec,width:W,height:H,bitrate:br,framerate:FPS,avc:{format:'avc'}};
+      if(H<=360){const c2={...c,hardwareAcceleration:'prefer-software'};const s2=await VideoEncoder.isConfigSupported(c2).catch(()=>({supported:false}));if(s2.supported){vc=c2;break}}
+      const s=await VideoEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){vc=c;break}}
+    if(!vc)return put('この設定の圧縮に対応していません');
     put('圧縮の速さ（'+W+'×'+H+'・'+S0.br+'Mbps・'+FPS+'fps）');
     const XR=exRange(),ex=[];{let o=0;for(const s of segs){const d=segD(s),sa=o,sb=o+d;o+=d;if(sb<=XR.a+1e-4||sa>=XR.b-1e-4)continue;ex.push({s,sa,sb})}}
     /* 作品のコマ数(速さ別)と元の動画の形式 */
@@ -4948,30 +4955,43 @@ async function xBench(out){
     const N=Math.max(60,FPS*8);let f0=null,r0=null;const q0=ex.find(q=>q.s.clip);
     if(q0)try{r0=new XVR(await xOpen(q0.s.clip));RD.push(r0);f0=await r0.frameAt(Math.min(q0.s.end-0.001,q0.s.start+0.5))}catch(e){f0=null}
     let tR=0;/* 動画を読んでいた時間 */
-    const light=i=>{g.fillStyle='hsl('+(i*7%360)+',60%,50%)';g.fillRect(0,0,W,H);g.fillStyle='#fff';g.fillRect((i*13)%W,H/3,80,80)};
-    const heavy=i=>{const T=Math.min(XR.b-0.001,XR.a+(i%N)/FPS);ovX=null;drawFrame(g,W,H,f0?toFc(f0,r0.X.V.rot,(i%9)-4):{videoWidth:0,videoHeight:0},T)};
-    /* 本番と同じ読み方: q の区間を頭から(K<8=1コマずつ・K>=8=キーフレームだけ) */
-    const real=q=>{const r=new XVR(q.s.clip._x);RD.push(r);const K=spdOf(q.s);return async i=>{const T=q.sa+i/FPS,ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);
-      const a=pn();const f=K>=8?await r.keyAt(ct,{step:K/FPS,end:q.s.end-0.001}):await r.frameAt(ct);tR+=pn()-a;ovX=null;drawFrame(g,W,H,f?toFc(f,r.X.V.rot,0):{videoWidth:0,videoHeight:0},T)}};
-    const run=async(c,n,prov)=>{let err=null,ch=0,by=0;const e=new VideoEncoder({output:k=>{ch++;by+=k.byteLength},error:x=>{err=err||x}});
-      try{e.configure(c);const ev='ondequeue' in VideoEncoder.prototype,wt=()=>new Promise(r=>{let d=0;const h=()=>{if(d)return;d=1;if(ev)e.removeEventListener('dequeue',h);r()};if(ev)e.addEventListener('dequeue',h);setTimeout(h,ev?50:2)});
-        tR=0;const t0=pn();let ws=0;
-        for(let i=0;i<n;i++){if(err)throw err;await prov(i);const vf=new VideoFrame(cv,{timestamp:Math.round(i*1e6/FPS),duration:Math.round(1e6/FPS)});e.encode(vf,{keyFrame:i%(FPS*2)===0});vf.close();
-          const w0=pn(),tw=Date.now();while(e.encodeQueueSize>10){if(err)throw err;if(Date.now()-tw>8000)throw new Error('止まりました');await wt()}ws+=pn()-w0}
-        await xTO(e.flush(),15000);if(err)throw err;const s=(pn()-t0)/1000;return {fps:n/s,w:ws/1000/s,v:tR/1000/s,ok:ch===n,kb:by/Math.max(1,ch)/1024}}
-      finally{try{e.state!=='closed'&&e.close()}catch(x){}}};
+    const heavy=()=>i=>{const T=Math.min(XR.b-0.001,XR.a+(i%N)/FPS);ovX=null;drawFrame(g,W,H,f0?toFc(f0,r0.X.V.rot,(i%9)-4):{videoWidth:0,videoHeight:0},T)};
+    /* 本番と同じ読み方: q の区間を o コマ目から(K<8=1コマずつ・K>=8=キーフレームだけ)。sw=ソフトで読む */
+    const real=(q,o,sw)=>()=>{const X=q.s.clip._x,r=new XVR(sw?{...X,V:{...X.V,cfg:{...X.V.cfg,hardwareAcceleration:'prefer-software'}}}:X);RD.push(r);const K=spdOf(q.s);
+      return async i=>{const T=q.sa+(o+i)/FPS,ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);
+        const a=pn();const f=K>=8?await r.keyAt(ct,{step:K/FPS,end:q.s.end-0.001}):await r.frameAt(ct);tR+=pn()-a;ovX=null;drawFrame(g,W,H,f?toFc(f,r.X.V.rot,0):{videoWidth:0,videoHeight:0},T)}};
+    /* 圧縮器(wk=別スレッド)。encode/待ち/flush/close を同じ形で使う */
+    const mkE=wk=>{let err=null,ch=0,by=0;
+      if(!wk){const e=new VideoEncoder({output:k=>{ch++;by+=k.byteLength},error:x=>{err=err||x}});e.configure(vc);const ev='ondequeue' in VideoEncoder.prototype;
+        return {st:()=>({err,ch,by}),enc:(vf,o)=>{e.encode(vf,o);vf.close()},q:()=>e.encodeQueueSize,
+          wt:()=>new Promise(r=>{let d=0;const h=()=>{if(d)return;d=1;if(ev)e.removeEventListener('dequeue',h);r()};if(ev)e.addEventListener('dequeue',h);setTimeout(h,ev?50:2)}),
+          fl:()=>e.flush(),close:()=>{try{e.state!=='closed'&&e.close()}catch(x){}}}}
+      const w=new Worker(URL.createObjectURL(new Blob([XWK],{type:'text/javascript'})));let qs=0,qn=0,sent=0,wk2=null,flr=null;const wake=()=>{if(wk2){const r=wk2;wk2=null;r()}};
+      w.onmessage=m=>{const d=m.data;if(d.t==='out'){ch++;by+=d.n}else if(d.t==='dq'){qs=d.q;qn=d.n;wake()}else if(d.t==='fl'){flr&&flr()}else if(d.t==='err'){err=err||new Error(d.m);wake();flr&&flr()}};
+      w.onerror=x=>{err=err||new Error('別スレッドが動きません');wake();flr&&flr()};w.postMessage({t:'cfg',c:vc});
+      return {st:()=>({err,ch,by}),enc:(vf,o)=>{sent++;try{w.postMessage({t:'f',f:vf,o},[vf])}catch(x){w.postMessage({t:'f',f:vf,o});vf.close()}},q:()=>qs+(sent-qn),
+        wt:()=>new Promise(r=>{wk2=r;setTimeout(()=>{if(wk2===r){wk2=null;r()}},50)}),fl:()=>new Promise(r=>{flr=r;w.postMessage({t:'flush'})}),close:()=>w.terminate()}};
+    const run=async(wk,n,prov)=>{const E=mkE(wk);
+      try{tR=0;const t0=pn();let ws=0;
+        for(let i=0;i<n;i++){if(E.st().err)throw E.st().err;await prov(i);E.enc(new VideoFrame(cv,{timestamp:Math.round(i*1e6/FPS),duration:Math.round(1e6/FPS)}),{keyFrame:i%(FPS*2)===0});
+          const w0=pn(),tw=Date.now();while(E.q()>10){if(E.st().err)throw E.st().err;if(Date.now()-tw>8000)throw new Error('止まりました');await E.wt()}ws+=pn()-w0}
+        await xTO(E.fl(),15000);const s=E.st();if(s.err)throw s.err;const sec=(pn()-t0)/1000;return {fps:n/sec,w:ws/1000/sec,v:tR/1000/sec,ok:s.ch===n,kb:s.by/Math.max(1,s.ch)/1024}}
+      finally{E.close()}};
     const show=(lab,r,rd)=>put(lab+': '+Math.round(r.fps)+'コマ/秒＝'+(r.fps/FPS).toFixed(1)+'倍速（'+(rd?'読込'+Math.round(r.v*100)+'%・':'')+'待ち'+Math.round(r.w*100)+'%・1コマ'+Math.round(r.kb)+'KB）'+(r.ok?'':'・コマ数が合わない'));
-    try{await run(vc,N,heavy)}catch(e){}/* 最初の1回は準備の時間(文字の用意など)が入るので数えない */
+    try{await run(false,N,heavy())}catch(e){}/* 最初の1回は準備の時間(文字の用意など)が入るので数えない */
     const big1=(K0,K1)=>ex.filter(q=>q.s.clip&&q.s.clip._x&&spdOf(q.s)>=K0&&spdOf(q.s)<K1).sort((a,b)=>(b.sb-b.sa)-(a.sb-a.sa))[0];
-    const qn=big1(0,2),qf=big1(8,1e9);
-    const rows=[['軽い絵',()=>vc,N,()=>light,0],['本物に近い絵',()=>vc,N,()=>heavy,0],
-      ['本物に近い絵・60fps設定',()=>pick(FPS*2,br*2),N,()=>heavy,0],['本物に近い絵・120fps設定',()=>pick(FPS*4,br*4),N,()=>heavy,0],
-      ['等速の本番（動画を読む）',()=>vc,qn?Math.min(N,Math.floor((qn.sb-qn.sa)*FPS)):0,()=>real(qn),1],
-      ['早送り'+(qf?spdOf(qf.s)+'倍':'')+'の本番（キーフレーム）',()=>vc,qf?Math.min(N,Math.floor((qf.sb-qf.sa)*FPS)):0,()=>real(qf),1]];
-    for(const [lab,cf,n,pv,rd] of rows){
-      if(n<30){put(lab+': （作品にその所が無い・短い）');continue}
-      try{const c=await cf();if(!c){put(lab+': 使えない（この設定は非対応）');continue}show(lab,await run(c,n,pv()),rd)}
-      catch(e){put(lab+': 使えない（'+String(e&&e.message||e).slice(0,40)+'）')}}
+    const qn=big1(0,2),qf=big1(8,1e9),nN=qn?Math.floor((qn.sb-qn.sa)*FPS):0,nF=qf?Math.floor((qf.sb-qf.sa)*FPS):0;
+    /* 同じ所を何度も読むと2回目から速くなる(端末の中の覚え)ので、行ごとに少しずつ先の所を使う(足りなければ頭から) */
+    const at=(nT,k)=>nT>=N*(k+1)?N*k:0,cnt=nT=>Math.min(N,nT);
+    let sw=false;if(qn)try{sw=(await VideoDecoder.isConfigSupported({...qn.s.clip._x.V.cfg,hardwareAcceleration:'prefer-software'})).supported}catch(e){}
+    const KF=qf?spdOf(qf.s)+'倍':'';
+    const rows=[['本物に近い絵',false,N,heavy,0],['本物に近い絵・別スレッド',true,N,heavy,0],
+      ['等速の本番',false,cnt(nN),qn&&real(qn,at(nN,0)),1],['等速の本番・別スレッド',true,cnt(nN),qn&&real(qn,at(nN,1)),1],
+      ['等速の本番・ソフトで読む',false,sw?cnt(nN):-1,qn&&real(qn,at(nN,2),1),1],['等速の本番・別スレッド＋ソフトで読む',true,sw?cnt(nN):-1,qn&&real(qn,at(nN,3),1),1],
+      ['早送り'+KF+'の本番',false,cnt(nF),qf&&real(qf,at(nF,0)),1],['早送り'+KF+'の本番・別スレッド',true,cnt(nF),qf&&real(qf,at(nF,1)),1]];
+    for(const [lab,wk,n,pv,rd] of rows){
+      if(n<0){put(lab+': 使えない（この端末はソフトで読めない）');continue}if(n<30){put(lab+': （作品にその所が無い・短い）');continue}
+      try{show(lab,await run(wk,n,pv()),rd)}catch(e){put(lab+': 使えない（'+String(e&&e.message||e).slice(0,40)+'）')}}
     put('（この画面のスクショを送ってください）');
   }catch(e){put('失敗: '+(e&&e.message||e))}
   finally{RD.forEach(r=>{try{r.close()}catch(e){}});busy=false}}
@@ -5447,7 +5467,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v642';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v643';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
