@@ -2395,14 +2395,14 @@ function sbDraw(g,W,H,K,t,o){o=o||{};const sz=o.sz||1,sh=o.sh==null?50:o.sh,tier
 /* 今の時間のクリップに速度表記が入っていれば描く(プレビュー・書き出し共通) */
 function sbOver(g,W,H,t){if(t>=segSum()-0.001)return;const L=locate(t),s=L&&segs[L.i];const o=s&&s.clip&&s.fx&&s.fx.sb;if(!o||!o.on)return;sbDraw(g,W,H,spdOf(s),t,o)}
 /* インスペクタ「速度」の中: □アニメーション ▼(大きさ・シャドウ) */
-function sbUI(box,tg,M){let pushed=false;const g0=()=>{const l=tg();return(l[0]&&l[0].fx&&l[0].fx.sb)||{}};
+function sbUI(box,tg,M,only){let pushed=false;const g0=()=>{const l=tg();return(l[0]&&l[0].fx&&l[0].fx.sb)||{}};
   const put=(k,v)=>{if(!pushed){pushed=true;segHist()}tg().forEach(o=>{o.fx=fxC(o.fx)||{};const x=Object.assign({sz:1,sh:50},o.fx.sb||{});x[k]=v;o.fx.sb=x;if(!x.on&&x.sz===1&&x.sh===50)delete o.fx.sb;if(!Object.keys(o.fx).length)delete o.fx});draw();renderPreview();M.upd&&M.upd()};
   const r=document.createElement('div');r.className='r';const lb=document.createElement('span');lb.textContent='速度表記';
   const tg0=tg,corn=()=>{const l=tg0(),c=l[0]&&l[0].cn;return c==null||!corners.length?l:segs.filter(q=>q.clip&&q.cn===c)};
   const onT=v=>{const keep=tg;tg=corn;put('on',v);tg=keep;renderLanes()};
   const cb=M.btn('',()=>{const v=!g0().on;if(v&&!segs.some(sbOnS))cdlg('レーンを追加します',[['はい',()=>onT(true)],['×']]);else onT(v)},'flex:1');const ar=M.btn('▼',()=>{pn.hidden=!pn.hidden;ar.textContent=pn.hidden?'▼':'▲'},'flex:none;min-width:44px');ar.setAttribute('aria-label','速度表記の大きさ・シャドウ');
-  r.append(lb,cb,ar);box.appendChild(r);
-  const pn=document.createElement('div');pn.hidden=true;pn.style.cssText='border:1px solid var(--line);border-radius:8px;padding:4px 6px;margin:2px 0 4px';box.appendChild(pn);
+  r.append(lb,cb,ar);if(!only)box.appendChild(r);
+  const pn=document.createElement('div');pn.hidden=!only;pn.style.cssText='border:1px solid var(--line);border-radius:8px;padding:4px 6px;margin:2px 0 4px';box.appendChild(pn);
   const sl=(t,k,mn,mx,st,fm)=>{const q=document.createElement('div');q.className='r';const l=document.createElement('span');l.textContent=t;const i=document.createElement('input');i.type='range';i.min=mn;i.max=mx;i.step=st;const v=document.createElement('div');v.className='v';
     i.oninput=()=>put(k,+i.value);q.append(l,i,v);pn.appendChild(q);return()=>{const x=g0()[k];const y=x==null?(k==='sz'?1:50):x;if(document.activeElement!==i)i.value=y;v.textContent=fm(y)}};
   const ds=[sl('大きさ','sz',0.1,2,0.05,x=>Math.round(x*100)+'%'),sl('シャドウ','sh',0,100,1,x=>x?Math.round(x)+'%':'オフ')];
@@ -3489,7 +3489,8 @@ function renderLanes(){
 }
 /* v621: 速度表記レーンの箱(時間 t)のインスペクタ = 箱の中の全部のクリップ */
 function sbIns(t){const L=locate(t),k=L&&L.i;if(k==null||!sbOnS(segs[k]))return;const cn=segs[k].cn;let a=k,b=k;while(a>0&&sbOnS(segs[a-1])&&segs[a-1].cn===cn)a--;while(b<segs.length-1&&sbOnS(segs[b+1])&&segs[b+1].cn===cn)b++;
-  segIns(k,'v',segs.slice(a,b+1),{tab:0,open:1})}
+  const A=segs.slice(a,b+1);let ph=0;
+  insDlg('速度表記',M=>({secs:[{t:'大きさ・シャドウ',build:bx=>sbUI(bx,()=>A.filter(q=>segs.includes(q)),M,true)}]}),{tab:0,open:0})}
 function laneTap(i,e){
   if(multiMode||panGuard||pinchUsed)return;
   const t=(e.clientX-$('cv').getBoundingClientRect().left)/pps;
@@ -5005,7 +5006,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v621';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v622';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
