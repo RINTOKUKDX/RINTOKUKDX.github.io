@@ -4353,7 +4353,7 @@ function spdUI(box,L,done){const r=document.createElement('div');r.className='r'
   const nt=document.createElement('div');nt.style.cssText='font-size:12px;color:var(--muted);margin:4px 2px';nt.textContent='音の高さはそのまま。0.5〜2倍がきれいです。4倍以上は声が崩れやすく、16倍を超えるとプレビューは倍率どおりに動きません（書き出しは倍率どおり）';box.appendChild(nt);
   let pushed=false;const cur=()=>{const l=L();return l.length?spdOf(l[0]):1};
   const draw=()=>{const k=cur();if(document.activeElement!==sl)sl.value=Math.log2(k);v.textContent=(k>=100?Math.round(k):k>=10?k.toFixed(1):k.toFixed(2))+'倍';P.forEach(([b,x])=>b.setAttribute('aria-pressed',String(Math.abs(x-k)<1e-3)));done&&done()};
-  function put(x){if(!pushed){pushed=true;segHist();segU[segU.length-1].items=cloneItems()}setSpd(L(),x);draw()}
+  function put(x){if(!pushed){pushed=true;segHist();segU[segU.length-1].items=cloneItems()}setSpd(L(),x);draw();if(x>=101){flashSel('(音が無くなります)');clearTimeout(flashSel.h);flashSel.h=setTimeout(()=>{const d=$('toast');if(d)d.style.display='none'},5000)}}
   sl.oninput=()=>{const x=Math.pow(2,+sl.value);v.textContent=(x>=100?Math.round(x):x>=10?x.toFixed(1):x.toFixed(2))+'倍'};sl.onchange=()=>put(Math.pow(2,+sl.value));draw();return draw}
 /* v522: 「速度」ボタン。押す→動画ブロックをタップで選ぶ(複数可・もう一度タップで外す)→右下の「決定」で速度の画面。ダブルタップ=選んだ全部のインスペクタ */
 /* v434: 選択モード。波形をスワイプで位置を合わせ、タップ1回目=イン点、2回目=アウト点(3回目は選び直し)。範囲は selA..selB(全体の時間) */
@@ -4671,7 +4671,7 @@ async function xAudWin(ex,A,B,XR){
   const ctx=new OfflineAudioContext(2,Math.max(1,Math.round((B-A)*XSR)),XSR),mg=ctx.createGain();mg.connect(ctx.destination);const FD=0.012;
   for(let k=0;k<ex.length;k++){const {s,sa,sb}=ex[k];if(!s.clip||sb<=A||sa>=B)continue;
     const K=spdOf(s),ga=Math.max(A,sa),gb=Math.min(B,sb),c0=s.start+(ga-sa)*K,c1=s.start+(gb-sa)*K;
-    /* v627: ライト版は8倍以上の早送りの音を作らない(元の音を何十倍分も読んで縮めるのが重い) */if(xLiteRun&&K>=8)continue;
+    /* v628: 101倍以上の早送りは音なし(本編もライト版も)。元の音を何十倍分も読んで縮めるのが重い */if(K>=101)continue;
     let r=await xAud(await xOpen(s.clip),c0,c1);if(!r)continue;/* v522: 速度。音程を保ったまま長さを変える */if(K!==1)r={buf:tStretch(r.buf,K),off:r.off/K};
     const src=ctx.createBufferSource();src.buffer=r.buf;const g=ctx.createGain(),P=g.gain;src.connect(g);g.connect(mg);
     const pv=ex[k-1],nx=ex[k+1];
@@ -4713,6 +4713,7 @@ async function exportX(PV){
     /* 圧縮の設定(使える物を上から順に) */
     const br=S0.br*1e6;let vc=null;const big=W*H>2560*1440&&XFPS>30;
     for(const codec of (big?['avc1.640034']:[]).concat(['avc1.640033','avc1.640028','avc1.4d0033','avc1.4d0028','avc1.42e033','avc1.42e028','avc1.42001f'])){const c={codec,width:W,height:H,bitrate:br,framerate:XFPS,avc:{format:'avc'}};
+      /* v628: 小さい画面(360p以下)は専用回路を使わずソフトで圧縮した方が速いことが多い(待ち時間の大半が圧縮だった) */if(H<=360){const c2={...c,hardwareAcceleration:'prefer-software'};const s2=await VideoEncoder.isConfigSupported(c2).catch(()=>({supported:false}));if(s2.supported){vc=c2;break}}
       const s=await VideoEncoder.isConfigSupported(c).catch(()=>({supported:false}));if(s.supported){vc=c;break}}
     if(!vc)throw new Error('この端末はこの設定('+W+'×'+H+'・'+XFPS+'fps)の圧縮に対応していません。設定を下げてください');
     let ac=null,acod='aac';
@@ -4748,7 +4749,7 @@ async function exportX(PV){
             fc.videoWidth=ow;fc.videoHeight=oh;src=fc}}
         PF.v+=pn()-_v;_v=pn();ovX=await ovXFrame(vo,T,W,H);PF.o+=pn()-_v;_v=pn();drawFrame(g,W,H,src||{videoWidth:0,videoHeight:0},T);PF.d+=pn()-_v;_v=pn();
         const vf=new VideoFrame(cv,{timestamp:Math.round(fi*1e6/XFPS),duration:Math.round(1e6/XFPS)});venc.encode(vf,{keyFrame:fi%(XFPS*2)===0});vf.close();fi++;
-        {const w0=Date.now();while(venc.encodeQueueSize>4){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await xSleep(2)}}PF.e+=pn()-_v;
+        {const w0=Date.now();while(venc.encodeQueueSize>10){if(Date.now()-w0>8000)throw new Error('映像の圧縮が止まりました('+fi+'コマ目)');await xSleep(2)}}PF.e+=pn()-_v;
         if(fi%10===0){const v=fi/N*100;if(PV)PV.p(v);else $('prog').style.width=v+'%';xLock.bar(v);
           const el=(performance.now()-t0)/1000,sp=(fi/XFPS)/Math.max(0.1,el);lastMsg=(PV?'作成中… ':'書き出し中… ')+Math.floor(v)+'%（速さ '+sp.toFixed(1)+'倍）'+'\n'+pfS();sayX(lastMsg)}}
     }
@@ -5071,7 +5072,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v627';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v628';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
