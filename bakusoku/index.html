@@ -4713,7 +4713,8 @@ window.narApi={ensure:ensureNar,buf:k=>narBuf[k],pk:k=>narPeaks[k],get micOK(){r
     const akey='nar|'+Date.now()+'|'+Math.random().toString(36).slice(2,6);narBuf[akey]=buf;narPeaks[akey]=peaksFromBuffer(buf);idbPut('files',akey,{blob}).catch(()=>{});return{akey,dur:buf.duration}}};
 /* v612: パフォーマンス設定。wfQ=波形の細かさ(1=フル/2=半分/4=4分の1。音のかたまりを wfQ 個に1つだけほどく)、wfPre=動画を選んだ後に裏で波形を先に作る */
 let wfQ=1,wfPre=true;try{wfQ=[1,2,4].includes(+localStorage.getItem('wfQ'))?+localStorage.getItem('wfQ'):1;wfPre=localStorage.getItem('wfPre')!=='0'}catch(e){}
-function wfPrefetch(){if(!wfPre)return;clips.forEach(c=>{if(!c.peaksP)clipPeaks(c)})}
+/* v613: 1本ずつ順に(一度に全部並べると、字幕ページで今要る動画の波形が後回しになるため) */let wfPreRun=false;
+async function wfPrefetch(){if(!wfPre||wfPreRun)return;wfPreRun=true;try{for(let c;wfPre&&(c=clips.find(q=>!q.peaksP));)await clipPeaks(c)}finally{wfPreRun=false}}
 window.wfPrefetch=wfPrefetch;window.clipByKey=k=>clips.find(c=>c.key===k);window.clipPeaks=c=>clipPeaks(c);
 function clipPeaks(c){
   if(c.peaksP)return c.peaksP;if(!clips.includes(c))return Promise.resolve(null);
@@ -4963,7 +4964,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v612';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v613';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -8005,20 +8006,24 @@ window.tzOpen=()=>{let sc=$('tzSc');if(sc)sc.remove();sc=document.createElement(
 /* 音声波形(選んだ所の前後も表示)。タップ=そこから再生 */
 let wfPk=null,wfBusy=false;
 /* v612: 字幕ページの波形は、動画ごとに保存してある波形(clipPeaks、1秒50個)から切り出して作る(音を全部ほどき直さない)。作れない時は今まで通り */
-async function wfFromPk(lid){if(rendOK()||!window.clipPeaks||!window.clipByKey)return null;const ks=[...new Set(JOB.filter(r=>!r.blank).map(r=>r.key))],P=new Map();let k=0;
-  for(const key of ks){if(audStop)throw new Error('stopped');const c=clipByKey(key);if(!c)return null;ldO.set(lid,'波形を読み込み中… '+(++k)+'/'+ks.length+'本');const p=await clipPeaks(c);if(!p)return null;P.set(key,p)}
+async function wfFromPk(){if(rendOK()||!window.clipPeaks||!window.clipByKey)return null;const ks=[...new Set(JOB.filter(r=>!r.blank).map(r=>r.key))],P=new Map();let k=0;
+  for(const key of ks){if(audStop)throw new Error('stopped');const c=clipByKey(key);if(!c)return null;wfMsg=(++k)+'/'+ks.length+'本';const p=await clipPeaks(c);if(!p)return null;P.set(key,p)}
   const n=Math.ceil((VD+2)*100),a=new Float32Array(n);
   for(const r of JOB){if(r.blank)continue;const p=P.get(r.key),o0=Math.round(r.v0*100),L=Math.round((r.b-r.a)*100);for(let i=0;i<L&&o0+i<n;i++){const v=(p[Math.floor((r.a+i/100)*50)]||0)/255;a[o0+i]=v*v}}
   let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;window.__wfSrc='pk';return a}
-async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;const lid=ldO.show('波形を読み込み中…',{delay:300,stop:wfStop});try{{const q=await wfFromPk(lid);if(q){wfPk=q;throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
+/* v613: 波形の読み込みは画面をふさがない(待機アニメ無し)。波形の所に「波形を読み込み中…」(点が動く) */let wfMsg='',wfTick=0;
+async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;wfMsg='';try{{const q=await wfFromPk();if(q){wfPk=q;throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
-  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}ldO.hide(lid);wfBusy=false;audStop=false;return wfPk}
+  let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}wfBusy=false;audStop=false;wfMsg='';return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
 let wfMap=null,zw=6,wEdge=null,vmode=null;const ptrs=new Map();let wdrag=null,pinch=null;
 function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
   if(c.width!==W*dp){c.width=W*dp;c.height=H*dp}const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
   if(!JOB.length)return;if(!wfPk&&wfOff){x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='13px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('波形の読み込みを止めました（ページを開き直すと読み込みます）',W/2,H/2);return}
-  if(!wfPk){wfData().then(d=>{if(d)drawWf(t)});return}
+  if(!wfPk){if(!wfBusy)wfData().then(d=>{if(d)drawWf(t)});
+    x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='14px sans-serif';x.textAlign='left';x.textBaseline='middle';
+    const tx='波形を読み込み中'+(wfMsg?' '+wfMsg:''),tw=x.measureText(tx+'...').width;x.fillText(tx+'.'.repeat(1+Math.floor(performance.now()/400)%3),(W-tw)/2,H/2);
+    if(!wfTick)wfTick=setTimeout(()=>{wfTick=0;if(!wfPk&&!wfOff&&!document.getElementById('s4').hidden)drawWf(t)},400);return}
   const cs=getComputedStyle(document.documentElement),acc=cs.getPropertyValue('--accent').trim(),mut=cs.getPropertyValue('--line').trim(),warn=cs.getPropertyValue('--warn').trim()||'#d33';
   const ct=t!=null?t:pos,A=ct-zw/2,B=ct+zw/2,sx=v=>(v-A)/(B-A)*W;wfMap={A,B,W};
   if(sel){x.globalAlpha=.12;x.fillStyle=acc;x.fillRect(sx(sel.a),0,sx(sel.b)-sx(sel.a),H);x.globalAlpha=1}
@@ -9146,7 +9151,7 @@ window.subOpen=async(auto,render,fresh,mode)=>{MODE=mode==='nar'?'nar':'sub';{co
   if(auto&&ok&&!Object.keys(R).some(k=>R[k].raw.length))$('go').click()};
 /* v538: 開いてから字幕の波形・画像ができるまで、再生画面の真ん中に「読み込み中」を出す */
 {const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');wfOff=false;audStop=false;let cz;const cp=new Promise(z=>{cz=z});const lid=ldO.show('読み込み中…',{stop:()=>{wfStop();cz()}});try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
-  try{const r=await o(...a);if(JOB.length&&!wfPk&&!wfOff)await Promise.race([wfData(),cp,new Promise(z=>setTimeout(z,30000))]);return r}finally{ldO.hide(lid)}}}
+  try{const r=await o(...a);/* v613: 波形は待たない(読み込みは裏で。波形の所に表示) */if(JOB.length&&!wfPk&&!wfOff)wfData().then(d=>{if(d)try{drawWf()}catch(e){}});return r}finally{ldO.hide(lid)}}}
 window.subClose=()=>{window.subRange=null;stopPlay();document.getElementById('s4').hidden=true;document.getElementById('s1').hidden=false;scrollTo(0,0)};
 </script>
 
