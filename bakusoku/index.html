@@ -4603,7 +4603,9 @@ async function xOpen(c){
   const sup=await VideoDecoder.isConfigSupported(V.cfg).catch(()=>({supported:false}));
   if(!sup.supported)throw new Error('この動画の形式('+V.cfg.codec+')は読めません');
   if(A){const as=await AudioDecoder.isConfigSupported(A.cfg).catch(()=>({supported:false}));if(!as.supported)throw new Error('この動画の音の形式は読めません')}
-  return c._x={V,A,read};
+  /* v629: 決まった所だけ読む(8MBの入れ物を使わない)。音や要所のコマを読むたびに映像用の8MBを読み直していた */
+  const readD=async(off,size)=>new Uint8Array(await file.slice(off,off+size).arrayBuffer());
+  return c._x={V,A,read,readD};
 }
 /* 1コマずつ読む係(時間の順に frameAt を呼ぶ) */
 class XVR{
@@ -4615,7 +4617,7 @@ class XVR{
     let lo=0,hi=this.KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[this.KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}
     if(this.kk===k&&this.kf)return this.kf;
     if(!this.kd||this.kd.state==='closed'){this.kq=[];this.kd=new VideoDecoder({output:f=>this.kq.push(f),error:e=>{this.err=e}});this.kd.configure(V.cfg)}
-    const s=S[this.KI[k]],d=await this.X.read(s.offset,s.size);
+    const s=S[this.KI[k]],d=await this.X.readD(s.offset,s.size);
     this.kd.decode(new EncodedVideoChunk({type:'key',timestamp:Math.round((s.cts/V.ts+V.sh)*1e6),duration:Math.round(s.duration/V.ts*1e6),data:d}));
     await xTO(this.kd.flush(),4000);if(this.err)throw this.err;
     const f=this.kq.pop();this.kq.forEach(x=>x.close());this.kq=[];if(!f)return this.kf||null;if(this.kf)this.kf.close();this.kf=f;this.kk=k;return f}
@@ -4645,8 +4647,13 @@ class XVR{
 /* 元動画の音を c0〜c1 だけ取り出す */
 async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
   const dec=new AudioDecoder({output:d=>out.push(d),error:e=>err=e});dec.configure(A.cfg);
-  for(let i=0;i<S.length;i++){const s=S[i],t=s.cts/A.ts+A.sh,d=s.duration/A.ts;if(t+d<c0-0.12)continue;if(t>c1+0.05)break;
-    dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data:await X.read(s.offset,s.size)}))}
+  /* v629: 使う音だけ読む。近い音(間が256KB未満)はまとめて1回で読む。前は映像と同じ8MBの入れ物で読み、早送りの所では映像ごと何百MBも読んでいた */
+  const tt=i=>S[i].cts/A.ts+A.sh;let lo=0,hi=S.length-1,i0=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=c0-0.12){i0=m;hi=m-1}else lo=m+1}
+  for(let i=i0;i<S.length&&!err;){if(tt(i)>c1+0.05)break;let j=i,end=S[i].offset+S[i].size;
+    while(j+1<S.length&&tt(j+1)<=c1+0.05&&S[j+1].offset>=S[i].offset&&S[j+1].offset-end<(256<<10)&&S[j+1].offset+S[j+1].size-S[i].offset<(4<<20)){j++;end=Math.max(end,S[j].offset+S[j].size)}
+    const buf=await X.readD(S[i].offset,end-S[i].offset);
+    for(let k=i;k<=j;k++){const s=S[k],t=tt(k),d=s.duration/A.ts;dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data:buf.subarray(s.offset-S[i].offset,s.offset-S[i].offset+s.size)}))}
+    i=j+1;while(dec.decodeQueueSize>64&&!err)await new Promise(r=>setTimeout(r,2))}
   await xTO(dec.flush(),4000);try{dec.close()}catch(e){}if(err)throw err;if(!out.length)return null;
   const sr=out[0].sampleRate,t0=out[0].timestamp/1e6,L=out[out.length-1],len=Math.round((L.timestamp/1e6-t0)*sr)+L.numberOfFrames;
   const ab=new AudioBuffer({length:Math.max(1,len),numberOfChannels:2,sampleRate:sr});
@@ -5072,7 +5079,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v628';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v629';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
