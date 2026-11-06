@@ -4713,7 +4713,7 @@ window.narApi={ensure:ensureNar,buf:k=>narBuf[k],pk:k=>narPeaks[k],get micOK(){r
   put:async blob=>{let buf;try{buf=await dctx().decodeAudioData(await blob.arrayBuffer())}catch(e){return null}
     const akey='nar|'+Date.now()+'|'+Math.random().toString(36).slice(2,6);narBuf[akey]=buf;narPeaks[akey]=peaksFromBuffer(buf);idbPut('files',akey,{blob}).catch(()=>{});return{akey,dur:buf.duration}}};
 /* v612: パフォーマンス設定。wfQ=波形の細かさ(1=フル/2=半分/4=4分の1。音のかたまりを wfQ 個に1つだけほどく)、wfPre=動画を選んだ後に裏で波形を先に作る */
-let wfQ=1,wfPre=true;try{wfQ=[1,2,4].includes(+localStorage.getItem('wfQ'))?+localStorage.getItem('wfQ'):1;wfPre=localStorage.getItem('wfPre')!=='0'}catch(e){}
+let wfQ=1,wfPre=true;try{wfQ=[1,2,4,10].includes(+localStorage.getItem('wfQ'))?+localStorage.getItem('wfQ'):1;wfPre=localStorage.getItem('wfPre')!=='0'}catch(e){}
 /* v613: 1本ずつ順に(一度に全部並べると、字幕ページで今要る動画の波形が後回しになるため) */let wfPreRun=false;
 async function wfPrefetch(){if(!wfPre||wfPreRun)return;wfPreRun=true;try{for(let c;wfPre&&(c=clips.find(q=>!q.peaksP));)await clipPeaks(c)}finally{wfPreRun=false}}
 window.wfPrefetch=wfPrefetch;window.clipByKey=k=>clips.find(c=>c.key===k);
@@ -4966,7 +4966,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v617';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v618';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -6690,7 +6690,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
    {const fs=setB.querySelector('label'),col=$('setCol');
     const perf=(()=>{const w=document.createElement('div');w.id='perfBox';w.style.cssText='display:flex;flex-direction:column;gap:10px;padding:4px 2px';
       const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px';const lb=document.createElement('span');lb.textContent='波形';lb.style.cssText='flex:none;width:3em;font-size:15px';r.appendChild(lb);
-      const bs=[[1,'フル'],[2,'半分'],[4,'4分の1']].map(([q,t])=>{const b=document.createElement('button');b.textContent=t;b.dataset.q=q;b.style.cssText='flex:1;min-height:40px;padding:0 6px';b.onclick=()=>{wfQ=q;try{localStorage.setItem('wfQ',q)}catch(e){}clips.forEach(c=>{delete c.peaksP});sh()};r.appendChild(b);return b});
+      const bs=[[1,'フル'],[2,'半分'],[4,'4分の1'],[10,'10分の1']].map(([q,t])=>{const b=document.createElement('button');b.textContent=t;b.dataset.q=q;b.style.cssText='flex:1;min-height:40px;padding:0 6px';b.onclick=()=>{wfQ=q;try{localStorage.setItem('wfQ',q)}catch(e){}clips.forEach(c=>{delete c.peaksP});sh()};r.appendChild(b);return b});
       const sh=()=>bs.forEach(b=>{const on=+b.dataset.q===wfQ;b.setAttribute('aria-pressed',String(on));b.style.background=on?'var(--accent)':'';b.style.color=on?'var(--accent-fg)':''});sh();
       const nt=document.createElement('div');nt.textContent='軽くするほど早くできますが、波形が粗くなります。変えた後に作る波形から効きます（字幕の生成には影響しません）';nt.style.cssText='font-size:12px;color:var(--muted)';
       const cl=document.createElement('label');cl.style.cssText='display:flex;align-items:center;gap:10px;font-size:15px;min-height:44px';cl.innerHTML='<input type="checkbox" style="width:22px;height:22px"><span>動画を選んだ後、裏で波形を先に作る</span>';
@@ -8033,7 +8033,7 @@ function wfLdHide(){const e=$('wfLd');if(e&&!e.hidden)e.hidden=true}
 function wfLdShow(){const e=$('wfLd');if(!e)return;
   if(e.hidden){e.hidden=false;e.innerHTML='<div class="r1"><span></span><button>停止</button></div><div class="tm"></div>';e.querySelector('button').onclick=()=>wfStop()}
   const q=window.wfQget?wfQget():1,T=wfTimes();e.querySelector('.r1 span').textContent='波形を読み込み中'+(wfMsg?' '+wfMsg:'')+'.'.repeat(1+Math.floor(performance.now()/400)%3);
-  e.querySelector('.tm').innerHTML=[[1,'フル'],[2,'2分の1'],[4,'4分の1']].map(([k,n])=>'<div style="flex:1"><b style="display:block;width:auto">'+n+'</b>'+(k===q?'<span style="color:var(--fg)">読み込み中</span>':wfFmtT(T[k]))+'</div>').join('')}
+  e.querySelector('.tm').innerHTML=[[1,'フル'],[2,'2分の1'],[4,'4分の1'],[10,'10分の1']].map(([k,n])=>'<div style="flex:1"><b style="display:block;width:auto">'+n+'</b>'+(k===q?'<span style="color:var(--fg)">読み込み中</span>':wfFmtT(T[k]))+'</div>').join('')}
 
 async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;wfMsg='';const t0=performance.now(),q0=window.wfQget?wfQget():1;window.__wfRead=false;try{{const q=await wfFromPk();if(q){wfPk=q;if(window.__wfRead&&!audStop){const T=wfTimes();T[q0]=Math.round(performance.now()-t0);try{localStorage.setItem('wfT',JSON.stringify(T))}catch(e){}}throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
