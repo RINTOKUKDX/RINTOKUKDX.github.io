@@ -4660,6 +4660,26 @@ async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out
   for(const d of out){const p=Math.round((d.timestamp/1e6-t0)*sr),n=Math.min(d.numberOfFrames,len-p);if(n>0&&p>=0)for(let ch=0;ch<2;ch++){const tmp=new Float32Array(d.numberOfFrames);
       d.copyTo(tmp,{planeIndex:Math.min(ch,d.numberOfChannels-1),format:'f32-planar'});ab.copyToChannel(n<tmp.length?tmp.subarray(0,n):tmp,ch,p)}d.close()}
   return{buf:ab,off:c0-t0}}
+/* v630: 早送り(8倍以上)の音。元の音を全部ほどいて縮めると、30倍なら10秒の窓で300秒分をほどく必要があり重い(スマホで「音63%」)。
+   代わりに 0.06秒ごとに、元の動画の対応する位置から 0.12秒だけ取り出して重ねる(音程そのまま)。ほどくのは使う所だけ */
+async function xAudSp(X,c0,c1,K){const A=X.A;if(!A)return null;const S=A.S,sr=A.cfg.sampleRate||XSR,tt=i=>S[i].cts/A.ts+A.sh;if(!S.length)return null;
+  const D=(c1-c0)/K,N=Math.max(1,Math.round(D*sr)),Lg=0.12,Hg=0.06,GL=Math.round(Lg*sr),HL=Math.round(Hg*sr);
+  const oL=new Float32Array(N+GL),oR=new Float32Array(N+GL),oW=new Float32Array(N+GL),win=new Float32Array(GL);for(let i=0;i<GL;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/GL);
+  let err=null,got=[];const dec=new AudioDecoder({output:d=>got.push(d),error:e=>{err=e}});dec.configure(A.cfg);
+  const find=t=>{let lo=0,hi=S.length-1,r=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=t){r=m;hi=m-1}else lo=m+1}return r};
+  try{for(let n=0;n*HL<N&&!err;n++){if(xAbort)throw new Error('中止しました');const p=c0+n*Hg*K;let i=find(p-0.05);if(i>=S.length)break;let j=i;while(j+1<S.length&&tt(j+1)<=p+Lg+0.02)j++;
+      const sp=S[j].offset+S[j].size-S[i].offset,one=sp>0&&sp<(2<<20)&&S[j].offset>=S[i].offset?await X.readD(S[i].offset,sp):null;
+      for(let k=i;k<=j;k++){const s=S[k],d=one?one.subarray(s.offset-S[i].offset,s.offset-S[i].offset+s.size):await X.readD(s.offset,s.size);
+        dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(tt(k)*1e6),duration:Math.round(s.duration/A.ts*1e6),data:d}))}
+      await xTO(dec.flush(),4000);if(err)break;
+      let pos=tt(i);const o0=n*HL;
+      for(const d of got){const m=d.numberOfFrames,ch=d.numberOfChannels,x=new Float32Array(m),y=new Float32Array(m);d.copyTo(x,{planeIndex:0,format:'f32-planar'});if(ch>1)d.copyTo(y,{planeIndex:1,format:'f32-planar'});else y.set(x);d.close();
+        const q0=Math.round((pos-p)*sr);for(let q=0;q<m;q++){const g=q0+q;if(g<0||g>=GL)continue;const w=win[g],oi=o0+g;oL[oi]+=x[q]*w;oR[oi]+=y[q]*w;oW[oi]+=w}pos+=m/sr}
+      got=[]}}
+  finally{got.forEach(d=>{try{d.close()}catch(_){}});try{dec.close()}catch(_){}}
+  if(err)throw err;
+  for(let i=0;i<N;i++){const w=oW[i];if(w>0.1){oL[i]/=w;oR[i]/=w}}
+  const ab=new AudioBuffer({length:N,numberOfChannels:2,sampleRate:sr});ab.copyToChannel(oL.subarray(0,N),0);ab.copyToChannel(oR.subarray(0,N),1);return{buf:ab,off:0}}
 /* v522: 音程を保ったまま速さを変える(WSOLA)。K=倍率(2=半分の長さ)。40msの窓を半分ずつ重ね、前とつながりの良い位置を±12msで探す */
 function tStretch(ab,K){const sr=ab.sampleRate,ch=ab.numberOfChannels,N=ab.length,M=Math.max(1,Math.round(N/K)),W=Math.max(64,Math.round(sr*0.04)),H=W>>1,S=Math.round(sr*0.012),win=new Float32Array(W);
   for(let i=0;i<W;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/W);
@@ -4679,7 +4699,7 @@ async function xAudWin(ex,A,B,XR){
   for(let k=0;k<ex.length;k++){const {s,sa,sb}=ex[k];if(!s.clip||sb<=A||sa>=B)continue;
     const K=spdOf(s),ga=Math.max(A,sa),gb=Math.min(B,sb),c0=s.start+(ga-sa)*K,c1=s.start+(gb-sa)*K;
     /* v628: 101倍以上の早送りは音なし(本編もライト版も)。元の音を何十倍分も読んで縮めるのが重い */if(K>=101)continue;
-    let r=await xAud(await xOpen(s.clip),c0,c1);if(!r)continue;/* v522: 速度。音程を保ったまま長さを変える */if(K!==1)r={buf:tStretch(r.buf,K),off:r.off/K};
+    let r=K>=8?(xS('音の作成(早送り '+K+'倍)'),await xAudSp(await xOpen(s.clip),c0,c1,K)):await xAud(await xOpen(s.clip),c0,c1);if(!r)continue;/* v522: 速度。音程を保ったまま長さを変える */if(K!==1&&K<8)r={buf:tStretch(r.buf,K),off:r.off/K};
     const src=ctx.createBufferSource();src.buffer=r.buf;const g=ctx.createGain(),P=g.gain;src.connect(g);g.connect(mg);
     const pv=ex[k-1],nx=ex[k+1];
     const contP=!!(pv&&pv.s.clip===s.clip&&Math.abs(pv.s.end-s.start)<1e-3&&spdOf(pv.s)===K),contN=!!(nx&&nx.s.clip===s.clip&&Math.abs(nx.s.start-s.end)<1e-3&&spdOf(nx.s)===K);
@@ -5079,7 +5099,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v629';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v630';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
