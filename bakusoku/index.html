@@ -816,7 +816,7 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #t_sb{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #t_sc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
 #t_iB{display:none!important;/* v553: 右上の⚙は削除(テンプレート編集は長タップへ) */position:absolute;z-index:3;top:8px;right:8px;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font:700 16px serif;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-#t_wf{display:block;width:100%;height:64px;background:var(--panel);touch-action:pan-y}
+#t_wfLd{padding:8px 12px;background:var(--panel);font-size:14px;color:var(--muted)}#t_wfLd .r1{display:flex;align-items:center;gap:10px;min-height:40px}#t_wfLd .r1 span{flex:1}#t_wfLd button{min-height:36px;padding:0 16px}#t_wfLd .tm{display:flex;gap:8px;font-size:13px;line-height:1.7}#t_wfLd .tm b{flex:none;width:5.5em;font-weight:400}#t_wf{display:block;width:100%;height:64px;background:var(--panel);touch-action:pan-y}
 /* v373: 波形の下の文字のタイムライン(波形と同じ範囲を表示。ブロックはタイムラインの字幕ブロックと同じ見た目) */
 #t_nw{display:none;width:100%;height:30px;background:var(--panel);border-top:1px solid var(--line);pointer-events:none}#s4.nar #t_nw{display:block}
 #t_tx{touch-action:pan-y;display:block;width:100%;height:68px;background:var(--bg);border-top:1px solid var(--line)}
@@ -1001,7 +1001,7 @@ html.s4open{overflow-anchor:none}/* 行の高さが変わっても勝手に画�
 <div id="t_root" class="tsec">
   <div id="t_stk">
     <div id="t_pl"><video id="t_pv" playsinline preload="auto"></video><video id="t_pv2" playsinline preload="auto"></video><canvas id="t_sb"></canvas><canvas id="t_sc"></canvas><div id="t_ov"></div><b id="t_iB">i</b></div>
-    <canvas id="t_wf"></canvas><canvas id="t_nw"></canvas><canvas id="t_tx"></canvas>
+    <canvas id="t_wf"></canvas><div id="t_wfLd" hidden></div><canvas id="t_nw"></canvas><canvas id="t_tx"></canvas>
     <div id="t_ctl"><button id="t_bP" aria-label="選んだ行を再生・停止">▶‖</button><button id="t_bA" aria-label="続けて再生">▶▶</button><button id="t_bN" aria-label="次の字幕へ">次へ</button><button id="t_bR" aria-label="再生位置から録音">🎤</button><button id="t_bZ" aria-label="合成音声で読む">🗣</button><button id="t_bV" aria-label="動画の音を出す・消す">🔊</button><button id="t_bU" aria-label="ひとつ戻る">↺</button><button id="t_bY" aria-label="やり直し">⟳</button></div>
     <div class="r lt" id="t_lt"><span>軽量化</span><input id="t_ltI" type="range" min="0" max="1" step="1" aria-label="軽量化"><span class="v" id="t_ltV"></span></div>
     <div id="t_skw"><div class="time" hidden><span id="t_tNow">0:00.0</span><span id="t_tAll">0:00.0</span></div><div class="tl" id="t_tl"><div class="tl-track"></div><input id="t_seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="再生位置"></div></div>
@@ -4966,7 +4966,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v615';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v616';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -8017,24 +8017,32 @@ async function wfFromPk(){if(rendOK()||!window.clipByKey||!window.xAudR)return n
   try{for(const key of ks){if(audStop)throw new Error('stopped');const c=clipByKey(key);if(!c)return null;k++;wfMsg=k+'/'+ks.length+'本';
       const pc=window.pkCached?await pkCached(c):null;if(pc){P.set(key,{p:pc,a:0});continue}
       const R=JOB.filter(r=>!r.blank&&r.key===key),A=Math.max(0,Math.min(...R.map(r=>r.a))-0.1),B=Math.min(c.d||1e9,Math.max(...R.map(r=>r.b))+0.1);
-      let q=null;try{q=await xAudR(c,A,B,{peaks:true,skip:window.wfQget?wfQget():1,prog:f=>{wfMsg=k+'/'+ks.length+'本 '+Math.round(f*100)+'%'}})}catch(e){q=null}
+      window.__wfRead=true;let q=null;try{q=await xAudR(c,A,B,{peaks:true,skip:window.wfQget?wfQget():1,prog:f=>{wfMsg=k+'/'+ks.length+'本 '+Math.round(f*100)+'%'}})}catch(e){q=null}
       if(!q){q=window.clipPeaks?await clipPeaks(c):null;if(!q)return null;P.set(key,{p:q,a:0})}else P.set(key,{p:q,a:A})}}
   finally{window.__wfLoading=false}
   const n=Math.ceil((VD+2)*100),a=new Float32Array(n);
   for(const r of JOB){if(r.blank)continue;const{p,a:A}=P.get(r.key),o0=Math.round(r.v0*100),L=Math.round((r.b-r.a)*100);for(let i=0;i<L&&o0+i<n;i++){const v=(p[Math.floor((r.a-A+i/100)*50)]||0)/255;a[o0+i]=v*v}}
   let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;window.__wfSrc='pk';return a}
 /* v613: 波形の読み込みは画面をふさがない(待機アニメ無し)。波形の所に「波形を読み込み中…」(点が動く) */let wfMsg='',wfTick=0;
-async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;wfMsg='';try{{const q=await wfFromPk();if(q){wfPk=q;throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
+/* v616: 波形の読み込み表示(波形の下。文字・「停止」・フル/2分の1/4分の1 の前回の読み込み時間)。後で消す予定(消すリスト) */
+const wfTimes=()=>{try{return JSON.parse(localStorage.getItem('wfT')||'{}')}catch(e){return{}}};
+const wfFmtT=ms=>ms==null?'—':(ms/1000).toFixed(1)+'秒';
+function wfLdHide(){const e=$('wfLd');if(e&&!e.hidden)e.hidden=true}
+function wfLdShow(){const e=$('wfLd');if(!e)return;
+  if(e.hidden){e.hidden=false;e.innerHTML='<div class="r1"><span></span><button>停止</button></div><div class="tm"></div>';e.querySelector('button').onclick=()=>wfStop()}
+  const q=window.wfQget?wfQget():1,T=wfTimes();e.querySelector('.r1 span').textContent='波形を読み込み中'+(wfMsg?' '+wfMsg:'')+'.'.repeat(1+Math.floor(performance.now()/400)%3);
+  e.querySelector('.tm').innerHTML=[[1,'フル'],[2,'2分の1'],[4,'4分の1']].map(([k,n])=>'<div style="flex:1"><b style="display:block;width:auto">'+n+'</b>'+(k===q?'<span style="color:var(--fg)">読み込み中</span>':wfFmtT(T[k]))+'</div>').join('')}
+
+async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=true;audStop=false;wfMsg='';const t0=performance.now(),q0=window.wfQget?wfQget():1;window.__wfRead=false;try{{const q=await wfFromPk();if(q){wfPk=q;if(window.__wfRead&&!audStop){const T=wfTimes();T[q0]=Math.round(performance.now()-t0);try{localStorage.setItem('wfT',JSON.stringify(T))}catch(e){}}throw 0}}window.__wfSrc='pcm';const {pcm}=await getAudio();const n=Math.ceil(pcm.length/160),a=new Float32Array(n);
   for(let i=0;i<n;i++){let m=0;for(let j=i*160,e=Math.min(pcm.length,j+160);j<e;j++){const v=Math.abs(pcm[j]);if(v>m)m=v}a[i]=m}
   let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}wfBusy=false;audStop=false;wfMsg='';return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
 let wfMap=null,zw=6,wEdge=null,vmode=null;const ptrs=new Map();let wdrag=null,pinch=null;
-function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
+function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;if(wfPk||wfOff||!JOB.length)wfLdHide();const dp=devicePixelRatio||1;
   if(c.width!==W*dp){c.width=W*dp;c.height=H*dp}const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
   if(!JOB.length)return;if(!wfPk&&wfOff){x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='13px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('波形の読み込みを止めました（ページを開き直すと読み込みます）',W/2,H/2);return}
   if(!wfPk){if(!wfBusy)wfData().then(d=>{if(d)drawWf(t)});
-    x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='14px sans-serif';x.textAlign='left';x.textBaseline='middle';
-    const tx='波形を読み込み中'+(wfMsg?' '+wfMsg:''),tw=x.measureText(tx+'...').width;x.fillText(tx+'.'.repeat(1+Math.floor(performance.now()/400)%3),(W-tw)/2,H/2);
+    wfLdShow();
     if(!wfTick)wfTick=setTimeout(()=>{wfTick=0;if(!wfPk&&!wfOff&&!document.getElementById('s4').hidden)drawWf(t)},400);return}
   const cs=getComputedStyle(document.documentElement),acc=cs.getPropertyValue('--accent').trim(),mut=cs.getPropertyValue('--line').trim(),warn=cs.getPropertyValue('--warn').trim()||'#d33';
   const ct=t!=null?t:pos,A=ct-zw/2,B=ct+zw/2,sx=v=>(v-A)/(B-A)*W;wfMap={A,B,W};
