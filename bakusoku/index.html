@@ -4631,7 +4631,7 @@ function xSetDlg(k,after){const v=xSet(k),w=document.createElement('div');w.clas
   /* v646: 直した所だけ書き出し直す(押すと切り替わる)・使い回しのデータを消す */let xcOn=xcWant();
   if(k==='main'){const tb=document.createElement('button');tb.id='xcTgl';tb.type='button';tb.style.cssText='display:block;width:100%;margin:10px 0 4px';
     const st=()=>{tb.textContent=(xcOn?'✓ ':'')+'直した所だけ書き出し直す';tb.className=xcOn?'primary':'no';tb.setAttribute('aria-pressed',String(xcOn))};st();tb.onclick=()=>{xcOn=!xcOn;st()};c.appendChild(tb);
-    const nt=document.createElement('p');nt.style.cssText='font-size:12px;opacity:.75;margin:4px 0';nt.textContent=xcOK()?'2回目からは、前回と同じ所の圧縮を飛ばして速く書き出します（画質は同じ）。前回の分をスマホの中に置きます（フルHD・8Mbpsなら10分で約600MB）。カットなどで長さが変わると、その後ろは作り直しになります。本番とライト版は別々です。':'この端末では使えません';c.appendChild(nt);
+    const nt=document.createElement('p');nt.style.cssText='font-size:12px;opacity:.75;margin:4px 0';nt.textContent=xcOK()?'2回目からは、前回と同じ所の圧縮と、元の動画から音を読む所を飛ばして速く書き出します（画質・音は同じ）。前回の分をスマホの中に置きます（フルHD・8Mbpsなら10分で約600MB）。カットなどで長さが変わると、その後ろは作り直しになります。本番とライト版は別々です。':'この端末では使えません';c.appendChild(nt);
     const cb=document.createElement('button');cb.id='xcClr';cb.type='button';cb.className='no';cb.style.cssText='display:block;width:100%;margin:4px 0 8px';cb.textContent='使い回しのデータを消す';
     xcSize().then(s=>{if(s!=null&&cb.isConnected&&!cb.disabled)cb.textContent='使い回しのデータを消す（今 '+xcMB(s)+'）'});
     cb.onclick=async()=>{if(busy)return;cb.disabled=true;cb.textContent='消しています…';await xcClearAll();cb.textContent='消しました'};c.appendChild(cb)}
@@ -4832,7 +4832,7 @@ class XVR{
       if(g>20000)throw new Error('動画の読み込みが止まりました')}}
 }
 /* 元動画の音を c0〜c1 だけ取り出す */
-async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
+async function xAud(X,c0,c1,ck){const A=X.A;if(!A)return null;const S=A.S;const out=[];let err=null;
   const dec=new AudioDecoder({output:d=>out.push(d),error:e=>err=e});dec.configure(A.cfg);
   /* v629: 使う音だけ読む。近い音(v631: 間が1MB未満・1回8MBまで。細かく読むと回数が増えて遅い)はまとめて1回で読む。前は映像と同じ8MBの入れ物で読み、早送りの所では映像ごと何百MBも読んでいた */
   const tt=i=>S[i].cts/A.ts+A.sh;let lo=0,hi=S.length-1,i0=S.length;while(lo<=hi){const m=(lo+hi)>>1;if(tt(m)+S[m].duration/A.ts>=c0-0.12){i0=m;hi=m-1}else lo=m+1}
@@ -4840,12 +4840,15 @@ async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out
   const G=[];for(let i=i0;i<S.length;){if(tt(i)>c1+0.05)break;let j=i,end=S[i].offset+S[i].size;
     while(j+1<S.length&&tt(j+1)<=c1+0.05&&S[j+1].offset>=S[i].offset&&S[j+1].offset-end<(1<<20)&&S[j+1].offset+S[j+1].size-S[i].offset<(8<<20)){j++;end=Math.max(end,S[j].offset+S[j].size)}
     G.push([i,j,S[i].offset,end-S[i].offset]);i=j+1}
-  const rd=xAhead(4,G.length,g=>X.readD(G[g][2],G[g][3]));
-  try{for(let g=0;g<G.length&&!err;g++){const [i,j,o]=G[g],buf=await rd(g);
-      for(let k=i;k<=j;k++){const s=S[k],t=tt(k),d=s.duration/A.ts;dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data:buf.subarray(s.offset-o,s.offset-o+s.size)}))}
+  /* v647: 前の書き出しで取っておいたサンプルがあれば、元のファイルを読まない(ほどく所からは同じ) */
+  const SL=[];for(const q of G)for(let k=q[0];k<=q[1];k++)SL.push(k);const C=await xcAGet(ck,S,SL);let ci=0;
+  const rd=C.d?null:xAhead(4,G.length,g=>X.readD(G[g][2],G[g][3]));
+  try{for(let g=0;g<G.length&&!err;g++){const [i,j,o]=G[g],buf=C.d?null:await rd(g);
+      for(let k=i;k<=j;k++){const s=S[k],t=tt(k),d=s.duration/A.ts,data=C.d?C.d[ci++]:buf.subarray(s.offset-o,s.offset-o+s.size);if(C.keep)C.keep.push(data.slice());
+        dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(t*1e6),duration:Math.round(d*1e6),data}))}
       while(dec.decodeQueueSize>64&&!err)await new Promise(r=>setTimeout(r,2))}}
   catch(e){try{dec.close()}catch(_){}out.forEach(d=>{try{d.close()}catch(_){}});throw e}
-  await xTO(dec.flush(),4000);try{dec.close()}catch(e){}if(err)throw err;if(!out.length)return null;
+  await xTO(dec.flush(),4000);try{dec.close()}catch(e){}if(err)throw err;if(C.keep&&C.keep.length===SL.length)xcAWr(C.au,C.name,C.keep);if(!out.length)return null;
   const sr=out[0].sampleRate,t0=out[0].timestamp/1e6,L=out[out.length-1],len=Math.round((L.timestamp/1e6-t0)*sr)+L.numberOfFrames;
   const ab=new AudioBuffer({length:Math.max(1,len),numberOfChannels:2,sampleRate:sr});
   for(const d of out){const p=Math.round((d.timestamp/1e6-t0)*sr),n=Math.min(d.numberOfFrames,len-p);if(n>0&&p>=0)for(let ch=0;ch<2;ch++){const tmp=new Float32Array(d.numberOfFrames);
@@ -4853,7 +4856,7 @@ async function xAud(X,c0,c1){const A=X.A;if(!A)return null;const S=A.S;const out
   return{buf:ab,off:c0-t0}}
 /* v630: 早送り(8倍以上)の音。元の音を全部ほどいて縮めると、30倍なら10秒の窓で300秒分をほどく必要があり重い(スマホで「音63%」)。
    代わりに 0.06秒ごとに、元の動画の対応する位置から 0.12秒だけ取り出して重ねる(音程そのまま)。ほどくのは使う所だけ */
-async function xAudSp(X,c0,c1,K){const A=X.A;if(!A)return null;const S=A.S,tt=i=>S[i].cts/A.ts+A.sh,du=i=>S[i].duration/A.ts;if(!S.length)return null;
+async function xAudSp(X,c0,c1,K,ck){const A=X.A;if(!A)return null;const S=A.S,tt=i=>S[i].cts/A.ts+A.sh,du=i=>S[i].duration/A.ts;if(!S.length)return null;
   let sr=A.cfg.sampleRate||XSR;const D=(c1-c0)/K;
   /* v635: 速いほど粒を長く・少なくする(100倍なら10秒で67か所。前は167か所)。スマホは1回ごとの読み込みに時間がかかり、100倍の所で止まって見えた */
   const Lg=K>=50?0.3:K>=20?0.2:0.12,Hg=Lg/2,PR=0.05;
@@ -4868,18 +4871,21 @@ async function xAudSp(X,c0,c1,K){const A=X.A;if(!A)return null;const S=A.S,tt=i=
       if(i2<S.length){const j2=Math.max(i2,upTo(np+Lg+0.01));if(!big(i2,j2)){p=np;i=i2;j=j2}}}
     if(i<=prevJ){i=prevJ+1;if(i>=S.length)break;if(j<i)j=i}
     G.push({n,p,i,j,one:!big(i,j)});prevJ=j}
-  const rd=xAhead(6,G.length,g=>{const q=G[g];return q.one?X.readD(S[q.i].offset,span(q.i,q.j)):Promise.all(Array.from({length:q.j-q.i+1},(_,k)=>X.readD(S[q.i+k].offset,S[q.i+k].size)))});
+  /* v647: 前の書き出しで取っておいたサンプルがあれば、元のファイルを読まない */
+  const SL=[];for(const q of G)for(let k=q.i;k<=q.j;k++)SL.push(k);const C=await xcAGet(ck,S,SL);let ci=0;
+  const rd=C.d?null:xAhead(6,G.length,g=>{const q=G[g];return q.one?X.readD(S[q.i].offset,span(q.i,q.j)):Promise.all(Array.from({length:q.j-q.i+1},(_,k)=>X.readD(S[q.i+k].offset,S[q.i+k].size)))});
   /* v631: 粒ごとに flush せず、まとめて入れて最後に1回だけ flush。出てきた音は入れた順に数えて元の時刻に戻す */
   const inp=[];let err=null;const outs=[];
   const dec=new AudioDecoder({output:d=>outs.push(d),error:e=>{err=e}});dec.configure(A.cfg);
-  try{for(let g=0;g<G.length&&!err;g++){if(xAbort)throw new Error('中止しました');const q=G[g],b=await rd(g);
-      for(let k=q.i;k<=q.j;k++){const s=S[k],d=q.one?b.subarray(s.offset-S[q.i].offset,s.offset-S[q.i].offset+s.size):b[k-q.i];
+  try{for(let g=0;g<G.length&&!err;g++){if(xAbort)throw new Error('中止しました');const q=G[g],b=C.d?null:await rd(g);
+      for(let k=q.i;k<=q.j;k++){const s=S[k],d=C.d?C.d[ci++]:q.one?b.subarray(s.offset-S[q.i].offset,s.offset-S[q.i].offset+s.size):b[k-q.i];if(C.keep)C.keep.push(d.slice());
         inp.push({t:tt(k),d:du(k),g});dec.decode(new EncodedAudioChunk({type:'key',timestamp:Math.round(tt(k)*1e6),duration:Math.round(du(k)*1e6),data:d}))}
       while(dec.decodeQueueSize>48&&!err)await new Promise(r=>setTimeout(r,2))}
     if(!err)await xTO(dec.flush(),8000)}
   catch(e){outs.forEach(d=>{try{d.close()}catch(_){}});throw e}
   finally{try{dec.close()}catch(_){}}
   if(err){outs.forEach(d=>{try{d.close()}catch(_){}});throw err}
+  if(C.keep&&C.keep.length===SL.length)xcAWr(C.au,C.name,C.keep);
   if(outs.length)sr=outs[0].sampleRate||sr;
   const N=Math.max(1,Math.round(D*sr)),GL=Math.round(Lg*sr),HL=Hg*sr;
   const oL=new Float32Array(N+GL),oR=new Float32Array(N+GL),oW=new Float32Array(N+GL),win=new Float32Array(GL);for(let i=0;i<GL;i++)win[i]=0.5-0.5*Math.cos(2*Math.PI*i/GL);
@@ -4912,7 +4918,7 @@ async function xAudWin(ex,A,B,XR){
   for(let k=0;k<ex.length;k++){const {s,sa,sb}=ex[k];if(!s.clip||sb<=A||sa>=B)continue;
     const K=spdOf(s),ga=Math.max(A,sa),gb=Math.min(B,sb),c0=s.start+(ga-sa)*K,c1=s.start+(gb-sa)*K;
     /* v628: 101倍以上の早送りは音なし(本編もライト版も)。元の音を何十倍分も読んで縮めるのが重い */if(K>=101)continue;
-    let r=K>=8?(XAS='早送り '+K+'倍',await xAudSp(await xOpen(s.clip),c0,c1,K)):await xAud(await xOpen(s.clip),c0,c1);if(!r)continue;/* v522: 速度。音程を保ったまま長さを変える */if(K!==1&&K<8)r={buf:tStretch(r.buf,K),off:r.off/K};
+    let r=K>=8?(XAS='早送り '+K+'倍',await xAudSp(await xOpen(s.clip),c0,c1,K,xcCK(s.clip))):await xAud(await xOpen(s.clip),c0,c1,xcCK(s.clip));if(!r)continue;/* v522: 速度。音程を保ったまま長さを変える */if(K!==1&&K<8)r={buf:tStretch(r.buf,K),off:r.off/K};
     const src=ctx.createBufferSource();src.buffer=r.buf;const g=ctx.createGain(),P=g.gain;src.connect(g);g.connect(mg);
     const pv=ex[k-1],nx=ex[k+1];
     const contP=!!(pv&&pv.s.clip===s.clip&&Math.abs(pv.s.end-s.start)<1e-3&&spdOf(pv.s)===K),contN=!!(nx&&nx.s.clip===s.clip&&Math.abs(nx.s.start-s.end)<1e-3&&spdOf(nx.s)===K);
@@ -5118,6 +5124,37 @@ async function xcGC(xc){try{const names=await xcNames(xc.dir);for(const n of nam
 async function xcSize(){if(!xcOK())return null;let s=0;try{const r=await xcRoot();for await(const [k,h] of r.entries()){if(h.kind!=='directory'||!/^xcache_/.test(k))continue;for await(const [,f] of h.entries())if(f.kind==='file')try{s+=(await f.getFile()).size}catch(e){}}}catch(e){return null}return s}
 async function xcClearAll(){try{const r=await xcRoot();const ns=[];for await(const [k,h] of r.entries())if(h.kind==='directory'&&/^xcache_/.test(k))ns.push(k);for(const k of ns)try{await r.removeEntry(k,{recursive:true})}catch(e){}}catch(e){}}
 const xcMB=b=>b>=1<<30?(b/(1<<30)).toFixed(1)+'GB':Math.round(b/1048576)+'MB';
+/* ===== v647: 音の使い回し =====
+   書き出しで重いのは、元の動画から音を読む所(スマホでは1回の書き出しで数千回読み、1回ごとに時間がかかる)。
+   読んだ音のデータ(圧縮されたままのサンプル)を、読み込み1回分(xAud / xAudSp の1回)ずつスマホの中(xcache_aud)に取っておき、
+   次の書き出しで同じサンプルを使う時は、元のファイルを読まずにこれを使う。ほどく・速さを変える・混ぜる・圧縮は毎回する
+   (=音の作り方は前と同じ。音量やBGMなどを変えても古い音は使わない)。
+   名前 = ファイル(名前|大きさ|更新日時)と、使うサンプルの位置・大きさの並び。本番とライト版で共通。最後の2回の書き出しで使った分だけ残す */
+let XCA=null;const XCAV='a1';
+function xcAKey(ck,S,L){XH[0]=0x61756431;XH[1]=0x0d15ea5e;xhS(XCAV);xhS(ck);xh(L.length);for(let i=0;i<L.length;i++){const s=S[L[i]];xhN(s.offset);xh(s.size)}return 'a'+xcHex(XH[0],XH[1])}
+async function xcAOpen(){const dir=await (await xcRoot()).getDirectoryHandle('xcache_aud',{create:true});
+  let meta=null;try{meta=JSON.parse(await (await (await dir.getFileHandle('meta.json')).getFile()).text())}catch(e){}
+  const ok=!!(meta&&meta.v===1),au={dir,files:new Set(),used:new Set(),prev:new Set(ok&&Array.isArray(meta.last)?meta.last:[]),pend:new Map(),wq:Promise.resolve(),canW:true,st:{h:0,m:0,rf:0,we:0,wb:0,rd:0}};
+  for(const n of await xcNames(dir)){if(n==='meta.json')continue;if(ok&&n[0]==='a')au.files.add(n);else try{await dir.removeEntry(n)}catch(e){}}
+  try{const e=await navigator.storage.estimate();if((e.quota||0)-(e.usage||0)<(512<<20))au.canW=false}catch(e){}
+  return au}
+async function xcARd(au,name,S,L){const w=au.pend.get(name);if(w)await w;const n=L.length,ab=await (await (await au.dir.getFileHandle(name)).getFile()).arrayBuffer();
+  if(ab.byteLength<8+n*4)throw new Error('短い');const h=new Uint32Array(ab,0,2+n);if(h[0]!==0x31414358||h[1]!==n)throw new Error('形が違う');
+  let p=8+n*4;const out=new Array(n);for(let i=0;i<n;i++){const z=h[2+i];if(z!==S[L[i]].size||p+z>ab.byteLength)throw new Error('大きさが違う');out[i]=new Uint8Array(ab,p,z);p+=z}
+  if(p!==ab.byteLength)throw new Error('長さが違う');au.st.rd+=ab.byteLength;return out}
+function xcAWr(au,name,parts){if(!au.canW)return;au.files.add(name);au.used.add(name);
+  const job=async()=>{if(!au.canW){au.files.delete(name);au.used.delete(name);return}
+    try{const n=parts.length,h=new Uint32Array(2+n);h[0]=0x31414358;h[1]=n;let sz=8+n*4;for(let i=0;i<n;i++){h[2+i]=parts[i].byteLength;sz+=parts[i].byteLength}
+      const w=await (await au.dir.getFileHandle(name,{create:true})).createWritable();await w.write(new Blob([h,...parts]));await w.close();au.st.wb+=sz}
+    catch(e){au.st.we++;au.canW=false;au.files.delete(name);au.used.delete(name);try{await au.dir.removeEntry(name)}catch(_){}}};
+  const p=au.wq.then(job).finally(()=>{if(au.pend.get(name)===p)au.pend.delete(name)});au.wq=p;au.pend.set(name,p)}
+/* 1回分のサンプル(並び L)を、取っておいた物から出す(d)。無い・読めない時は d が無く、読んだ物を keep に集めて後で取っておく(xcAWr) */
+async function xcAGet(ck,S,L){const au=XCA;if(!au||!ck||!L.length)return {};const name=xcAKey(ck,S,L);
+  if(au.files.has(name)){try{const d=await xcARd(au,name,S,L);au.used.add(name);au.st.h++;return {d}}catch(e){au.st.rf++;au.files.delete(name)}}
+  au.st.m++;return {au,name,keep:[]}}
+/* 書き出しの終わり: 保存を待って、最後の2回で使わなかった物を消す */
+async function xcAEnd(au){try{await au.wq;for(const n of await xcNames(au.dir))if(n!=='meta.json'&&!au.used.has(n)&&!au.prev.has(n))try{await au.dir.removeEntry(n)}catch(e){}
+  const w=await (await au.dir.getFileHandle('meta.json',{create:true})).createWritable();await w.write(JSON.stringify({v:1,last:[...au.used],t:Date.now()}));await w.close()}catch(e){}}
 /* v646: 使い回しのデータが今の圧縮と合わない時は、使い回さずにもう一度書き出す */
 async function exportX(PV){const r=await exportX0(PV,false);if(r!=='xcRetry')return r;say('前回の分が今の圧縮と合わなかったので、使い回さずに書き出し直します');await xSleep(600);return exportX0(PV,true)}
 async function exportX0(PV,noC){
@@ -5159,7 +5196,8 @@ async function exportX0(PV,noC){
     const G=XFPS*2;
     if(!PV&&!noC&&xcWant()){if(!xcOK())xcNote='この端末では使い回しが使えません';else{xS('使い回しの準備');sayX('前回の書き出しを確かめています…');
       try{const cks=new Set(ex.filter(q=>q.s.clip).map(q=>xcCK(q.s.clip)));items.forEach(it=>{if(it.lane===8&&it.end>XR.a&&it.start<XR.b){const c=ovClip(it);if(c)cks.add(xcCK(c))}});
-        xc=await xcOpen({prof:xLiteRun?'lite':'main',vc,W,H,XFPS,G,need:S0.br*1e6/8*all,clips:[...cks]})}catch(e){xc=null;xcNote='使い回しの準備に失敗しました（'+(e&&e.message||e)+'）'}}}
+        xc=await xcOpen({prof:xLiteRun?'lite':'main',vc,W,H,XFPS,G,need:S0.br*1e6/8*all,clips:[...cks]})}catch(e){xc=null;xcNote='使い回しの準備に失敗しました（'+(e&&e.message||e)+'）'}
+      /* v647: 音の使い回し(元の動画から読んだ音のデータ) */if(xc)try{xc.au=XCA=await xcAOpen()}catch(e){xc.au=XCA=null}}}
     /* MP4 を少しずつ作る(大きな動画でもメモリを使いすぎない) */
     const HM=1<<20,head=new Uint8Array(HM);let headLen=0,cursor=0;const parts=[];
     const onData=(data,pos)=>{let d=data,p=pos;
@@ -5241,8 +5279,8 @@ async function exportX0(PV,noC){
     }
     cleanup();lastMsg='仕上げ中…';sayX(lastMsg);xS('映像の圧縮(最後)');await xTO(venc.flush(),8000);xS('音の圧縮(最後)');await xTO(aenc.flush(),8000);if(eErr)throw eErr;
     /* v646: 最後の2秒分を保存して、今回使わなかった前の分を消す */
-    let xcInf='';if(xc){if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}xS('使い回しの保存');await xc.wq;if(!xc.dead){await xcMeta(xc);xcGC(xc)}
-      const S=xc.st,tot=S.hit+S.miss;xcInf='\n使い回し '+S.hit+'/'+tot+'（2秒ごと）'+(S.nst?'・使えない所 '+S.nst:'')+(S.mis?'・指紋ちがい '+S.mis:'')+(S.rf?'・読めなかった所 '+S.rf:'')+(S.we?'・保存の失敗 '+S.we:'')+(xc.canW?'・保存 '+xcMB(S.wb+S.rd):'・空きが少ないので保存していません')+(xc.dead?'・途中で使い回しを止めました（'+xc.err+'）':'')+(XC.err?'・記録の失敗 '+XC.err:'')}
+    let xcInf='';if(xc){if(xc.pg&&!xc.dead){xcFin(xc,xc.pg);xc.pg=null}xS('使い回しの保存');await xc.wq;if(!xc.dead){await xcMeta(xc);xcGC(xc)}const Au=xc.au;if(Au){XCA=null;await xcAEnd(Au)}const AS=Au?Au.st:{h:0,m:0,rf:0,we:0,wb:0,rd:0};
+      const S=xc.st,tot=S.hit+S.miss;xcInf='\n使い回し '+S.hit+'/'+tot+'（2秒ごと）'+(AS.h+AS.m?'・音 '+AS.h+'/'+(AS.h+AS.m):'')+(AS.rf?'・音の読めなかった所 '+AS.rf:'')+(AS.we?'・音の保存の失敗 '+AS.we:'')+(S.nst?'・使えない所 '+S.nst:'')+(S.mis?'・指紋ちがい '+S.mis:'')+(S.rf?'・読めなかった所 '+S.rf:'')+(S.we?'・保存の失敗 '+S.we:'')+(xc.canW?'・保存 '+xcMB(S.wb+S.rd+AS.wb+AS.rd):'・空きが少ないので保存していません')+(xc.dead?'・途中で使い回しを止めました（'+xc.err+'）':'')+(XC.err?'・記録の失敗 '+XC.err:'')}
     else if(xcNote)xcInf='\n'+xcNote;
     try{venc.close()}catch(e){}try{aenc.close()}catch(e){}xS('MP4にまとめる');mux.finalize();
     const blob=new Blob([head.subarray(0,Math.min(HM,Math.max(headLen,0))),...parts],{type:'video/mp4'});
@@ -5251,8 +5289,8 @@ async function exportX0(PV,noC){
     outBlob=blob;outExt='mp4';outLite=!!xLiteRun;{const sm=$('saveMsg');if(sm)sm.textContent=''}
     const r=$('result');r.src=URL.createObjectURL(outBlob);r.hidden=false;$('save').hidden=!dl;$('prog').style.width='100%';
     say('できました（'+inf+'）','ok');return true;
-  }catch(err){cleanup();xcEnd();if(err&&err.xcRetry){/* v646: 前回の分は消して、使い回さずにやり直す */try{if(xc)for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'xcRetry'}sayX('失敗:'+(err&&err.message||err),'err');return null}
-  finally{xcEnd();clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
+  }catch(err){cleanup();xcEnd();XCA=null;if(err&&err.xcRetry){/* v646: 前回の分は消して、使い回さずにやり直す */try{if(xc)for(const n of await xcNames(xc.dir))try{await xc.dir.removeEntry(n)}catch(e){}}catch(e){}return 'xcRetry'}sayX('失敗:'+(err&&err.message||err),'err');return null}
+  finally{xcEnd();XCA=null;clearInterval(wd);xLock.off();busy=false;if(PV&&PV.end)PV.end();$('export').disabled=!segs.length;try{wake&&wake.release()}catch(e){}}
 }
 
 /* 保存 */
@@ -5639,7 +5677,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v646';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v647';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
