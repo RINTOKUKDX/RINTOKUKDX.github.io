@@ -4588,7 +4588,17 @@ async function xOpen(c){
 /* 1コマずつ読む係(時間の順に frameAt を呼ぶ) */
 class XVR{
   constructor(X){this.X=X;this.q=[];this.cur=null;this.dec=null;this.err=null;this.lastT=-1e9;this.wk=null}
-  close(){try{this.dec&&this.dec.state!=='closed'&&this.dec.close()}catch(e){}this.q.forEach(f=>f.close());this.q=[];if(this.cur)this.cur.close();this.cur=null;this.dec=null}
+  close(){try{this.dec&&this.dec.state!=='closed'&&this.dec.close()}catch(e){}this.q.forEach(f=>f.close());this.q=[];if(this.cur)this.cur.close();this.cur=null;this.dec=null;this.kClose()}
+  kClose(){try{this.kd&&this.kd.state!=='closed'&&this.kd.close()}catch(e){}this.kd=null;(this.kq||[]).forEach(f=>f.close());this.kq=[];if(this.kf)this.kf.close();this.kf=null;this.kk=-1}
+  /* v625: 速い速度(8倍以上)の時は、t より前の一番近いキーフレームだけを読む。間のコマを全部読むと 30倍なら30倍の手間になり、書き出しが極端に遅く・熱くなっていた */
+  async keyAt(t){const V=this.X.V,S=V.S;if(!this.KI){this.KI=[];for(let i=0;i<S.length;i++)if(S[i].is_sync)this.KI.push(i)}if(!this.KI.length)return this.frameAt(t);
+    let lo=0,hi=this.KI.length-1,k=0;while(lo<=hi){const m=(lo+hi)>>1;if(S[this.KI[m]].cts/V.ts+V.sh<=t+1e-4){k=m;lo=m+1}else hi=m-1}
+    if(this.kk===k&&this.kf)return this.kf;
+    if(!this.kd||this.kd.state==='closed'){this.kq=[];this.kd=new VideoDecoder({output:f=>this.kq.push(f),error:e=>{this.err=e}});this.kd.configure(V.cfg)}
+    const s=S[this.KI[k]],d=await this.X.read(s.offset,s.size);
+    this.kd.decode(new EncodedVideoChunk({type:'key',timestamp:Math.round((s.cts/V.ts+V.sh)*1e6),duration:Math.round(s.duration/V.ts*1e6),data:d}));
+    await xTO(this.kd.flush(),4000);if(this.err)throw this.err;
+    const f=this.kq.pop();this.kq.forEach(x=>x.close());this.kq=[];if(!f)return this.kf||null;if(this.kf)this.kf.close();this.kf=f;this.kk=k;return f}
   start(t0){this.close();const V=this.X.V,S=V.S;let k=0;
     for(let i=0;i<S.length;i++){const t=S[i].cts/V.ts+V.sh;if(S[i].is_sync&&t<=t0+1e-4)k=i;if(S[i].dts/V.ts+V.sh>t0+2)break}
     this.i=k;this.flushed=false;this.ok=Date.now();
@@ -4709,7 +4719,7 @@ async function exportX(PV){
         if(eErr)throw eErr;if(xAbort)throw new Error('中止しました');xS('映像 '+fi+'/'+N+'コマ');
         const q=segOf(T);let src=null;
         if(q&&q.s.clip){const c=q.s.clip;let r=vr.get(c);if(!r){vr.forEach(x=>x.close());vr.clear();r=new XVR(await xOpen(c));vr.set(c,r)}
-          const f=await r.frameAt(Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*spdOf(q.s)));
+          const K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K);const f=K>=8?await r.keyAt(ct):await r.frameAt(ct);
           if(f){const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
             const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(fc.width!==ow||fc.height!==oh){fc.width=ow;fc.height=oh}
             fg.save();fg.translate(ow/2,oh/2);fg.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);fg.drawImage(f,-dw/2,-dh/2,dw,dh);fg.restore();
@@ -5039,7 +5049,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v624';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v625';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
