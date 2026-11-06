@@ -5135,7 +5135,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v631';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v632';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5207,6 +5207,8 @@ setInterval(async()=>{
   const st=snapshot(),sig=JSON.stringify(st);
   if(sig===lastSig)return;lastSig=sig;
   try{await idbPut('state','project',st)}catch(e){}
+  /* v632: 作品を最後に触った日(30日のお知らせ用) */
+  try{if(curProj&&curProj.id){const T=JSON.parse(localStorage.getItem('pjTouch')||'{}');T[curProj.id]=Date.now();localStorage.setItem('pjTouch',JSON.stringify(T))}}catch(e){}
 },1500);
 /* v346: 動画はアプリにコピーしない。開き直した時は、元の動画を選び直してもらう(名前・大きさ・日時で自動で見分ける)。
    アプリ化したら、ここはスマホのファイルを覚える仕組みに置き換える */
@@ -5216,17 +5218,21 @@ function relink(miss){return new Promise(res=>{const got=new Map();
   lab.innerHTML='動画を選ぶ<input type="file" accept="video/*,.mp4,.mov" multiple style="display:none">';
   const sk=document.createElement('button');sk.textContent='選ばずに続ける';
   const left=()=>miss.filter(m=>!got.has(m.key));
+  /* v632: アプリ(箱ver8〜)なら、外部ストレージのフォルダを選ぶと中から同じ名前・大きさの動画を探してスマホにコピーする */
+  const fd=document.createElement('label');fd.className='btn';fd.style.cssText='display:none;align-items:center;justify-content:center;text-align:center;box-sizing:border-box;min-height:48px;padding:10px;border-radius:10px;border:1px solid var(--line);font-weight:700';
+  fd.innerHTML='外部ストレージのフォルダから探す<input type="file" accept="video/*,.mp4,.mov" multiple style="display:none">';fd.id='rlFind';
+  fd.addEventListener('pointerdown',()=>{try{window.BakuApp.findDir(JSON.stringify(left().map(m=>({name:m.name,size:+String(m.key).split('|')[1]||0}))))}catch(e){}});
   /* v347: アプリ(箱)の中なら、覚えている場所から自動で渡してもらう(ボタンを押すだけ) */
   const app=()=>{const A=window.BakuApp;if(!A||!A.relink)return 0;try{return A.relink(JSON.stringify(left().map(m=>({name:m.name,size:+String(m.key).split('|')[1]||0}))))}catch(e){return 0}};
   const upd=()=>{const L=left();if(!L.length){w.remove();res(got);return}
     const n=app();const pjN=window.__pjName;/* v584: プロジェクトから開いた時は「前回の続き」ではなく、そのプロジェクトの動画を読み込む案内(動画の中身はプロジェクトに入れていないので、アプリが覚えている場所から渡す。ファイル選択はボタンを押さないと開けない) */
     if(n){lab.firstChild.textContent=pjN?'動画を読み込む':'前回の続き';p.textContent=(pjN?'「'+pjN+'」の動画（'+n+'本）を読み込みます。':'前回の続きから始めます（動画'+n+'本）。')+'\n下のボタンを押してください。'+(n<L.length?'\n残りの'+(L.length-n)+'本は、次に選んでください。':'');return}
-    lab.firstChild.textContent='動画を選ぶ';
+    lab.firstChild.textContent='動画を選ぶ';{const A=window.BakuApp;fd.style.display=A&&A.findDir?'flex':'none'}
     p.textContent=(got.size?'あと'+L.length+'本です。\n':'')+'続きを作るには、使っていた動画を選んでください（'+L.length+'本）。\n動画フォルダで「すべて選択」を押せば、必要な物だけ自動で使います。\n\n'+L.slice(0,6).map(m=>'・'+m.name).join('\n')+(L.length>6?'\n…ほか'+(L.length-6)+'本':'')};
-  lab.querySelector('input').onchange=e=>{for(const f of e.target.files){const k=fkey(f);let m=miss.find(q=>q.key===k);
+  lab.querySelector('input').onchange=fd.querySelector('input').onchange=e=>{for(const f of e.target.files){const k=fkey(f);let m=miss.find(q=>q.key===k);
       if(!m)m=miss.find(q=>!got.has(q.key)&&q.name===f.name&&+q.key.split('|')[1]===f.size);if(m)got.set(m.key,f)}e.target.value='';upd()};
   sk.onclick=()=>cdlg('選ばなかった動画は、カットや字幕から外れます。\n本当にいいですか?',[['外して続ける',()=>{w.remove();res(got)},'warn'],['いいえ']]);
-  p.style.whiteSpace='pre-wrap';c.append(p,lab,sk);w.appendChild(c);document.body.appendChild(w);upd()})}
+  p.style.whiteSpace='pre-wrap';c.append(p,lab,fd,sk);w.appendChild(c);document.body.appendChild(w);upd()})}
 let preGot=null;
 function startMenu(has,np,miss){return new Promise(res=>{
   const show=()=>{const B=[];if(has)B.push(['前回の続き',()=>res('cont')]);
@@ -6041,7 +6047,37 @@ const P_NAR=['res_nar|ALL','narrng|ALL','nartx|ALL'];
 window.projWipe=async ck=>{const ak=await aTx('readonly',o=>o.getAllKeys());for(const k of ak){const s=String(k);if(P_NAR.includes(s)||(s.startsWith('res_')&&ck.some(c=>s.endsWith('|'+c))))await aTx('readwrite',o=>o.delete(k))}};
 let curProj=null,pBusy=false;try{curProj=JSON.parse(localStorage.getItem('curProj')||'null')}catch(e){}
 const pSetCur=m=>{curProj=m?{id:m.id,name:m.name}:null;try{localStorage.setItem('curProj',JSON.stringify(curProj))}catch(e){}};
-async function pList(){try{const ks=(await pKeys()).filter(k=>String(k).startsWith('m|'));const out=[];for(const k of ks){const m=await pGet(k);if(m)out.push({id:m.id,name:m.name,ty:m.ty,at:m.at,n:m.n})}return out.sort((a,b)=>b.at-a.at)}catch(e){return[]}}
+/* v632: 外部ストレージ(USB・SSD)の動画は、アプリ(箱ver8〜)がスマホにコピーして使う(=キャッシュ)。ここはその表示・片付け */
+const CA=()=>{const A=window.BakuApp;return A&&A.cacheInfo?A:null};
+const ckOf=st=>{const o=[],seen=new Set();for(const c of (st&&st.clips)||[]){const sz=+String(c.key).split('|')[1]||0,k=c.name+'|'+sz;if(!sz||seen.has(k))continue;seen.add(k);o.push({name:c.name,size:sz})}return o};
+const gbT=b=>(b>0?Math.max(0.1,Math.round(b/1e8)/10):0).toFixed(1)+'G';
+const caInfo=ck=>{const A=CA();if(!A||!ck||!ck.length)return ck?ck.map(()=>({c:0,x:0,b:0})):[];try{return JSON.parse(A.cacheInfo(JSON.stringify(ck)))}catch(e){return ck.map(()=>({c:0,x:0,b:0}))}};
+/* 作品ごと: c=コピーがある本数, x=外部の物でコピーが無い本数, b=スマホに保存している大きさ(コピー+作品に入れた音など) */
+async function pCache(L){let ks=[];try{ks=await pKeys()}catch(e){}const out=[];
+  for(const m of L){let b=0;for(const k of ks){if(!String(k).startsWith('b|'+m.id+'|'))continue;try{const r=await pGet(k);b+=(r&&r.blob&&r.blob.size)||(r&&r.size)||0}catch(e){}}
+    let c=0,x=0;caInfo(m.ck).forEach(q=>{if(q.c){c++;b+=q.b||0}if(q.x)x++});
+    out.push({c,x,b,t:x?(c?'キャッシュ一部':'キャッシュ無し'):(c?'キャッシュあり':'')})}return out}
+/* 起動して少し後: どの作品でも使っていないコピーを消す(カットで消した動画など)・30日以上触っていない作品のコピーを消すか聞く */
+window.cacheCare=async()=>{const A=CA();if(!A)return;const wt=()=>new Promise(r=>setTimeout(r,2000));
+  for(let i=0;i<90&&(!restored||pBusy||document.querySelector('.cdlg')||(window.isBusy&&isBusy()));i++)await wt();
+  if(!restored||document.querySelector('.cdlg'))return;
+  let ms=[],cur=[];
+  try{cur=ckOf({clips});const st=await idbGet('state','project');cur=cur.concat(ckOf(st));
+    for(const k of await pKeys()){if(!String(k).startsWith('m|'))continue;const m=await pGet(k);if(!m||!m.st)throw new Error('read');ms.push(m)}}catch(e){return}/* 読めない時は何も消さない */
+  const keyOf=q=>q.name+'|'+q.size;
+  try{A.cacheKeep(JSON.stringify(cur.concat(...ms.map(m=>ckOf(m.st)))))}catch(e){}
+  const now=Date.now(),D=864e5;let T={},N={};try{T=JSON.parse(localStorage.getItem('pjTouch')||'{}');N=JSON.parse(localStorage.getItem('cacheNo')||'{}')}catch(e){}
+  const ask=(msg,btns)=>new Promise(r=>{let v=0;cdlg(msg,btns.map(([t,f,cl])=>[t,()=>{v=f},cl]));const w=document.querySelector('.cdlg');const iv=setInterval(()=>{if(!w||!w.isConnected){clearInterval(iv);r(v)}},300)});
+  for(const m of ms.sort((a,b)=>(a.at||0)-(b.at||0))){
+    if(curProj&&curProj.id===m.id)continue;
+    const days=Math.floor((now-Math.max(m.at||0,T[m.id]||0))/D);if(days<30||(N[m.id]&&now-N[m.id]<30*D))continue;
+    const others=new Set(cur.concat(...ms.filter(o=>o!==m).map(o=>ckOf(o.st))).map(keyOf));
+    const ck=ckOf(m.st),inf=caInfo(ck),mine=ck.filter((q,i)=>inf[i]&&inf[i].c&&!others.has(keyOf(q)));if(!mine.length)continue;
+    while(document.querySelector('.cdlg'))await wt();
+    const ok=await ask('「'+m.name+'」プロジェクトは'+days+'日間変更されてません。\nキャッシュを削除しますか？\n(スマホの空きが'+gbT(mine.reduce((s,q)=>s+q.size,0))+'増えます。また使う時は外部ストレージから読み込めます)',[['はい',1,'warn'],['×',0]]);
+    if(ok){try{A.cacheDel(JSON.stringify(mine))}catch(e){}flashSel('「'+m.name+'」のキャッシュを削除しました')}
+    else{N[m.id]=now;try{localStorage.setItem('cacheNo',JSON.stringify(N))}catch(e){}}}};
+async function pList(){try{const ks=(await pKeys()).filter(k=>String(k).startsWith('m|'));const out=[];for(const k of ks){const m=await pGet(k);if(m)out.push({id:m.id,name:m.name,ty:m.ty,at:m.at,n:m.n,ck:ckOf(m.st)})}return out.sort((a,b)=>b.at-a.at)}catch(e){return[]}}
 async function pSave(name,id){
   id=id||('p'+Date.now().toString(36));const st=snapshot();try{await idbPut('state','project',st)}catch(e){}
   for(const k of (await pKeys()).filter(k=>String(k).startsWith('b|'+id+'|')))await pDel(k);
@@ -6079,7 +6115,10 @@ async function pMenu(){
   const del=m=>cdlg('「'+m.name+'」を削除しますか?\n(元に戻せません)',[['削除する',async()=>{for(const k of (await pKeys()).filter(k=>String(k).startsWith('b|'+m.id+'|')||k==='m|'+m.id))await pDel(k);if(curProj&&curProj.id===m.id)pSetCur(null);flashSel('削除しました');pPick()},'warn'],['いいえ',pPick]]);
   /* v334: 一覧。タップ=開く、長押し=削除するか聞く */
   async function pPick(){const L=await pList();if(!L.length){cdlg('保存した作品はありません',[['閉じる']]);return}
-    cdlg('開く作品を選んでください\n(長押しで削除)',L.map(m=>[m.name+'（'+fmtD(m.at)+'）',open(m)]).concat([['閉じる']]));
+    /* v632: 作品名の後ろに「キャッシュあり/無し/一部」とスマホに保存している大きさ。キャッシュが無い作品は外部ストレージから読み込むか聞く */
+    const K=await pCache(L);
+    const opn=(m,k)=>k&&k.x?()=>cdlg((k.c?'キャッシュが一部有りません。':'キャッシュが有りません。')+'外部ストレージから読み込みますか？\n(外部ストレージを挿してから「はい」を押してください。今の作業は、保存していなければ消えます)',[['はい',async()=>{pBusy=true;try{await pOpen(m)}catch(e){cdlg('開けませんでした: '+(e&&e.message||e),[['閉じる']])}finally{pBusy=2}},'primary'],['×']]):open(m);
+    cdlg('開く作品を選んでください\n(長押しで削除)',L.map((m,i)=>{const k=K[i]||{};return[m.name+'（'+fmtD(m.at)+'）'+(k.t?' '+k.t:'')+(k.b>0?' '+gbT(k.b):''),opn(m,k)]}).concat([['閉じる']]));
     const bs=[...document.querySelectorAll('.cdlg button')];
     L.forEach((m,i)=>{const b=bs[i];if(!b)return;let lp=null,fired=false;
       b.addEventListener('pointerdown',()=>{fired=false;clearTimeout(lp);lp=setTimeout(()=>{fired=true;try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}del(m)},600)});
@@ -6917,6 +6956,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
        B.appendChild(row(m.name,fm(n)+'・動画'+(m.n||0)+'本',['削除',()=>cdlg('「'+m.name+'」を削除しますか?\n(元に戻せません)',[['削除する',async()=>{for(const[q]of proj)if(String(q).startsWith(pre)||q===k)await pDel(q);if(curProj&&curProj.id===m.id)pSetCur(null);draw()},'warn'],['いいえ']])]))});
      B.appendChild(hd('その他'));
      B.appendChild(row('テンプレート',fm(tpls.reduce((s,[,v])=>s+sz(v),0))));
+     /* v632: 外部ストレージからスマホにコピーした動画(アプリ ver8〜) */try{const A=window.BakuApp;if(A&&A.cacheTotal)B.appendChild(row('外部ストレージのコピー',fm(+A.cacheTotal()||0)))}catch(e){}
      B.appendChild(row('字幕・ナレーション・SE',fm(asr.reduce((s,[,v])=>s+sz(v),0))));
      const nt=document.createElement('small');nt.className='hx-help';nt.style.color='var(--muted)';nt.textContent='ここで消しても、スマホに入っている元の動画は消えません。保存した作品には動画のコピーが入っているので、作品を消すと容量が空きます。';B.appendChild(nt)}
    sc.querySelector('#stoX').onclick=()=>{sc.hidden=true;sc.style.display='none'};
@@ -6932,7 +6972,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
 }
 
 renderSegs();
-restore().finally(()=>{restored=true;setTimeout(()=>window.wfPrefetch&&wfPrefetch(),3000);window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}else autoType();syncTypeRow()});
+restore().finally(()=>{restored=true;setTimeout(()=>window.cacheCare&&cacheCare(),5000);setTimeout(()=>window.wfPrefetch&&wfPrefetch(),3000);window.fineReset&&fineReset();if(tpl){cornerInit();renderSegs()}else autoType();syncTypeRow()});
 })();
 </script>
 
