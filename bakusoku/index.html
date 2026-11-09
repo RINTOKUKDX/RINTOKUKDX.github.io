@@ -465,7 +465,7 @@ body.cnTint:has(#s2:not([hidden])){--bg:color-mix(in srgb,var(--cx) 11%,var(--bg
 #cctl button:disabled{opacity:.35}
 #cFine{min-height:44px;font-size:15px}
 #cFine[aria-pressed=true]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
-#cwf{touch-action:pan-y}
+#cwf{touch-action:none}/* v678: 上下になぞる=音量 */
 /* v460: 波形の下の残す範囲タイムライン(#cmt)は出さない(シークバーはそのまま) */#cmt{display:none!important}
 /* v457: 今の動画の残す範囲だけをつなげたタイムライン(見た目だけ) */#cmt{display:block;width:100%;height:46px;background:var(--bg);border-top:1px solid var(--line)}
 #s1 .stage{position:relative;touch-action:none}/* v655: 1本指ドラッグで位置を動かす(ページは動かさない) */
@@ -1869,7 +1869,7 @@ function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector(
 /* v472: 波形の操作は3つから1つ選ぶ。del=削除(赤いかたまりをタップで消す) / rng=範囲を削除(タップ=黄色い印、長押し→左右で消す。最初) / fix=修正(消した所を表示して、長押し→左右で戻す) */
 window.cwMode='rng';window.rngMode=false;
 function setCwMode(m){cwMode=m;rngMode=m==='del';[['rngDel','del'],['rngCut','rng'],['fixB','fix'],['kfB','kf']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(m===k)));
-  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'キーフレーム(準備中)':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
+  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'波形を上下になぞると、再生ヘッドの所に音量の◇を置きます（◇タップ=移動・長押し=削除）':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
 window.setCwMode=setCwMode;
 $('rngDel').onclick=()=>setCwMode('del');$('rngCut').onclick=()=>setCwMode('rng');$('fixB').onclick=()=>setCwMode('fix');$('kfB').onclick=()=>setCwMode('kf');
 $('auto').onclick=e=>{auto=!auto;e.currentTarget.setAttribute('aria-pressed',auto);
@@ -2690,7 +2690,9 @@ const segA=s=>(s&&s.fx&&s.fx.a)||{},segV=s=>(s&&s.fx&&s.fx.v)||null;
 /* 動画ブロック = 同じ動画が続く所(タイムラインで1つに見えている所) */
 function visBlk(i){const c=segs[i]&&segs[i].clip;let a=i,b=i;if(!c)return[i,i];while(a>0&&segs[a-1].clip===c&&!segs[a].sp)a--;while(b<segs.length-1&&segs[b+1].clip===c&&!segs[b+1].sp)b++;return[a,b]}
 /* 動画の音の倍率(音量・ミュート・ノーマライズ・ブロックの頭と終わりのフェード) */
-function audG(i,t){const s=segs[i];if(!s||!s.clip)return 1;const u=segA(s);if(u.m)return 0;let g=(u.vol==null?tltV():u.vol)*audNm(u);
+/* v678: 音量のキーフレーム。fx.a.vk=[[元動画の秒,音量],...]。間は直線でつなぐ。前後は端の値 */
+function vkAt(vk,t){if(!vk||!vk.length)return null;if(t<=vk[0][0])return vk[0][1];for(let i=1;i<vk.length;i++){const[a,x]=vk[i-1],[b,y]=vk[i];if(t<=b)return b>a?x+(y-x)*(t-a)/(b-a):y}return vk[vk.length-1][1]}
+function audG(i,t){const s=segs[i];if(!s||!s.clip)return 1;const u=segA(s);if(u.m)return 0;let g=(u.vk&&u.vk.length?vkAt(u.vk,t):u.vol==null?tltV():u.vol)*audNm(u);
   const[a,b]=visBlk(i),fi=segA(segs[a]).fi||0,fo=segA(segs[b]).fo||0;
   /* v670: 次とクロスディゾルブする所は前の音を下げる */{const N=segs[b+1],xd=N&&N.clip&&segF(N).xd;if(xd){const e2=cumAt(b)+segD(segs[b]),x2=cumAt(i)+(t-s.start)/spdOf(s);if(e2-x2<xd)g*=1-fcv(segF(N).xdc)(Math.max(0,Math.min(1,1-(e2-x2)/xd)))}}
   if(!fi&&!fo)return g;
@@ -5955,8 +5957,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v679';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v680';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v680','音量の横棒とキーフレーム(◇)。波形を上下になぞると音量、◇オンで再生ヘッドの所に◇'],['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -7211,7 +7213,7 @@ function subEnter(v,p){
       x.save();x.beginPath();x.rect(X0+1,4,Math.max(2,X1-X0-2),H-8);x.clip();x.fillStyle='rgba(128,128,128,.25)';x.fillRect(X0,0,X1-X0,H);x.strokeStyle='rgba(160,160,160,.75)';x.lineWidth=1.5;x.beginPath();for(let y=-12;y<H+12;y+=6){x.moveTo(X0-2,y+6);x.lineTo(X1+2,y-6)}x.stroke();x.restore()});
     for(let px=0;px<W;px+=3){const u0=A+(B-A)*px/W,u1=A+(B-A)*(px+3)/W,t0=cmap.u2t(u0),t1=cmap.u2t(u1);if(u0>cmap.U)break;if(u1<0)continue;let m=0;if(cmap.hide&&!kept((t0+t1)/2))continue;
       if(pk){for(let i=Math.max(0,Math.floor(t0*50));i<=Math.ceil(t1*50)&&i<pk.length;i++)if(pk[i]>m)m=pk[i];m/=255}else m=.04;
-      const h=Math.max(1,m*(H-8)),tm=(t0+t1)/2,r=kept(tm);
+      const tm=(t0+t1)/2,h=Math.max(1,Math.min(H-8,m*(H-8)*volAt(tm))),r=kept(tm);
       /* v451: 無音削除で切る所は薄く(元の波形は見える) */const sl=r&&sm&&sm.some(([a,b])=>tm>=a&&tm<=b);if(sl)/* v464: 切った後(残す範囲の外)は薄くしない */x.globalAlpha=.22;
       const hi=window.cwHi&&cwHi.c===cur&&cwHi.r.some(([a,b])=>tm>=a&&tm<=b);
       x.fillStyle=hi?'#f5c400':r?(s?(r===s?acc:ok):acc):mut;x.fillRect(px,(H-h)/2,2,h);if(sl)x.globalAlpha=1}
@@ -7219,6 +7221,12 @@ function subEnter(v,p){
     if(s){x.fillStyle=acc;x.fillRect(sx(s.start)-1,0,2,H);x.fillRect(sx(s.end)-1,0,2,H)}
     if(!fine)mk().forEach(t=>{if(t2u(t)<A||t2u(t)>B)return;x.fillStyle='#f5c400';x.fillRect(sx(t)-1.5,0,3,H);x.beginPath();x.moveTo(sx(t)-6,0);x.lineTo(sx(t)+6,0);x.lineTo(sx(t),8);x.fill()});
     if(delR){x.globalAlpha=.45;x.fillStyle=delR.fix?'#2fbf6b':'#d33';x.fillRect(sx(delR.a),0,sx(delR.b)-sx(delR.a),H);x.globalAlpha=1;x.fillStyle='#fff';x.font='700 12px sans-serif';x.fillText((delR.fix?'戻す ':'削除 ')+(delR.b-delR.a).toFixed(1)+'秒',Math.max(4,Math.min(W-80,sx(delR.a)+4)),16)}
+    /* v678: 音量の横棒(真ん中=100%、上=200%、下=0%)。100%以外は色が変わる。◇=音量のキーフレーム(波形の下) */
+    {const vk=vkOf(),ch=vk.length||mine().some(q=>segA(q).vol!=null&&segA(q).vol!==1),Y=v=>H/2-(v-1)*(H/2-4);
+      x.strokeStyle=ch?'#ff9f1a':'rgba(255,255,255,.8)';x.lineWidth=ch?2:1.2;x.beginPath();let st=false;
+      for(let px=0;px<=W;px+=3){const u=A+(B-A)*px/W;if(u<0||u>cmap.U){st=false;continue}const t=cmap.u2t(u);if(cmap.hide&&!kept(t)){st=false;continue}const y=Y(volAt(t));if(st)x.lineTo(px,y);else{x.moveTo(px,y);st=true}}
+      x.stroke();
+      const kf=cwMode==='kf';vk.forEach(([t])=>{if(t2u(t)<A||t2u(t)>B)return;const X=sx(t),y=H-8;x.beginPath();x.moveTo(X,y-6);x.lineTo(X+6,y);x.lineTo(X,y+6);x.lineTo(X-6,y);x.closePath();x.fillStyle=kf?'#ff9f1a':'rgba(255,159,26,.55)';x.fill();x.strokeStyle='#fff';x.lineWidth=1;x.stroke()})}
     x.fillStyle=warn;x.fillRect(sx(lpT!=null?lpT:phT!=null?phT:pv.currentTime)-1,0,2.5,H)
     if(!fine&&B-A<cmap.U+2*edgePad()-0.01){x.fillStyle=g('--muted');const U=Math.max(0.1,cmap.U),bw=Math.max(16,W*(B-A)/U);x.globalAlpha=.6;x.fillRect(Math.max(0,Math.min(W-bw,W*A/U)),H-3,bw,3);x.globalAlpha=1}
     ['caR','caL','czR','czL'].forEach(id=>$(id).disabled=!s);['cbP','cbA'].forEach(id=>$(id).disabled=false);
@@ -7322,7 +7330,7 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
   /* v156: スマホは止めるのが少し遅れて範囲外の声が入るので、約0.06秒手前で音を消して止める(v157: まだ入ったので0.12秒に) */
   pv.addEventListener('play',()=>{try{pv.volume=1}catch(_){}});
   const chkEnd=()=>{if(pEnd!=null&&pv.currentTime>=pEnd-0.12){try{pv.volume=0}catch(_){}pv.pause();pEnd=null;if(pRet!=null){try{pv.currentTime=pRet}catch(_){}}pRet=null}};
-  const loop=()=>{chkEnd();draw();if(!pv.paused)raf=requestAnimationFrame(loop);else raf=0};
+  const loop=()=>{chkEnd();/* v678: カット画面の再生にも音量(100%まで)を反映 */if(cur&&!pv.paused&&pEnd==null){try{pv.volume=Math.max(0,Math.min(1,volAt(pv.currentTime)))}catch(_){}}draw();if(!pv.paused)raf=requestAnimationFrame(loop);else raf=0};
   pv.addEventListener('play',()=>{if(!raf)raf=requestAnimationFrame(loop)});
   ['pause','seeked','loadedmetadata','timeupdate'].forEach(ev=>pv.addEventListener(ev,()=>{if(!raf)draw()}));
   pv.addEventListener('timeupdate',chkEnd);
@@ -7349,6 +7357,13 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
     segs=out.filter(q=>!q.clip||q.end-q.start>=1/FPS);sortSegs();resetOut();renderSegs();renderTL()}
   /* 微調整用(今は前の操作) */
   function snap(t){return Math.round(t*FPS)/FPS}
+  /* v678: 音量の横棒とキーフレーム(◇)。この動画の全部の範囲に同じ設定を入れる */
+  function volAt(t){const L=mine();const q=L.find(o=>t>=o.start-1e-3&&t<=o.end+1e-3)||L[0];if(!q)return 1;const u=segA(q);return u.vk&&u.vk.length?vkAt(u.vk,t):u.vol==null?1:u.vol}
+  window.cutVolAt=volAt;
+  function vkOf(){const q=mine().find(o=>segA(o).vk&&segA(o).vk.length);return q?segA(q).vk.map(x=>x.slice()):[]}
+  window.cutVk=vkOf;
+  function volSet(fn){mine().forEach(q=>{q.fx=fxC(q.fx)||{};const a=q.fx.a=q.fx.a||{};fn(a,q);if(a.vol!=null&&Math.abs(a.vol-1)<0.005)delete a.vol;if(a.vk&&!a.vk.length)delete a.vk;if(!Object.keys(a).length)delete q.fx.a;if(!Object.keys(q.fx).length)delete q.fx})}
+  const vClamp=v=>{v=Math.max(0,Math.min(2,v));if(Math.abs(v-1)<0.03)v=1;return Math.round(v*100)/100};
   function edge(s,side,v){const o=mine().filter(q=>q!==s),D=cur.d,MIN=3/FPS;
     if(side<0){v=Math.max(0,Math.min(v,s.end-MIN));o.forEach(q=>{if(q.end<=s.start+0.001)v=Math.max(v,q.end)});s.start=v}
     else{v=Math.min(D,Math.max(v,s.start+MIN));o.forEach(q=>{if(q.start>=s.end-0.001)v=Math.min(v,q.start)});s.end=v}}
@@ -7369,7 +7384,7 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
     const r=wf.getBoundingClientRect();e.textContent=t;e.style.left=(r.left+r.width/2)+'px';e.style.top=(r.top+r.height/2)+'px';e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>{e.hidden=true},2000)}
   const tAt=(map,cx,r)=>{const u=map.A+(map.B-map.A)*(cx-r.left)/r.width;return Math.max(0,Math.min(cur.d,map.u2t?map.u2t(u):u))};
   wf.addEventListener('contextmenu',e=>e.preventDefault());
-  wf.addEventListener('touchmove',e=>{if(pinch||(wdrag&&wdrag.moved))e.preventDefault()},{passive:false});
+  wf.addEventListener('touchmove',e=>{if(pinch||(wdrag&&(wdrag.moved||wdrag.vol)))e.preventDefault()},{passive:false});
   wf.addEventListener('pointerdown',e=>{if(!cur||!wmap)return;try{wf.setPointerCapture(e.pointerId)}catch(_){}
     ptrs.set(e.pointerId,e.clientX);const r=wf.getBoundingClientRect();
     if(ptrs.size===2){const [x1,x2]=[...ptrs.values()];const z=zoom();
@@ -7378,11 +7393,23 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
     if(ptrs.size>2)return;
     wdrag={x0:e.clientX,y0:e.clientY,side:(e.clientX-r.left)<r.width/2?-1:1,map:{...wmap},moved:false,r,s:fine?okSel():null};
     if(wdrag.s){wdrag.a=wdrag.s.start;wdrag.b=wdrag.s.end}
+    /* v678: ◇(波形の下)をタップ=そこへ移動、長押し=削除 */{const Y=e.clientY-r.top,X=e.clientX-r.left,W=r.width,H=r.height;if(Y>H-22){const m=wmap,sx=t=>(m.t2u(t)-m.A)/(m.B-m.A)*W;let best=null,bd=14;vkOf().forEach(([t])=>{const dd=Math.abs(sx(t)-X);if(dd<bd){bd=dd;best=t}});
+      if(best!=null){const d=wdrag;d.kd=best;d.lt=setTimeout(()=>{if(wdrag!==d||d.moved)return;d.kdDel=true;buzz();pushH();volSet(a=>{if(a.vk)a.vk=a.vk.filter(([t])=>Math.abs(t-best)>1e-4)});resetOut();renderSegs();draw();wfToast('◇を削除しました')},450);return}}}
     if(!fine){const d=wdrag;d.lt=setTimeout(()=>{if(wdrag!==d||d.moved)return;d.long=true;buzz();pv.pause();pEnd=null;frz={...zoom()};lpT=phT!=null?phT:pv.currentTime;d.lp0=lpT;d.lx0=d.lx!=null?d.lx:d.x0;delR=null;cutMsg(cwMode==='fix'?'右へ動かす=左を戻す / 左へ=右を戻す':'右へ動かす=左を削除 / 左へ=右を削除');draw()},450)}});
   wf.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,e.clientX);
     if(pinch){if(ptrs.size<2)return;const [x1,x2]=[...ptrs.values()],d=Math.max(20,Math.abs(x2-x1));setW(pinch.w0*pinch.d0/d);draw();return}
     const d=wdrag;if(!d)return;const dx=e.clientX-d.x0;
     d.lx=e.clientX;
+    if(d.kd!=null)return;
+    if(d.vol){e.preventDefault();const o=d.vol,dv=-(e.clientY-o.y0)/o.sc;
+      if(o.k!=null){const v=vClamp(o.v0+dv),vk=o.vk.map(q=>q.slice());vk[o.k][1]=v;volSet(a=>{a.vk=vk.map(q=>q.slice())});cutMsg('◇ 音量 '+Math.round(v*100)+'%')}
+      else{const bs=o.bs;volSet((a,q)=>{const b=bs.get(q);if(!b)return;if(b.vk)a.vk=b.vk.map(([t,v])=>[t,vClamp(v+dv)]);else a.vol=vClamp(b.vol+dv)});cutMsg('音量 '+Math.round(volAt(headT())*100)+'%')}
+      draw();return}
+    if(!d.long&&!d.moved&&Math.abs(e.clientY-d.y0)>=8&&Math.abs(e.clientY-d.y0)>Math.abs(dx)){/* v678: 上下になぞる=音量。◇がオンなら再生ヘッドの所にキーフレーム */
+      clearTimeout(d.lt);pushH();pv.pause();pEnd=null;dragBusy=true;const sc=Math.max(10,d.r.height/2-4),o=d.vol={y0:e.clientY,sc};
+      if(cwMode==='kf'){const h=snap(headT()),vk=vkOf(),m=d.map,px=(m.B-m.A)*6/d.r.width;let k=vk.findIndex(([t])=>Math.abs(m.t2u(t)-m.t2u(h))<px*1);if(k<0){vk.push([h,volAt(h)]);vk.sort((a,b)=>a[0]-b[0]);k=vk.findIndex(([t])=>t===h)}o.vk=vk;o.k=k;o.v0=vk[k][1]}
+      else{o.bs=new Map(mine().map(q=>{const a=segA(q);return[q,a.vk&&a.vk.length?{vk:a.vk.map(z=>z.slice())}:{vol:a.vol==null?1:a.vol}]}))}
+      draw();return}
     if(d.long){/* v340: 長押し→左右: 再生ヘッドからその向きの中間点(無ければ端)までを削除する予定(赤) */
       const dx2=e.clientX-d.lx0,h=d.lp0,ms=mk();
       if(Math.abs(dx2)<12)delR=null;
@@ -7402,6 +7429,8 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
   const up=e=>{ptrs.delete(e.pointerId);
     if(pinch){if(ptrs.size===0){pinch=null;dragBusy=false}return}
     const d=wdrag;if(!d)return;wdrag=null;dragBusy=false;clearTimeout(d.lt);
+    if(d.vol){cutMsg('');resetOut();renderSegs();renderTL();draw();return}
+    if(d.kd!=null){if(!d.kdDel){pv.pause();phT=null;try{pv.currentTime=d.kd}catch(_){}draw()}return}
     if(d.long){lpT=null;frz=null;const r=delR;delR=null;cutMsg('');
       if(r&&r.fix){const a=snap(r.a),b=snap(r.b);include(a,b);try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}cutMsg('戻しました（端からスワイプで取り消せます）')}
       else if(r){const a=snap(r.a),b=snap(r.b),ms=mk();exclude(a,b);for(let i=ms.length-1;i>=0;i--)if(ms[i]>a+0.01&&ms[i]<b-0.01)ms.splice(i,1);
