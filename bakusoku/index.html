@@ -2559,11 +2559,14 @@ function focusDim(){const ln=document.querySelector('#cv .lane.vlane');if(!ln)re
   let L=locate(gt);const k=L?L.i:segs.length-1,R=segRun(segs[k]),a=segAt(segs[R[0]]);let D=0;for(let j=R[0];j<=R[1];j++)D+=segD(segs[j]);
   const key=a.toFixed(3)+'|'+D.toFixed(3)+'|'+pps+'|'+segs.length;if(ln._fk===key&&o[0].style.display==='block')return;ln._fk=key;
   const W=total()*pps+60;o[0].style.cssText='display:block;left:0;width:'+Math.max(0,a*pps)+'px';o[1].style.cssText='display:block;left:'+((a+D)*pps)+'px;width:'+Math.max(0,W-(a+D)*pps)+'px'}
-function updatePlayhead(){try{focusDim()}catch(e){}try{drawTW()}catch(e){}try{segInsFollow()}catch(e){}if(cornerFollow())return;if(ph)ph.style.left=(gt*pps)+'px'}
+function updatePlayhead(){try{focusDim()}catch(e){}try{drawTW()}catch(e){}try{segInsFollow()}catch(e){}if(cornerFollow())return;if(ph)ph.style.left=(gt*pps)+'px';phCenter()}
+/* v661: タイムラインの再生ヘッドはいつも真ん中(再生画面下の波形と同じ)。左右に画面半分の余白を付けて、再生位置に合わせて横に送る */
+function phPad(){const sc=$('scr');if(!sc)return 0;const h=Math.round((sc.clientWidth||0)/2);if(sc._pad!==h){sc._pad=h;sc.style.paddingLeft=h+'px';sc.style.paddingRight=h+'px'}return h}
+function phCenter(){const sc=$('scr');if(!sc)return;phPad();const x=Math.round((gt-vA())*pps);if(Math.abs(sc.scrollLeft-x)>0.5)sc.scrollLeft=x}
 /* v400: 再生中に毎コマ幅や色を読み直すと重い(画面の作り直しが起きる)ので、大きさは ResizeObserver、色は2秒ごとに覚えておく */
 const szC=new WeakMap();function szOf(el){let v=szC.get(el);if(!v){v={w:el.clientWidth,h:el.clientHeight};szC.set(el,v);try{if(!el._ro){el._ro=new ResizeObserver(()=>szC.delete(el));el._ro.observe(el)}}catch(e){}}return v}
 let cssC=null,cssT=0;function cssV(){const n=performance.now();if(!cssC||n-cssT>2000){cssC=getComputedStyle(document.documentElement);cssT=n;cssC={line:cssC.getPropertyValue('--line').trim(),muted:cssC.getPropertyValue('--muted').trim(),warn:cssC.getPropertyValue('--warn').trim()}}return cssC}
-function followPlayhead(){const sc=$('scr'),x=(gt-vA())*pps;if(x<sc.scrollLeft||x>sc.scrollLeft+szOf(sc).w-30)sc.scrollLeft=Math.max(0,x-40)}
+function followPlayhead(){phCenter()}
 async function seekGlobal(t){
   if(!segs.length)return;
   const my=++seekTok;t=Math.max(0,Math.min(t,Math.max(0,total()-0.001)));
@@ -2693,7 +2696,7 @@ function segIns(i,kind,SEL,keep){
         /* v588: ビデオのタブでは速度も1倍に */if(!ti&&L.some(q=>spdOf(q)!==1))setSpd(L,1);renderPreview();const k=segs.indexOf(s0);if(k>=0)segIns(k,ti?'a':'v',SEL,{tab:ti,open:M.open()});flashSel('このクリップを元に戻しました')}],
       /* v588: 全部の動画→同じコーナーの中だけ */['コーナー全体に適用',ti=>cdlg('今の'+(ti?'音':'見た目')+'の設定を、このコーナーの全部のクリップに同じように入れますか?\n(同じコーナーの他のクリップの'+(ti?'音':'見た目')+'の設定は上書きされます)',[['入れる',()=>{const p=part(ti);segHist();const src=s0.fx&&s0.fx[p];
         segs.forEach(o=>{if(!o.clip||o===s0||o.cn!==s0.cn)return;if(src){o.fx=fxC(o.fx)||{};o.fx[p]=fxC(src)}else if(o.fx){delete o.fx[p];if(!Object.keys(o.fx).length)delete o.fx}});renderPreview();flashSel((ti?'音':'見た目')+'をコーナー全体に適用しました')}],['やめる']])]]}},keep);
-  segInsF={s0,SEL,M:MM,w:$('insP')};insMark()
+  segInsF={s0,SEL,M:MM,w:$('insP'),g:gt};insMark()
 }
 /* v598: レーン左の「動画」「動画音声」「BGM」をダブルタップ=同じインスペクタ。中の数値は今のコーナー全体に入る */
 function lblIns(i){
@@ -2709,7 +2712,7 @@ let segInsF=null;
 /* v589: インスペクタの範囲(tg と同じ)の波形の箱に insOn を付ける */
 function insMark(){const F=segInsF,on=F&&F.w&&F.w.isConnected;let R=null;if(on){if(F.SEL){const l=F.SEL.filter(q=>segs.includes(q));if(l.length)R=new Set(l)}if(!R){const k=segs.indexOf(F.s0);R=new Set(k<0?[F.s0]:segs.slice(...(a=>[a[0],a[1]+1])(visBlk(k))))}}
   document.querySelectorAll('.blk.wvb').forEach(b=>b.classList.toggle('insOn',!!(R&&b._ss&&b._ss.some(q=>R.has(q)))))}
-function segInsFollow(){const F=segInsF;if(!F||F.SEL||!F.M||!F.w||!F.w.isConnected)return;const L=locate(gt);const q=L&&segs[L.i];if(!q||!q.clip)return;
+function segInsFollow(){const F=segInsF;if(!F||F.SEL||!F.M||!F.w||!F.w.isConnected)return;/* v661: タップでは再生位置が動かないので、開いた後に再生位置が動いた時だけ付いていく */if(F.g!=null&&Math.abs(gt-F.g)<1e-6)return;F.g=gt;const L=locate(gt);const q=L&&segs[L.i];if(!q||!q.clip)return;
   const k=segs.indexOf(F.s0);if(k>=0){const[a,b]=visBlk(k);if(L.i>=a&&L.i<=b)return}const ti=F.M.tab();segIns(L.i,ti?'a':'v',null,{tab:ti,open:F.M.open?F.M.open():-1})}
 /* ナレーション・BGM のインスペクタ(設定は項目 it に直接: vol fi fo m nm nmG vo nz cut) */
 function itemIns(it,ALL){
@@ -3135,15 +3138,15 @@ function lblAdj(e,i){
   /* v425: ピンチ中は毎コマ作り直さず、前に作った絵を横に伸び縮みさせる(0.25秒ごとと指を離した時だけ作り直す) */
   let rP=0,rT=0,lastW=null;const cvEl=$('cv');
   const apply=()=>{raf=0;if(!want)return;const w=want;want=null;lastW=w;
-    if(pinching&&rP&&performance.now()-rT<250){const k=w.pps/rP;cvEl.style.transformOrigin=(vA()*rP)+'px 0';cvEl.style.transform='scaleX('+k+')';scr.scrollLeft=(w.t-vA())*w.pps-w.fx;return}
-    lastW=null;pps=w.pps;renderLanes();rP=pps;rT=performance.now();scr.scrollLeft=(w.t-vA())*pps-w.fx};
+    if(pinching&&rP&&performance.now()-rT<250){const k=w.pps/rP;cvEl.style.transformOrigin=(vA()*rP)+'px 0';cvEl.style.transform='scaleX('+k+')';scr.scrollLeft=(gt-vA())*w.pps;return}
+    lastW=null;pps=w.pps;renderLanes();rP=pps;rT=performance.now();scr.scrollLeft=(gt-vA())*pps};
   scr.style.touchAction='pan-y';
   scr.addEventListener('pointerdown',e=>{
     const r=scr.getBoundingClientRect();
     ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});
     if(ptr.size===2){pinching=true;pinchUsed=true;const [a,b]=[...ptr.values()];
       const fx=(a.x+b.x)/2-r.left;p0={d:Math.hypot(a.x-b.x,a.y-b.y)||1,pps:pps,t:(scr.scrollLeft+fx)/pps+vA()};panX=null}
-    else if(!multiMode&&ptr.size===1&&!e.target.closest('.blk.sel,.blk.edit,.gbar,.ruler,.hd')){panX=e.clientX;panMoved=0}
+    else if(!multiMode&&ptr.size===1&&!e.target.closest('.blk.sel,.blk.edit,.gbar,.hd')){panX=e.clientX;panMoved=0}
   },true);
   scr.addEventListener('pointermove',e=>{
     const o=ptr.get(e.pointerId);if(!o)return;
@@ -3152,7 +3155,7 @@ function lblAdj(e,i){
       const d=Math.hypot(a.x-b.x,a.y-b.y),fx=(a.x+b.x)/2-r.left;
       /* v431: 一番小さくすると全体(コーナー表示ならそのコーナー全体)が1画面に入るまで */const V0=viewR(),fit=(szOf(scr).w-30)/Math.max(0.5,V0.b-V0.a);want={pps:Math.max(Math.min(6,fit),Math.min(240,p0.pps*d/p0.d)),t:p0.t,fx};if(!raf)raf=requestAnimationFrame(apply)}
     else if(dragBusy){panX=null}
-    else if(panX!=null&&ptr.size===1){panMoved+=Math.abs(e.clientX-px);if(panMoved>6){panGuard=true;scr.scrollLeft-=e.clientX-px}}
+    else if(panX!=null&&ptr.size===1){panMoved+=Math.abs(e.clientX-px);if(panMoved>6){panGuard=true;scr.scrollLeft-=e.clientX-px;/* v661: 横に送った位置へ動画の再生位置を動かす */if(playing)pausePreview();const V=viewR(),a=cview?V.a:0,b=cview?V.b:total();twSeek(Math.max(a,Math.min(b,scr.scrollLeft/pps+vA())))}}
   },true);
   const up=e=>{ptr.delete(e.pointerId);if(ptr.size<2){p0=null;rP=0;if(lastW){want=lastW;if(!raf)raf=requestAnimationFrame(apply)}}if(!ptr.size){pinching=false;panX=null;dragBusy=false;setTimeout(()=>{pinchUsed=false;panGuard=false},300)}};
   addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);
@@ -3444,9 +3447,7 @@ function renderLanes0(){try{sbMigrate()}catch(e){}
   else for(let s=0;s<=all;s+=tick){const sp=document.createElement('span');sp.style.left=(s*pps)+'px';sp.textContent=fmtS(s);ru.appendChild(sp)}
   ru.style.touchAction='none';
   {/* v425: 目盛りのドラッグも波形と同じく、頭出しは前のが終わってから最新の位置だけ */const sx=e=>twSeek(Math.max(0,Math.min(total(),(e.clientX-cv.getBoundingClientRect().left)/pps))),fin=()=>{ru._d=0};
-   ru.addEventListener('pointerdown',e=>{if(pinching)return;pausePreview();ru._d=1;try{ru.setPointerCapture(e.pointerId)}catch(x){}sx(e)});
-   ru.addEventListener('pointermove',e=>{if(ru._d&&!pinching)sx(e)});
-   ru.addEventListener('pointerup',fin);ru.addEventListener('pointercancel',fin)}
+   /* v661: 目盛りも横に送るだけ(再生ヘッドは真ん中に固定) */void sx;void fin}
   cv.appendChild(ru);
   for(const i of ordNow()){
     const ln=document.createElement('div');ln.className='lane'+(i===3?' g3':i===4?' g4':'')+(i?' empty':'')+(i===0?' vlane':'')+(actLane===i?' act':'');
@@ -3681,12 +3682,13 @@ function laneTap(i,e){
   /* v360: 動画・動画音声レーンのダブルタップ=動画のインスペクタ */if((i===0||i===7)&&dbl('lane07',e.clientX)){const L=locate(t),q=L&&segs[L.i];if(q&&q.clip){segIns(L.i,i===0?'v':'a');return}}
   if(roAll()){const k=cAt(t);if(k>=0){cornerPick(corners[k].id);return}}
   pausePreview();
-  if(i===10){seekGlobal(t);return}
-  /* v637: FX ダブルタップ=FXを入れる */if(i===11){seekGlobal(t);if(dbl('lane11',e.clientX))fxAddMenu(t);return}
-  if(i===0||i===7||i===9){seekGlobal(t);return}
-  /* v412: 上の動画 ダブルタップ=動画を重ねる */if(i===8){seekGlobal(t);if(dbl('lane8',e.clientX))ovPick(t,null);return}
-  if(i===6){seekGlobal(t);if(dbl('lane6',e.clientX))bgmAddDlg(t);return}
-  if(i<2||i===5||i===7){seekGlobal(t);return}
+  /* v661: タップでは再生位置を動かさない(横に送った時だけ動く) */
+  if(i===10)return;
+  /* v637: FX ダブルタップ=FXを入れる */if(i===11){if(dbl('lane11',e.clientX))fxAddMenu(t);return}
+  if(i===0||i===7||i===9)return;
+  /* v412: 上の動画 ダブルタップ=動画を重ねる */if(i===8){if(dbl('lane8',e.clientX))ovPick(t,null);return}
+  if(i===6){if(dbl('lane6',e.clientX))bgmAddDlg(t);return}
+  if(i<2||i===5||i===7)return;
   if(i>=2&&i<=4)return;
   const it=addItem(i,t);if(it){selItem=it;actLane=it.lane}
   renderLanes();
@@ -5823,8 +5825,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v660';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v661';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
