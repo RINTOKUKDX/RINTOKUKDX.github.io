@@ -517,7 +517,17 @@ body.editing .pgnav{display:none!important}
 /* v652: 爆速カットは 軽量化バー・シークバー・無音削除 だけ隠す */#s1 section.b.fast #prW,#s1 section.b.fast .tl,#s1 section.b.fast #silB{display:none!important}#cutTitle{display:none}
 #cutDeleteRow button{width:100%}
 /* v531: 爆速・詳細とも ▶‖ ▶▶ ⟳ ↺ の同じ並び。1フレーム移動(＜＞・◁▷)は廃止して隠す */
-#s1 #cctl{grid-template-columns:1.3fr 1.3fr 1fr 1fr}
+#s1 #cctl{grid-template-columns:4.4fr 1fr 1fr}
+/* v670: ▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を破線の枠で囲んで並べる */
+#s1 #cctl #cbP,#s1 #cctl #cbA{display:none!important}
+#s1 #cctl #cfGrp{grid-template-rows:auto!important;align-self:start;grid-column:1!important;grid-row:1!important;margin:0!important;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:3px;border:1px dashed #9a9a9a;border-radius:10px}
+#s1 #cctl #cfGrp button{writing-mode:horizontal-tb!important;grid-row:auto!important;grid-column:auto!important;min-height:46px!important;height:auto!important;padding:0!important;font-size:20px!important;letter-spacing:0!important;border:none!important;display:flex!important}
+#s1 #cctl #cfGrp button[aria-pressed=true]{background:var(--accent);color:var(--accent-fg)}
+#s1 #cRow1{grid-template-columns:1fr 1fr 1fr!important}
+#s1 #cRow1 #delGrp{grid-column:1!important;grid-row:1/3!important;display:block!important}
+#s1 #cRow1 #cfFrame{display:none!important}
+#s1 #cRow1 #delCur{width:100%;height:100%!important;min-height:96px!important;writing-mode:vertical-rl;letter-spacing:.1em;border:1px solid var(--btnl)!important}
+#s1 #cRow1 #nxt{grid-column:2!important}#s1 #cRow1 #skipClip{grid-column:3!important}
 #s1 #cctl #caL,#s1 #cctl #caR,#s1 #cctl #czL,#s1 #cctl #czR,#s1 #b1f,#s1 #f1f{display:none!important}
 /* v498: サムネ・動画番号・挿入先・削除を横1列へ */
 #segs .sourceSeg{grid-template-columns:56px minmax(44px,1fr) minmax(60px,1.5fr) auto;gap:6px}
@@ -577,12 +587,12 @@ body.editing .pgnav{display:none!important}
     <div class="stage"><video id="pv" playsinline preload="metadata"></video></div>
     <canvas id="cwf" aria-label="音声波形"></canvas>
     <canvas id="cmt" aria-label="残す範囲だけのタイムライン"></canvas>
-    <div id="cctl"><button id="caL" aria-label="イン 1フレーム前へ">＜</button><button id="caR" aria-label="イン 1フレーム後ろへ">＞</button><button id="cbP" aria-label="選んだ範囲を再生・停止">▶‖</button><button id="cbA" aria-label="続けて再生">▶▶</button><button id="cRedo" disabled aria-label="やり直し">⟳</button><button id="cUndo" disabled aria-label="ひとつ戻る">↺</button><button id="czL" aria-label="アウト 1フレーム前へ">＜</button><button id="czR" aria-label="アウト 1フレーム後ろへ">＞</button></div>
+    <div id="cctl"><button id="caL" aria-label="イン 1フレーム前へ">＜</button><button id="caR" aria-label="イン 1フレーム後ろへ">＞</button><button id="cbP" aria-label="選んだ範囲を再生・停止">▶‖</button><button id="cbA" aria-label="続けて再生">▶▶</button><div id="cfGrp" role="group" aria-label="操作の選択"><button id="rngDel" class="sm cmode" aria-pressed="false" aria-label="削除">🗑</button><button id="rngCut" class="sm cmode" aria-pressed="true" aria-label="カット">✂</button><button id="fixB" class="sm cmode" aria-pressed="false" aria-label="修正">✎</button><button id="kfB" class="sm cmode" aria-pressed="false" aria-label="キーフレーム">◇</button></div><button id="cRedo" disabled aria-label="やり直し">⟳</button><button id="cUndo" disabled aria-label="ひとつ戻る">↺</button><button id="czL" aria-label="アウト 1フレーム前へ">＜</button><button id="czR" aria-label="アウト 1フレーム後ろへ">＞</button></div>
     <div class="time" style="display:none"><span id="tNow">0:00.0</span><span id="tAll">0:00.0</span></div>
     <div class="tl"><div class="tl-track" id="tlTrack"></div>
       <input id="seek" type="range" min="0" max="1" step="0.05" value="0" disabled aria-label="再生位置"></div>
     <div class="autorow" id="cRow1">
-      <div id="delGrp"><svg id="cfFrame" viewBox="0 0 2 2" preserveAspectRatio="none" aria-hidden="true"><path d="M.97,-.03 L2.03,-.03 L2.03,2.03 L-.03,2.03 L-.03,.97 L.97,.97 Z"/></svg><button id="delCur" class="sm" disabled>動画を削除</button><button id="rngCut" class="sm cmode" aria-pressed="true">カット</button><button id="rngDel" class="sm cmode" aria-pressed="false">削除</button><button id="fixB" class="sm cmode" aria-pressed="false">修正</button></div>
+      <div id="delGrp"><svg id="cfFrame" viewBox="0 0 2 2" preserveAspectRatio="none" aria-hidden="true"><path d="M.97,-.03 L2.03,-.03 L2.03,2.03 L-.03,2.03 L-.03,.97 L.97,.97 Z"/></svg><button id="delCur" class="sm" disabled>動画を削除</button></div>
       <button id="nxt" class="sm" disabled>TLに挿入</button>
       <button id="skipClip" class="sm" disabled>スキップ</button>
     </div>
@@ -1854,10 +1864,10 @@ function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector(
   const w=document.createElement('div');w.id='prW';w.append(r);$('cctl').after(w)}
 /* v472: 波形の操作は3つから1つ選ぶ。del=削除(赤いかたまりをタップで消す) / rng=範囲を削除(タップ=黄色い印、長押し→左右で消す。最初) / fix=修正(消した所を表示して、長押し→左右で戻す) */
 window.cwMode='rng';window.rngMode=false;
-function setCwMode(m){cwMode=m;rngMode=m==='del';[['rngDel','del'],['rngCut','rng'],['fixB','fix']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(m===k)));
-  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
+function setCwMode(m){cwMode=m;rngMode=m==='del';[['rngDel','del'],['rngCut','rng'],['fixB','fix'],['kfB','kf']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(m===k)));
+  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'キーフレーム(準備中)':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
 window.setCwMode=setCwMode;
-$('rngDel').onclick=()=>setCwMode('del');$('rngCut').onclick=()=>setCwMode('rng');$('fixB').onclick=()=>setCwMode('fix');
+$('rngDel').onclick=()=>setCwMode('del');$('rngCut').onclick=()=>setCwMode('rng');$('fixB').onclick=()=>setCwMode('fix');$('kfB').onclick=()=>setCwMode('kf');
 $('auto').onclick=e=>{auto=!auto;e.currentTarget.setAttribute('aria-pressed',auto);
   e.currentTarget.textContent='自動送 '+(auto?'ON':'OFF')};
 /* 次へ:今の動画の範囲は決定済み。途中の開始位置は捨てて次の動画へ(範囲がなければそのまま飛ばす) */
@@ -5936,8 +5946,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v674';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v675';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
