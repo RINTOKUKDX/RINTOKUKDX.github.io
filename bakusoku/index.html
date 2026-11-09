@@ -766,6 +766,10 @@ body:has(#s1[hidden]) #fsBtn{display:none}
 #sBlk button{flex:0 0 auto;min-height:40px;padding:0 14px;border:2px solid var(--btnl);border-radius:10px;font-weight:600}
 #sBlk button[aria-pressed=true]{color:#fff}
 #sBlk[hidden]{display:none}
+/* v678: コーナーの帯(タイムライン・字幕ページ共通)は少し下げて、動画から生えているように重ねる */
+#sBlk,#cnBar{position:relative;z-index:3;margin-bottom:-8px;padding-bottom:0;align-items:flex-end}
+#sBlk button,#cnBar button{border-radius:10px 10px 0 0;min-height:44px;padding-bottom:6px}
+#cnBar[hidden]{display:none}
 #t_stk{position:sticky;top:env(safe-area-inset-top,0px);z-index:3;background:var(--bg);display:flex;flex-direction:column;gap:6px;padding:0 0 6px}
 #t_pl{background:#000;position:relative;overflow:hidden;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;aspect-ratio:16/9;width:100%}/* v167: 16:9固定(このアプリは16:9のみ) */
 #t_pl video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;background:#000}
@@ -1265,7 +1269,7 @@ let s2ExBtn=null;
 function renderCBar(){
   let bar=$('cnBar'),act=$('cnAct');
   if(!bar){bar=document.createElement('div');bar.id='cnBar';act=document.createElement('div');act.id='cnAct';
-    const h=document.querySelector('#stk .tlhead');stk.insertBefore(bar,stk.firstChild);stk.insertBefore(act,h)}
+    const h=document.querySelector('#stk .tlhead');/* v678: コーナーの帯は字幕ページと同じ、再生画面の真上 */const pv=$('pvSec');if(pv)pv.insertBefore(bar,pv.firstChild);else stk.insertBefore(bar,stk.firstChild);stk.insertBefore(act,h)}
   const on=corners.length>0&&!!cR;bar.hidden=!on;act.hidden=!on;
   {const k=on&&cview?cIdx(cview):-1;document.body.classList.toggle('cnTint',k>=0);if(k>=0)document.body.style.setProperty('--cx',ccol(k))}
   if(!on)return;
@@ -3122,7 +3126,7 @@ function drawTW(t){
     const d=twDrag;if(!d)return;const dx=e.clientX-d.x0;
     if(d.lp){const k=Math.abs(dx)>16?-Math.sign(dx):0;if(k!==d.dir){d.dir=k;twPv=k;drawTW()}return}
     if(!d.moved){if(Math.abs(dx)<8)return;if(Math.abs(e.clientY-d.y0)>Math.abs(dx)){twDrag=null;return}d.moved=true;clearTimeout(d.tm);pausePreview()}
-    twSeek(magnetSnap(twC(d.t0-dx*twZ/d.r.width),14*twZ/d.r.width,d))});
+    twSeek(twC(d.t0-dx*twZ/d.r.width))/* v678: 波形にはマグネットを付けない */});
   const up=e=>{twP.delete(e.pointerId);if(twPinch){if(!twP.size)twPinch=null;return}const d=twDrag;twDrag=null;if(d)clearTimeout(d.tm);if(d&&d.lp){twPv=null;drawTW();tlDelSide(d.dir);return}if(!d||d.moved)return;
     if(selMode){pausePreview();selTap();return}
     if(cutMode){pausePreview();doCut();try{navigator.vibrate&&navigator.vibrate(30)}catch(x){}return}
@@ -3269,7 +3273,7 @@ function lblAdj(e,i){
       /* v431: 一番小さくすると全体(コーナー表示ならそのコーナー全体)が1画面に入るまで */const V0=viewR(),fit=(szOf(scr).w-30)/Math.max(0.5,V0.b-V0.a);want={pps:Math.max(Math.min(6,fit),Math.min(240,p0.pps*d/p0.d)),t:p0.t,fx};if(!raf)raf=requestAnimationFrame(apply)}
     else if(dragBusy){panX=null}
     else if(panX!=null&&ptr.size===1){panMoved+=Math.abs(e.clientX-px);if(panMoved>6){panGuard=true;/* v661: 横に送った位置へ動画の再生位置を動かす */if(playing)pausePreview();const V=viewR(),a=cview?V.a:0,b=cview?V.b:total();
-      /* v671: マグネット。クリップの端に近づくと(指14px分)ピタッと止まり、そこから指を14px以上動かすと離れる */panRaw-=e.clientX-px;let t=Math.max(a,Math.min(b,panRaw/pps+vA())),best=null,bd=14/pps;for(const E of clipEdges()){if(E<a-1e-6||E>b+1e-6)continue;const d=Math.abs(E-t);if(d<=bd){bd=d;best=E}}
+      /* v671: マグネット。クリップの端に近づくと(指14px分)ピタッと止まり、そこから指を14px以上動かすと離れる */panRaw-=e.clientX-px;let t=Math.max(a,Math.min(b,panRaw/pps+vA())),best=null,bd=14/pps;if(window.magOn)for(const E of clipEdges()){if(E<a-1e-6||E>b+1e-6)continue;const d=Math.abs(E-t);if(d<=bd){bd=d;best=E}}
       if(best!=null)t=best;if(best!==panSn){if(best!=null)try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}panSn=best}
       scr.scrollLeft=(t-vA())*pps;twSeek(t)}}
   },true);
@@ -4608,7 +4612,12 @@ function swOpen(){
   draw();
 }
 window.swOpen=swOpen;
-{const b=document.createElement('button');b.id='swB';b.textContent='入替';b.setAttribute('aria-label','クリップの入れ替え');b.style.cssText='min-height:36px;min-width:52px;padding:0 6px';b.onclick=()=>{if(!segs.some(q=>q.clip)){flashSel('クリップがありません');return}swOpen()};$('sp2').after(b)}
+{const b=document.createElement('button');b.id='swB';b.textContent='入替';b.setAttribute('aria-label','クリップの入れ替え');b.style.cssText='min-height:36px;min-width:52px;padding:0 6px';b.onclick=()=>{if(!segs.some(q=>q.clip)){flashSel('クリップがありません');return}swOpen()};$('sp2').after(b);
+  /* v678: 🧲 = タイムラインのマグネット(入替の右)。ON=タイムラインを動かすと、クリップの端で吸い付く。OFF=吸い付かない。波形では使わない */
+  const mg=document.createElement('button');mg.id='magB';mg.textContent='🧲';mg.setAttribute('aria-label','マグネット');mg.style.cssText='min-height:36px;min-width:40px;padding:0 6px';
+  try{window.magOn=localStorage.getItem('magOn')!=='0'}catch(e){window.magOn=true}
+  const sh=()=>{mg.setAttribute('aria-pressed',String(!!window.magOn));mg.classList.toggle('primary',!!window.magOn)};sh();
+  mg.onclick=()=>{window.magOn=!window.magOn;try{localStorage.setItem('magOn',window.magOn?'1':'0')}catch(e){}sh();flashSel(window.magOn?'マグネット ON':'マグネット OFF')};b.after(mg)}
 /* v522: 速度を入れる(0.25〜4倍)。後ろの字幕・ナレーションなどは一緒に動かす。そのクリップの中の字幕は伸び縮み、他は長さそのままで位置だけ */
 function setSpd(L,v){v=Math.max(0.25,Math.min(1000,v>=100?Math.round(v):v>=10?Math.round(v*10)/10:Math.round(v*100)/100));
   const S=L.filter(q=>q&&q.clip&&segs.includes(q)&&spdOf(q)!==v).sort((a,b)=>segs.indexOf(b)-segs.indexOf(a));if(!S.length)return false;
@@ -5946,8 +5955,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v677';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v679';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
