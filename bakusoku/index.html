@@ -108,6 +108,7 @@ button:disabled{opacity:.4}
 #cut.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .autorow{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;margin-top:8px}
 /* v461: 1段目 動画を削除/範囲を削除/次へ、2段目 コーナー、3段目 無音削除/自動送 */#cRow1{grid-template-columns:1fr 1fr 1fr}/* v472 *//* v479 */#insRow{grid-template-columns:1fr 1fr;margin-top:6px}.gpk{position:absolute;top:0;bottom:0;width:28px;z-index:6;cursor:pointer;background:linear-gradient(to right,transparent 11px,#fffc 11px,#fffc 17px,transparent 17px)}.gpk.on{background:linear-gradient(to right,transparent 8px,#ff9800 8px,#ff9800 20px,transparent 20px)}#rngCut[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}#fixB[aria-pressed=true]{background:#2f8f5b;border-color:#2f8f5b;color:#fff;font-weight:700}#cRow2{grid-template-columns:1fr 1fr}#rngDel[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}
+#rngDel,#skipClip,#gapIns,#reIns,#auto,#cutDeleteRow{display:none!important}#cRow1{grid-template-columns:1fr 1fr}#insRow{grid-template-columns:1fr!important}#cRow2{grid-template-columns:1fr!important}/* v651: 削除・次へ・自動送・隙間に挿入・更新・下の動画を削除は見せない(挿入ボタンが更新も兼ねる) */
 #delCur2{padding:0 14px;color:var(--warn);border-color:var(--warn)}/* v438: 動画の枠の削除 */
 #delCur{padding:0 14px;color:var(--warn);border-color:var(--warn)}
 .sm{min-height:48px;font-size:14px}
@@ -572,7 +573,7 @@ body.editing .pgnav{display:none!important}
       <input id="seek" type="range" min="0" max="1" step="0.05" value="0" disabled aria-label="再生位置"></div>
     <div class="autorow" id="cRow1">
       <button id="rngDel" class="sm cmode" aria-pressed="false">削除</button>
-      <button id="rngCut" class="sm cmode" aria-pressed="true">範囲を削除</button>
+      <button id="rngCut" class="sm cmode" aria-pressed="true">カット</button>
       <button id="fixB" class="sm cmode" aria-pressed="false">修正</button>
     </div>
     <div class="autorow" id="insRow"><button id="skipClip" class="sm" disabled>次へ</button><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>更新</button></div>
@@ -1533,7 +1534,7 @@ function reTarget(){const c=cur;if(!c)return null;const S=tlSegs();
   if(!c.pend){const e=reEd.get(c);if(e&&e.tgt&&e.tgt.every(q=>S.includes(q)))return e.tgt}
   const k=S.findIndex(q=>q.clip&&!q.clip.pend&&(c.pend?bkey(q.clip.key)===bkey(c.key):q.clip===c));return k<0?null:runOf(S,k)}
 const sameTL=c=>tlSegs().some(q=>q.clip&&!q.clip.pend&&bkey(q.clip.key)===bkey(c.key));
-function insUpd(){const c=cur;$('skipClip').disabled=!c;$('nxt').disabled=!c;$('gapIns').disabled=!c||!tlSegs().some(q=>!(q.clip&&q.clip.pend));$('reIns').disabled=!c||!reTarget()}
+function insUpd(){const c=cur;$('skipClip').disabled=!c;$('nxt').disabled=!c;$('gapIns').disabled=!c||!tlSegs().some(q=>!(q.clip&&q.clip.pend));$('reIns').disabled=!c||!reTarget();/* v651: 入っている動画は「更新」、まだなら「TLに挿入」 */{const up=!!c&&!c.pend&&!!reTarget();$('nxt').textContent=up?'更新':($('cutFast').getAttribute('aria-pressed')==='true'?'挿入':'TLに挿入')}}
 /* 同じ元動画のもう1本(v477と同じ key#n)。カット画面の一覧の後ろに足す */
 function mkInst(c){const b=bkey(c.key);let n=2;while(clips.some(x=>x.key===b+'#'+n))n++;
   const w={id:nextId++,key:b+'#'+n,name:c.name,file:c.file,url:c.url,d:c.d,w:c.w,h:c.h,meta:c.meta,au:c.au};
@@ -1861,6 +1862,8 @@ $('reIns').onclick=()=>{const c=cur;if(!c)return;const T=reTarget();if(!T)return
   if(c.pend){draft.delete(c);c.pend=false;const o=T.find(q=>q.clip);c.ord=o?sOrd(o.clip):c.ord}else reEd.delete(c);
   tlShift(t0+D0,D1-D0,gcn);if(corners.length)cornerSync();else cornerRebase();resetOut();
   reIn(c,N[0]);renderSegs();renderChips();renderCut();window.cwfDraw&&cwfDraw();cutMsg('更新しました')};
+/* v651: 挿入ボタン=すでにタイムラインに入っている動画なら更新(再挿入)、まだなら今まで通りTLに挿入 */
+{const nx0=$('nxt').onclick;$('nxt').onclick=function(e){const c=cur;if(c&&!c.pend&&reTarget())return $('reIns').onclick(e);return nx0.call(this,e)}}
 /* v479: 隙間に挿入 = タイムラインでクリップとクリップの間をタップして入れる */
 let gapC=null;
 {const bar=document.createElement('div');bar.id='gapBar';bar.hidden=true;
@@ -5787,7 +5790,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v650';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v651';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
@@ -5943,7 +5946,7 @@ async function restore(){
     for(const[k,rs]of Object.entries(st.pend||{})){const c=by[k];if(!c)continue;c.pend=true;segs=segs.filter(q=>q.clip!==c);draft.set(c,rs)}
     window.fineReset&&fineReset();  corners=st.corners||[];cview=st.cview||null;cPreset=st.cPreset||'doc';cKey=st.cKey||'';
     items=st.items||[];itemId=st.itemId||1;tailPad=st.tailPad||0;tpl=st.tpl||null;if(tpl==='travel')tpl=cPreset==='tv'?'tv':'doc';else if(tpl==='point'||tpl==='talk')tpl='diy';workMade=!!st.workMade;noCH=!!st.noCH;segMan=!!st.segMan;
-    pps=st.pps||28;thr=st.thr||5;auto=st.auto!==false;tltDone=st.tltDone==null?true:!!st.tltDone;
+    pps=st.pps||28;thr=st.thr||5;auto=true;tltDone=st.tltDone==null?true:!!st.tltDone;
     $('thr').value=String(thr);
     $('auto').setAttribute('aria-pressed',auto);$('auto').textContent='自動送 '+(auto?'ON':'OFF');
     /* v397: 1回だけ「出発」の動画を数字順に並べ直す */
