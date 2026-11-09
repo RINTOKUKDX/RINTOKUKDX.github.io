@@ -512,9 +512,7 @@ body.editing .pgnav{display:none!important}
 #s1>section.b>#cutTitle{margin-left:8px}
 #cutModes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 #cutModes button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg);font-weight:700}
-#s1 section.b.fast>*:not(#cutModes):not(.stage):not(#cwf):not(#cctl):not(#cRow1):not(#insRow):not(#cutCn):not(#cutDeleteRow):not(#cutMsg){display:none!important}
-#s1 section.b.fast #cRow1,#s1 section.b.fast #insRow>*:not(#skipClip):not(#nxt),#s1 section.b.fast #cctl>*:not(#cbP):not(#cbA):not(#cRedo):not(#cUndo){display:none!important}
-#s1 section.b.fast #insRow{grid-template-columns:1fr 1fr}
+/* v652: 爆速カットは 軽量化バー・シークバー・無音削除 だけ隠す */#s1 section.b.fast #prW,#s1 section.b.fast .tl,#s1 section.b.fast #silB{display:none!important}#cutTitle{display:none}
 #cutDeleteRow button{width:100%}
 /* v531: 爆速・詳細とも ▶‖ ▶▶ ⟳ ↺ の同じ並び。1フレーム移動(＜＞・◁▷)は廃止して隠す */
 #s1 #cctl{grid-template-columns:1.3fr 1.3fr 1fr 1fr}
@@ -564,7 +562,7 @@ body.editing .pgnav{display:none!important}
 
   <section class="b">
     <h2 id="cutTitle">爆速カット</h2>
-    <div id="cutModes" role="group" aria-label="カット表示" hidden><button id="cutFast" aria-pressed="true">爆速カット</button><button id="cutDetail" aria-pressed="false">詳細カット</button></div>
+    <div id="cutModes" role="group" aria-label="カット表示"><button id="cutFast" aria-pressed="true">爆速カット</button><button id="cutDetail" aria-pressed="false">細くカット</button></div>
     <div class="stage"><video id="pv" playsinline preload="metadata"></video></div>
     <canvas id="cwf" aria-label="音声波形"></canvas>
     <canvas id="cmt" aria-label="残す範囲だけのタイムライン"></canvas>
@@ -1138,7 +1136,7 @@ let cutCn=null;
 function cutCnNow(){if(!corners.length)return undefined;if(cIdx(cutCn)<0){const l=segs[segs.length-1];cutCn=l&&cIdx(l.cn)>=0?l.cn:corners[0].id}return cutCn}
 function renderCutCn(){const w=$('cutCn');if(!w)return;w.innerHTML='';w.hidden=!corners.length;if(!corners.length)return;/* v430: 名前が cur(今の動画)と被っていて、今の動画にコーナーが入っていなかった */const cc=cutCnNow();
   corners.forEach((c,i)=>{const b=document.createElement('button');b.textContent=c.name;const on=c.id===cc;b.setAttribute('aria-pressed',String(on));
-    if(on){b.style.background=ccol(i);b.style.borderColor=ccol(i);b.style.color='#fff'}b.onclick=()=>{cutCn=c.id;/* v339: 今の動画とそれより後ろの動画をこのコーナーにする */if(cur&&clips.includes(cur)){const L=clips.slice(clips.indexOf(cur));segs.forEach(s=>{if(s.clip&&L.includes(s.clip))s.cn=c.id});/* v388: まだ開いていない動画の下書きも */L.forEach(k=>{const d=draft.get(k);if(d)d.forEach(s=>s.cn=c.id)});sortSegs();resetOut();renderSegs()}renderCutCn()};cnLP(b,i);w.appendChild(b)})}
+    b.style.borderColor=ccol(i);b.style.background=on?ccol(i):'color-mix(in srgb,'+ccol(i)+' 28%,var(--bg))';if(on)b.style.color='#fff';b.onclick=()=>{cutCn=c.id;/* v339: 今の動画とそれより後ろの動画をこのコーナーにする */if(cur&&clips.includes(cur)){const L=clips.slice(clips.indexOf(cur));segs.forEach(s=>{if(s.clip&&L.includes(s.clip))s.cn=c.id});/* v388: まだ開いていない動画の下書きも */L.forEach(k=>{const d=draft.get(k);if(d)d.forEach(s=>s.cn=c.id)});sortSegs();resetOut();renderSegs()}renderCutCn()};cnLP(b,i);w.appendChild(b)})}
 const ccol=i=>(corners[i]&&corners[i].col)||['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'][i%5];
 function cornerInit(){
   corners.forEach(c=>{c.ch=true;if(c.name==='挨拶・説明'&&!c.custom)c.name='説明';if(c.name==='完成・ED'&&!c.custom)c.name='ED'});
@@ -1835,8 +1833,8 @@ function silOpen(){if(!cur)return;let P=$('silP');if(P){window.silApStop&&silApS
   /* 波形が見えるように、再生バーのすぐ下に出す */$('tlTrack').closest('.tl').after(P);try{P.scrollIntoView({block:'nearest',behavior:'smooth'})}catch(e){}calc();silOpen.calc=calc}
 $('silB').onclick=silOpen;
 /* v495: 閉じる操作を廃止し、爆速/詳細の表示を切り替える */
-function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector('#s1 section.b');sec.classList.remove('fold');sec.classList.toggle('fast',fast);$('cutFast').setAttribute('aria-pressed',String(fast));$('cutDetail').setAttribute('aria-pressed',String(!fast));$('nxt').textContent=fast?'挿入':'TLに挿入';try{localStorage.setItem('cutView',fast?'fast':'detail')}catch(e){}setTimeout(()=>{window.cwfDraw&&cwfDraw()},50)}
-/* v532: 爆速カット/詳細カットのボタンは廃止。常に詳細カットの画面で開く。枠の名前は「爆速カット」 */{setCutView('detail');$('cutFast').onclick=()=>setCutView('fast');$('cutDetail').onclick=()=>setCutView('detail')}
+function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector('#s1 section.b');sec.classList.remove('fold');sec.classList.toggle('fast',fast);$('cutFast').setAttribute('aria-pressed',String(fast));$('cutDetail').setAttribute('aria-pressed',String(!fast));$('nxt').textContent=fast?'挿入':'TLに挿入';/* v652: 爆速カットの間は軽量化は通常 */window.silPr=fast?2:SIL.pr;try{insUpd()}catch(e){}try{localStorage.setItem('cutView',fast?'fast':'detail')}catch(e){}setTimeout(()=>{window.cwfDraw&&cwfDraw()},50)}
+/* v532: 爆速カット/詳細カットのボタンは廃止。常に詳細カットの画面で開く。枠の名前は「爆速カット」 */{let m0='fast';try{m0=localStorage.getItem('cutView')==='detail'?'detail':'fast'}catch(e){}setCutView(m0);$('cutFast').onclick=()=>setCutView('fast');$('cutDetail').onclick=()=>setCutView('detail')}
 /* v462: 軽量化バー(音を優先〜映像を優先)はカット画面にいつも出す(▶▶の再生に効く) */{const r=document.createElement('div');r.className='r lt';r.innerHTML='<span>軽量化</span><input type="range" min="0" max="3" step="1" aria-label="軽量化"><span class="v"></span>';
   /* v471: 左=軽量化 → 右=通常。バーの位置と silPr(0音だけ/1音優先/2なし/3映像だけ)の対応 PM(行き帰り同じ) */const PM=[0,1,3,2];
   const i=r.querySelector('input'),v=r.querySelector('.v'),nm=['音だけ','音優先','通常','映像だけ'],put=()=>{v.textContent=nm[SIL.pr];window.silPr=SIL.pr};i.value=PM[SIL.pr];put();
@@ -5812,7 +5810,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v652';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v653';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
