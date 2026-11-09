@@ -5946,8 +5946,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v676';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v677';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -6075,7 +6075,17 @@ function nfSegs(st,by){const ci={};(st.clips||[]).forEach(c=>{ci[c.key]=c});
 /* 前に NOT FOUND だった動画も、開く時にもう一度探す */
 function nfClips(st){if(!st||!st.segs)return;const have=new Set((st.clips||[]).map(c=>c.key));st.clips=st.clips||[];
   st.segs.forEach(s=>{const n=s.k==='gap'&&s.nf;if(n&&n.c&&!have.has(n.k)){have.add(n.k);st.clips.push(n.c)}})}
+/* v675: 前回の続きの準備(v420の片付けと、v477の動画探し)。stop で途中で止める。結果は {fs,miss} */
+function prepRun(st){let stop=false;const P=(async()=>{const fs={},miss=[];
+  try{const keep=new Set(['project','bgm|list']);const ks=await idbTx('state','readonly',o=>o.getAllKeys());for(const k of ks){if(stop)return{fs,miss};if(!keep.has(String(k)))await idbDel('state',k)}}catch(e){}
+  try{const ks=await idbTx('files','readonly',o=>o.getAllKeys());for(const k of ks){if(stop)return{fs,miss};const r=await idbGet('files',k);if(r)await idbPut('files',k,r)}}catch(e){}
+  try{for(const k of P_NAR){if(stop)return{fs,miss};const v=await aTx('readonly',o=>o.get(k));if(v!==undefined)await aTx('readwrite',o=>o.put(v,k))}}catch(e){}
+  /* v477: もう1本として入れた動画(key#2)は元の key のファイルを使う */
+  for(const c of st.clips||[]){if(stop)break;const K=bkey(c.key);if(fs[K]||miss.some(m=>m.key===K))continue;const rec=await idbGet('files',K);if(rec&&rec.blob)fs[K]=rec.blob;else miss.push(c.key===K?c:{...c,key:K})}
+  return{fs,miss}})();
+  P.then(()=>{P.done=true});window.__prepStop=async()=>{stop=true;try{await P}catch(e){}};return P}
 async function restore(){
+  let prep=null;
   try{
     const st=await idbGet('state','project');nfClips(st);
     /* v417: v410と同じく波形(pk|)とサムネ(th|)を消してから開く(v411で波形を残したらタイムラインが重くなった) */
@@ -6084,28 +6094,25 @@ async function restore(){
     {const has=!!(st&&st.clips&&st.clips.length);let np=0;try{np=(await pList()).length}catch(e){}
      let pj=false;try{pj=localStorage.getItem('projJust')==='1';localStorage.removeItem('projJust')}catch(e){}if(pj)window.__pjName=(curProj&&curProj.name)||'プロジェクト';
      if((has||np)&&!pj){let m0=[];if(has)for(const c of st.clips){try{const r=await idbGet('files',c.key);if(!(r&&r.blob))m0.push(c)}catch(e){m0.push(c)}}
+       /* v675: ホームを出している間に、裏で前回の続きの準備(片付け・動画の確認)を進める */prep=prepRun(st);
        const ch=await startMenu(has,np,m0);
-       if(ch==='new'){if(has){newArm=true;await $('newp').onclick()}return}
-       if(ch==='pick')return}}
+       if(ch==='new'){await window.__prepStop();if(has){newArm=true;await $('newp').onclick()}return}
+       if(ch==='pick'){await window.__prepStop();return}}}
     if(!st||!st.clips||!st.clips.length)return;
-    /* v420: 「作品から開く」と軽くなるので、起動時に同じ片付けをする(state は project と bgm|list 以外を消す・files と字幕ページのナレーションデータを書き直す) */
-    ldO.show('準備中…');
-    try{const keep=new Set(['project','bgm|list']);const ks=await idbTx('state','readonly',o=>o.getAllKeys());for(const k of ks)if(!keep.has(String(k)))await idbDel('state',k)}catch(e){}
-    try{const ks=await idbTx('files','readonly',o=>o.getAllKeys());for(const k of ks){const r=await idbGet('files',k);if(r)await idbPut('files',k,r)}}catch(e){}
-    try{for(const k of P_NAR){const v=await aTx('readonly',o=>o.get(k));if(v!==undefined)await aTx('readwrite',o=>o.put(v,k))}}catch(e){}
-    ldO.hide();
-    const by={},miss=[],fs={};
-    /* v477: もう1本として入れた動画(key#2)は元の key のファイルを使う */
-    for(const c of st.clips){const K=bkey(c.key);if(fs[K]||miss.some(m=>m.key===K))continue;const rec=await idbGet('files',K);if(rec&&rec.blob)fs[K]=rec.blob;else miss.push(c.key===K?c:{...c,key:K})}
+    if(!prep)prep=prepRun(st);
+    if(!prep.done)ldO.show('準備中…');const P=await prep;ldO.hide();window.__prepStop=null;
+    const by={},miss=P.miss,fs=P.fs;
     if(preGot){preGot.forEach((f,k)=>{fs[k]=f});miss.splice(0,miss.length,...miss.filter(c=>!preGot.has(c.key)));preGot=null}
     if(miss.length){const got=await relink(miss);got.forEach((f,k)=>{fs[k]=f})}
     st.clips.forEach(c=>{if(!fs[c.key]&&fs[bkey(c.key)])fs[c.key]=fs[bkey(c.key)]});
     /* v404: 選び直した動画が本当に読めるか、取り込みの時と同じように1本ずつ確かめる(読めない動画があると固まるため) */
     {const ks=st.clips.map(c=>c.key).filter(k=>fs[k]&&!(fs[k] instanceof Blob&&!(fs[k] instanceof File)));let i=0;const bad=[];
-     for(const k of ks){ldO.show('動画を確認中… '+(++i)+'/'+ks.length+'本');const f=fs[k];
+     /* v675: 3本ずつ同時に確かめて待ち時間を減らす */
+     const one=async k=>{const f=fs[k];
        const ok=await Promise.race([(async()=>{await f.slice(0,65536).arrayBuffer();const u=URL.createObjectURL(f);
          const r=await new Promise(res=>{const v=document.createElement('video');v.preload='metadata';const fin=x=>{res(x);try{v.removeAttribute('src');v.load()}catch(e){}};v.onloadedmetadata=()=>fin(true);v.onerror=()=>fin(false);v.src=u});URL.revokeObjectURL(u);return r})().catch(()=>false),new Promise(r=>setTimeout(()=>r(false),15000))]);
-       if(!ok){bad.push((st.clips.find(c=>c.key===k)||{}).name||k);delete fs[k]}}
+       ldO.show('動画を確認中… '+(++i)+'/'+ks.length+'本');if(!ok){bad.push((st.clips.find(c=>c.key===k)||{}).name||k);delete fs[k]}};
+     if(ks.length)ldO.show('動画を確認中… 0/'+ks.length+'本');const qq=ks.slice();await Promise.all([0,1,2].map(async()=>{while(qq.length)await one(qq.shift())}));
      ldO.hide();if(bad.length)setTimeout(()=>cdlg('読み込めない動画がありました（'+bad.length+'本）。\n'+bad.slice(0,5).join('\n')+'\nタイムラインに「NOT FOUND」として残しました。',[['閉じる']]),500)}
     for(const c of st.clips){const f=fs[c.key];if(!f)continue;
       const o={id:nextId++,key:c.key,name:c.name,file:f,url:URL.createObjectURL(f),d:c.d,w:c.w,h:c.h,meta:c.meta||{},au:c.au,ord:c.ord,ov:c.ov};
@@ -6920,6 +6927,7 @@ async function pSave(name,id){
   try{const ak=await aTx('readonly',o=>o.getAllKeys());for(const k of ak){const s=String(k);if(P_NAR.includes(s)||(s.startsWith('res_')&&ck.some(c=>s.endsWith('|'+c))))kvs[s]=await aTx('readonly',o=>o.get(k))}}catch(e){}
   const m={id,name,ty:tpl,at:Date.now(),n:clips.length,st,kv:kvs};/* v673: ホーム用のサムネ(最初のクリップから1枚) */try{const q=tlSegs().find(z=>z.clip&&z.clip.file);if(q)m.th=await vidShot(q.clip.file,q.start+Math.min(1,(q.end-q.start)/2))||''}catch(e){}await pPut('m|'+id,m);pSetCur(m);try{tKeep()}catch(e){}return m}
 async function pOpen(meta){
+  /* v675: 起動時に裏で読み込んでいる前回の続きを止めてから */try{if(window.__prepStop)await window.__prepStop()}catch(e){}
   const m=await pGet('m|'+meta.id);if(!m)throw new Error('データが見つかりません');
   restored=false;/* 自動保存を止める */
   await idbClear('files');await idbClear('state');
@@ -7828,7 +7836,7 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
        c.append(th,nm,sb);
        let lp=0,fired=false;c.addEventListener('pointerdown',()=>{fired=false;clearTimeout(lp);lp=setTimeout(()=>{fired=true;try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}pMenu('del',m,draw)},600)});
        ['pointerup','pointerleave','pointercancel'].forEach(ev=>c.addEventListener(ev,()=>clearTimeout(lp)));c.oncontextmenu=e=>e.preventDefault();
-       c.addEventListener('click',()=>{if(fired){fired=false;return}if(stDone){/* v674: 起動時 */if(curProj&&curProj.id===m.id&&stHas){stDone('cont');return}pMenu('open',m);const iv=setInterval(()=>{if(pBusy===2){clearInterval(iv);pBusy=false;if(stDone)stDone('pick')}else if(!pBusy&&!document.querySelector('.cdlg'))clearInterval(iv)},300);return}if(curProj&&curProj.id===m.id){homeClose();return}pMenu('open',m)});G.appendChild(c)});
+       c.addEventListener('click',()=>{if(fired){fired=false;return}if(stDone){/* v674: 起動時。v675: 開いているプロジェクトのカード=前回の続きは消して、前に保存した所から開く */if(curProj&&curProj.id===m.id&&stHas){cdlg('「'+m.name+'」を前に保存した所から開きます。\n前回の続きのデータは消えます。本当にいいですか?',[['開く',async()=>{pBusy=true;try{await pOpen(m)}catch(e){pBusy=false;cdlg('開けませんでした: '+(e&&e.message||e),[['閉じる']])}},'warn'],['いいえ']]);return}pMenu('open',m);const iv=setInterval(()=>{if(pBusy===2){clearInterval(iv);pBusy=false;if(stDone)stDone('pick')}else if(!pBusy&&!document.querySelector('.cdlg'))clearInterval(iv)},300);return}if(curProj&&curProj.id===m.id){homeClose();return}pMenu('open',m)});G.appendChild(c)});
      for(const[id,th]of need){if(my!==tok||sc.style.display==='none')return;let u='';try{u=await fill(id)}catch(e){}if(u&&th.isConnected){const im=document.createElement('img');im.src=u;im.alt='';th.prepend(im)}}}
    const homeClose=()=>{sc.style.display='none'};
    window.homeOpen=()=>{try{pausePreview()}catch(e){}sc.style.display='block';sc.scrollTop=0;draw()};window.homeClose=homeClose;window.homeDraw=draw;
