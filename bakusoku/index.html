@@ -108,7 +108,7 @@ button:disabled{opacity:.4}
 #cut.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 .autorow{display:grid;grid-template-columns:auto 1fr 1fr;gap:8px;margin-top:8px}
 /* v461: 1段目 動画を削除/範囲を削除/次へ、2段目 コーナー、3段目 無音削除/自動送 */#cRow1{grid-template-columns:1fr 1fr 1fr}/* v472 *//* v479 */#insRow{grid-template-columns:1fr 1fr;margin-top:6px}.gpk{position:absolute;top:0;bottom:0;width:28px;z-index:6;cursor:pointer;background:linear-gradient(to right,transparent 11px,#fffc 11px,#fffc 17px,transparent 17px)}.gpk.on{background:linear-gradient(to right,transparent 8px,#ff9800 8px,#ff9800 20px,transparent 20px)}#rngCut[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}#fixB[aria-pressed=true]{background:#2f8f5b;border-color:#2f8f5b;color:#fff;font-weight:700}#cRow2{grid-template-columns:1fr 1fr}#rngDel[aria-pressed=true]{background:#d33;border-color:#d33;color:#fff;font-weight:700}
-#rngDel,#skipClip,#gapIns,#reIns,#auto,#cutDeleteRow{display:none!important}#cRow1{grid-template-columns:1fr 1fr}#insRow{grid-template-columns:1fr!important}#cRow2{grid-template-columns:1fr!important}/* v651: 削除・次へ・自動送・隙間に挿入・更新・下の動画を削除は見せない(挿入ボタンが更新も兼ねる) */
+#rngDel,#gapIns,#reIns,#auto,#cutDeleteRow{display:none!important}#cRow1{grid-template-columns:1fr 1fr}#insRow{display:none!important}#cRow2{grid-template-columns:1fr!important}/* v651: 削除・次へ・自動送・隙間に挿入・更新・下の動画を削除は見せない(挿入ボタンが更新も兼ねる) */
 #delCur2{padding:0 14px;color:var(--warn);border-color:var(--warn)}/* v438: 動画の枠の削除 */
 #delCur{padding:0 14px;color:var(--warn);border-color:var(--warn)}
 .sm{min-height:48px;font-size:14px}
@@ -573,9 +573,11 @@ body.editing .pgnav{display:none!important}
     <div class="autorow" id="cRow1">
       <button id="rngDel" class="sm cmode" aria-pressed="false">削除</button>
       <button id="rngCut" class="sm cmode" aria-pressed="true">カット</button>
+      <button id="nxt" class="sm" disabled>TLに挿入</button>
       <button id="fixB" class="sm cmode" aria-pressed="false">修正</button>
+      <button id="skipClip" class="sm" disabled>スキップ</button>
     </div>
-    <div class="autorow" id="insRow"><button id="skipClip" class="sm" disabled>次へ</button><button id="nxt" class="sm" disabled>TLに挿入</button><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>更新</button></div>
+    <div class="autorow" id="insRow"><button id="gapIns" class="sm" disabled>隙間に挿入</button><button id="reIns" class="sm" disabled>更新</button></div>
     <div id="cutCn"></div>
     <div id="cutDeleteRow"><button id="delCur" class="sm" disabled>動画を削除</button></div>
     <div class="autorow" id="cRow2">
@@ -5810,7 +5812,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v653';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v654';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
