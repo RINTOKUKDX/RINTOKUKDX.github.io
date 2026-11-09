@@ -291,6 +291,7 @@ body.editing.subedit #s2 #pvSec .pcw canvas{max-height:25vh}
 .lane.vlane{background:#000}
 .blk.v.spdOn{outline:3px solid var(--accent);outline-offset:-3px;filter:brightness(1.25);z-index:2}
 .blk.vmsel::after{content:'';position:absolute;inset:0;background:rgba(255,179,0,.5);outline:3px solid #ffb300;outline-offset:-3px;pointer-events:none;z-index:6}
+.fdim{position:absolute;top:0;bottom:0;background:rgba(0,0,0,.62);z-index:5;pointer-events:none}
 .blk.v.xsel{outline:3px solid var(--accent);outline-offset:-3px;z-index:2}
 .blk.v.gap{background:#000;border-color:#666;color:#aaa}
 .blk.v.gap span{background:#444}
@@ -2550,7 +2551,14 @@ function renderPreview(){pvModeUpd();
   if(pvFill)pvFill.style.width=(total()>0?Math.min(100,gt/total()*100):0)+'%';
   if(window.nrPv)try{window.nrPv()}catch(e){}
 }
-function updatePlayhead(){try{drawTW()}catch(e){}try{segInsFollow()}catch(e){}if(cornerFollow())return;if(ph)ph.style.left=(gt*pps)+'px'}
+/* v653: 動画レーンは、再生ヘッド(選ばれている)のクリップだけ明るく、ほかは暗くする(同じ動画の続きは1つのクリップとして扱う)。見えない膜を左右に2枚置くだけ */
+function focusDim(){const ln=document.querySelector('#cv .lane.vlane');if(!ln)return;
+  let o=ln._fd;if(!o||!o[0].isConnected){o=ln._fd=[0,1].map(()=>{const d=document.createElement('div');d.className='fdim';ln.appendChild(d);return d});ln._fk=''}
+  if(segs.length<2){o.forEach(d=>d.style.display='none');ln._fk='';return}
+  let L=locate(gt);const k=L?L.i:segs.length-1,R=segRun(segs[k]),a=segAt(segs[R[0]]);let D=0;for(let j=R[0];j<=R[1];j++)D+=segD(segs[j]);
+  const key=a.toFixed(3)+'|'+D.toFixed(3)+'|'+pps+'|'+segs.length;if(ln._fk===key&&o[0].style.display==='block')return;ln._fk=key;
+  const W=total()*pps+60;o[0].style.cssText='display:block;left:0;width:'+Math.max(0,a*pps)+'px';o[1].style.cssText='display:block;left:'+((a+D)*pps)+'px;width:'+Math.max(0,W-(a+D)*pps)+'px'}
+function updatePlayhead(){try{focusDim()}catch(e){}try{drawTW()}catch(e){}try{segInsFollow()}catch(e){}if(cornerFollow())return;if(ph)ph.style.left=(gt*pps)+'px'}
 /* v400: 再生中に毎コマ幅や色を読み直すと重い(画面の作り直しが起きる)ので、大きさは ResizeObserver、色は2秒ごとに覚えておく */
 const szC=new WeakMap();function szOf(el){let v=szC.get(el);if(!v){v={w:el.clientWidth,h:el.clientHeight};szC.set(el,v);try{if(!el._ro){el._ro=new ResizeObserver(()=>szC.delete(el));el._ro.observe(el)}}catch(e){}}return v}
 let cssC=null,cssT=0;function cssV(){const n=performance.now();if(!cssC||n-cssT>2000){cssC=getComputedStyle(document.documentElement);cssT=n;cssC={line:cssC.getPropertyValue('--line').trim(),muted:cssC.getPropertyValue('--muted').trim(),warn:cssC.getPropertyValue('--warn').trim()}}return cssC}
@@ -3422,7 +3430,8 @@ function lzAdd(b,x,d,f){lzL.push({b,a:x,e:x+d,f})}
 function lzRun(){if(!lzL.length)return;const sc=$('scr'),w=szOf(sc).w||innerWidth,V=viewR(),a=(sc.scrollLeft-w)/pps+V.a,e=(sc.scrollLeft+2*w)/pps+V.a;
   lzL=lzL.filter(o=>{if(o.e<a||o.a>e)return true;if(o.b.isConnected)try{o.f()}catch(x){}return false})}
 setTimeout(()=>{$('scr').addEventListener('scroll',()=>{if(!lzQ)lzQ=requestAnimationFrame(()=>{lzQ=0;lzRun()})},{passive:true})},0);
-function renderLanes(){try{sbMigrate()}catch(e){}
+function renderLanes(){const r=renderLanes0();try{focusDim()}catch(e){}return r}
+function renderLanes0(){try{sbMigrate()}catch(e){}
   calcAutoH();cleanEmptySubs();
   items.forEach(o=>{if(o.fromSub){o.lane=3;o.bold=true;o.bstyle=o.style||'setsumei_yoko';o.style='';o.auto=true;delete o.fromSub}});
   cornerSync();if(!document.querySelector('.blk.dragging'))cornerCutCH(total());migrateGroups();saveLanes();blkMap={};blkEl=new Map();mirEl=new Map();
@@ -5812,7 +5821,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v654';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v655';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
