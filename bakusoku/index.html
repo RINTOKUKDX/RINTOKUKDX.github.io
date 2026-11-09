@@ -468,7 +468,7 @@ body.cnTint:has(#s2:not([hidden])){--bg:color-mix(in srgb,var(--cx) 11%,var(--bg
 #cwf{touch-action:pan-y}
 /* v460: 波形の下の残す範囲タイムライン(#cmt)は出さない(シークバーはそのまま) */#cmt{display:none!important}
 /* v457: 今の動画の残す範囲だけをつなげたタイムライン(見た目だけ) */#cmt{display:block;width:100%;height:46px;background:var(--bg);border-top:1px solid var(--line)}
-#s1 .stage{position:relative}
+#s1 .stage{position:relative;touch-action:none}/* v655: 1本指ドラッグで位置を動かす(ページは動かさない) */
 .cpv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;pointer-events:none;background:#000}
 #cFine{width:100%;box-sizing:border-box}
 @media (orientation:portrait){#s1 section.b>#cFine,#s1 section.b>#cTrRow{width:calc(100% - 16px)}}
@@ -1613,23 +1613,24 @@ $('restoreClip').onclick=restoreClipMenu;
 $('delCur').onclick=()=>{if(!cur)return;const c=cur;cdlg('「'+c.name+'」を削除しますか?\n元に戻すボタンで復元できます（再起動まで）',[['削除する',()=>dropClips([c]),'warn'],['やめる']])};
 $('delCur2').onclick=()=>$('delCur').onclick();
 /* v395: カットの再生画面を2本指でピンチ=ズーム・回転・移動。今の位置の残す範囲だけ(中間点があればその間だけに分ける)。s.fx.v の zm/rt/px/py */
-{const st=pv.parentElement,P=new Map();let G=null;
+{const st=pv.parentElement,P=new Map();let G=null,D=null,dragged=false;
  const segAt=()=>{if(!cur)return null;const t=pv.currentTime;return segs.find(s=>s.clip===cur&&t>=s.start-1e-3&&t<s.end)||null};
  const tf=v=>v&&(v.zm||v.rt||v.px||v.py)?'translate('+((v.px||0)*100)+'%,'+((v.py||0)*100)+'%) rotate('+(v.rt||0)+'deg) scale('+(v.zm||1)+')':'';
  const show=()=>{try{pv.style.transform=tf(segV(segAt()))}catch(e){}};window.cutTfShow=show;
  ['timeupdate','seeked','loadedmetadata','emptied'].forEach(ev=>pv.addEventListener(ev,()=>{if(!G)show()}));
  const ang=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
- st.addEventListener('pointerdown',e=>{if(e.isPrimary){P.clear();G=null}/* v396: 前の指が残らないように */if(e.pointerType==='mouse')return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(P.size!==2||!cur)return;const s=segAt();if(!s){cutMsg('残す範囲の上で使えます');return}
+ st.addEventListener('pointerdown',e=>{if(e.isPrimary){P.clear();G=null}/* v396: 前の指が残らないように */if(e.pointerType==='mouse')return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});/* v655: 1本指ドラッグ=今の位置の残す範囲を動かす(少し動いてから始まる) */if(P.size===1&&cur&&!G){const s1=segAt();if(s1){const v1=segV(s1)||{},rc1=st.getBoundingClientRect();D={s:s1,x:e.clientX,y:e.clientY,x0:v1.px||0,y0:v1.py||0,W:rc1.width,H:rc1.height,on:false,v:{zm:v1.zm||1,rt:v1.rt||0,px:v1.px||0,py:v1.py||0}}}}else D=null;if(P.size!==2||!cur)return;const s=segAt();if(!s){cutMsg('残す範囲の上で使えます');return}
    const [a,b]=[...P.values()],v=segV(s)||{},rc=st.getBoundingClientRect();
    G={s,d0:Math.hypot(b.x-a.x,b.y-a.y)||1,a0:ang(a,b),m0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},z0:v.zm||1,r0:v.rt||0,x0:v.px||0,y0:v.py||0,W:rc.width,H:rc.height,v:{zm:v.zm||1,rt:v.rt||0,px:v.px||0,py:v.py||0}};pv.pause()},true);
- st.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(!G||P.size<2)return;e.preventDefault();e.stopPropagation();
+ st.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(D&&P.size===1&&!G){const dx=e.clientX-D.x,dy=e.clientY-D.y;if(!D.on&&Math.hypot(dx,dy)<8)return;if(!D.on){D.on=true;pv.pause()}e.preventDefault();e.stopPropagation();let px=D.x0+dx/D.W,py=D.y0+dy/D.H;if(Math.abs(px)<0.015)px=0;if(Math.abs(py)<0.015)py=0;D.v={...D.v,px,py};pv.style.transform=tf(D.v);cutMsg('位置 '+Math.round(px*100)+'%, '+Math.round(py*100)+'%');return}
+   if(!G||P.size<2)return;e.preventDefault();e.stopPropagation();
    const [a,b]=[...P.values()],d=Math.hypot(b.x-a.x,b.y-a.y)||1,m={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
    let zm=Math.max(0.3,Math.min(6,G.z0*d/G.d0)),rt=G.r0+ang(a,b)-G.a0;rt=((rt+540)%360)-180;if(Math.abs(zm-1)<0.04)zm=1;if(Math.abs(rt)<3)rt=0;
    let px=G.x0+(m.x-G.m0.x)/G.W,py=G.y0+(m.y-G.m0.y)/G.H;if(Math.abs(px)<0.015)px=0;if(Math.abs(py)<0.015)py=0;
    G.v={zm,rt,px,py};pv.style.transform=tf(G.v);cutMsg('ズーム '+zm.toFixed(2)+'倍・回転 '+Math.round(rt)+'°')},true);
- const up=e=>{P.delete(e.pointerId);if(!G||P.size)return;const g=G;G=null;apply(g.s,g.v);show()};
+ const up=e=>{P.delete(e.pointerId);if(D&&D.on&&!G&&!P.size){const d=D;D=null;dragged=true;setTimeout(()=>dragged=false,350);apply(d.s,d.v);show();return}if(!P.size)D=null;if(!G||P.size)return;const g=G;G=null;apply(g.s,g.v);show()};
  st.addEventListener('pointerup',up,true);st.addEventListener('pointercancel',up,true);
- st.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+ st.addEventListener('touchmove',e=>{if(e.touches.length>1||(D&&D.on))e.preventDefault()},{passive:false});st.addEventListener('click',e=>{if(dragged){e.stopPropagation();e.preventDefault()}},true);
  function apply(s,v){if(!segs.includes(s))return;
    hist.push({segs:segs.map(q=>({...q,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
    const t=pv.currentTime,M=window.cutMk().filter(x=>x>s.start+0.05&&x<s.end-0.05).sort((x,y)=>x-y);let a=s.start,b=s.end;M.forEach(x=>{if(x<=t)a=x;else if(x<b)b=x});
@@ -5821,7 +5822,7 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v655';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+{const v=document.createElement('div');v.textContent='v656';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
   /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},3000)}}
 {
   const nr=document.querySelector('.narr');nr.style.gridTemplateColumns='1fr 1fr 1fr';
