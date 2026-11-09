@@ -2477,24 +2477,27 @@ const svOther=()=>sv===svA?svB:svA;
 /* v412: 上の動画レーン(8)。items に {lane:8,start,end,ck:動画のkey,off:動画の中の開始秒,fx}。プレビューは3つ目の再生器 ovV(音なし)、書き出しは ovX に1コマ入れて drawFrame で重ねる */
 const ovV=svMk();ovV.muted=true;let ovX=null,ovLive=false;const ovC=document.createElement('canvas'),ovG=ovC.getContext('2d');
 const ovClip=it=>clips.find(c=>c.key===it.ck)||null;
-const ovAt=t=>items.find(o=>o.lane===8&&t>=o.start&&t<o.end&&ovClip(o));
+const ovAt=t=>items.find(o=>o.lane===8&&t>=o.start&&t<o.end&&ovClip(o))||xdAt(t);/* v670: クロスディゾルブの次の頭も同じしくみで重ねる */
 const ovRedraw=()=>{if(!playing&&window._tlRedraw)window._tlRedraw()};
 function ovLoad(c,st){if(ovV._ld===c)return;ovV._ld=c;ovV._c=null;ovV._tg=st;
   loadSrc(ovV,c.url).then(()=>{if(ovV._ld!==c)return;ovV._c=c;ovV.addEventListener('seeked',ovRedraw,{once:true});ovV.currentTime=Math.max(0,st)}).catch(()=>{if(ovV._ld===c)ovV._ld=null})}
-function ovSync(it,t){const c=ovClip(it),st=(it.off||0)+(t-it.start);
+function ovSync(it,t){const c=ovClip(it),K=it.spd||1,st=(it.off||0)+(t-it.start)*K;
   if(ovV._c!==c){ovLoad(c,st);return null}
-  if(playing||ovLive){if(ovV.paused){ovV._tg=null;ovV.playbackRate=1;ovV.currentTime=st;ovV.play().catch(()=>{})}else if(!ovV.seeking){/* v425: 少しのずれは速さで合わせる(頭出しに時間がかかるスマホだと、頭出し→またずれる→頭出しを繰り返して止まるため)。1秒以上ずれた時だけ少し先へ頭出し */const d=st-ovV.currentTime;if(Math.abs(d)>1)ovV.currentTime=st+0.2;else{const r=Math.abs(d)<0.05?1:Math.max(0.85,Math.min(1.15,1+d));if(Math.abs(ovV.playbackRate-r)>0.02)ovV.playbackRate=r}}}
+  if(playing||ovLive){if(ovV.paused){ovV._tg=null;ovV.playbackRate=K;ovV.currentTime=st;ovV.play().catch(()=>{})}else if(!ovV.seeking){/* v425: 少しのずれは速さで合わせる(頭出しに時間がかかるスマホだと、頭出し→またずれる→頭出しを繰り返して止まるため)。1秒以上ずれた時だけ少し先へ頭出し */const d=st-ovV.currentTime;if(Math.abs(d)>1)ovV.currentTime=st+0.2;else{const r=K*(Math.abs(d)<0.05?1:Math.max(0.85,Math.min(1.15,1+d)));if(Math.abs(ovV.playbackRate-r)>0.02)ovV.playbackRate=r}}}
   else{if(!ovV.paused)ovV.pause();/* v414: 同じ位置へ何度も頭出ししない(描き直し→頭出しの繰り返しで重くならないように) */if(!ovV.seeking&&Math.abs((ovV._tg==null?-9:ovV._tg)-st)>0.03){ovV._tg=st;ovV.addEventListener('seeked',ovRedraw,{once:true});ovV.currentTime=st}}
   return ovV.readyState>=2?ovV:null}
 function ovIdle(t){if(!ovV.paused)ovV.pause();if(!(playing||ovLive))return;
-  const n=items.filter(o=>o.lane===8&&o.start>t&&o.start-t<2&&ovClip(o)).sort((a,b)=>a.start-b.start)[0];if(n&&ovV._ld!==ovClip(n))ovLoad(ovClip(n),n.off||0)}
+  const n=items.filter(o=>o.lane===8&&o.start>t&&o.start-t<2&&ovClip(o)).sort((a,b)=>a.start-b.start)[0]||(segs.some(s=>s.fx&&s.fx.fd&&s.fx.fd.xd)?xdList().find(r=>r.start>t&&r.start-t<2):null);/* v670: クロスディゾルブの頭も先に読む */if(n&&ovV._ld!==ovClip(n))ovLoad(ovClip(n),n.off||0)}
 function ovDraw(g,W,H,t){let it,src;
   if(ovX){it=ovX.it;src=ovX.f}else{it=ovAt(t);if(!it){ovIdle(t);return}src=ovSync(it,t)}
   if(!it||!src)return;const vw=src.videoWidth,vh=src.videoHeight;if(!vw||!vh)return;
+  /* v670: クロスディゾルブは曲線どおりに濃くする。プレビューでは次の音も曲線どおりに出す */if(it.xd){const u=Math.max(0,Math.min(1,(t-it.start)/Math.max(1e-3,it.end-it.start))),k=fcv(it.xdc)(u);
+    if(!ovX){try{ovV.muted=false;ovV.volume=Math.max(0,Math.min(1,k*audG(it.i,segs[it.i].start)))}catch(e){}}g.save();g.globalAlpha=k;vDraw(g,W,H,src,vw,vh,it.fx&&it.fx.v||null);g.restore();return}
+  if(!ovX&&!ovV.muted)ovV.muted=true;
   vDraw(g,W,H,src,vw,vh,it.fx&&it.fx.v||null)}
 async function ovXFrame(vo,T,W,H){const it=ovAt(T);if(!it)return{f:null};const c=ovClip(it);let r=vo.get(c);
   if(!r){vo.forEach(x=>x.close());vo.clear();r=new XVR(await xOpen(c));vo.set(c,r)}
-  const f=await r.frameAt(Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start))));if(!f)return{f:null};
+  const f=await r.frameAt(Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start)*(it.spd||1))));if(!f)return{f:null};
   const rot=r.X.V.rot,fw=f.displayWidth,fh=f.displayHeight,rw=rot%180?fh:fw,rh=rot%180?fw:fh,k=Math.min(W/rw,H/rh);
   const ow=Math.max(2,Math.round(rw*k)),oh=Math.max(2,Math.round(rh*k));if(ovC.width!==ow||ovC.height!==oh){ovC.width=ow;ovC.height=oh}
   ovG.save();ovG.translate(ow/2,oh/2);ovG.rotate(rot*Math.PI/180);const dw=(rot%180?oh:ow),dh=(rot%180?ow:oh);ovG.drawImage(f,-dw/2,-dh/2,dw,dh);ovG.restore();
@@ -2664,7 +2667,9 @@ const segA=s=>(s&&s.fx&&s.fx.a)||{},segV=s=>(s&&s.fx&&s.fx.v)||null;
 function visBlk(i){const c=segs[i]&&segs[i].clip;let a=i,b=i;if(!c)return[i,i];while(a>0&&segs[a-1].clip===c&&!segs[a].sp)a--;while(b<segs.length-1&&segs[b+1].clip===c&&!segs[b+1].sp)b++;return[a,b]}
 /* 動画の音の倍率(音量・ミュート・ノーマライズ・ブロックの頭と終わりのフェード) */
 function audG(i,t){const s=segs[i];if(!s||!s.clip)return 1;const u=segA(s);if(u.m)return 0;let g=(u.vol==null?tltV():u.vol)*audNm(u);
-  const[a,b]=visBlk(i),fi=segA(segs[a]).fi||0,fo=segA(segs[b]).fo||0;if(!fi&&!fo)return g;
+  const[a,b]=visBlk(i),fi=segA(segs[a]).fi||0,fo=segA(segs[b]).fo||0;
+  /* v670: 次とクロスディゾルブする所は前の音を下げる */{const N=segs[b+1],xd=N&&N.clip&&segF(N).xd;if(xd){const e2=cumAt(b)+segD(segs[b]),x2=cumAt(i)+(t-s.start)/spdOf(s);if(e2-x2<xd)g*=1-fcv(segF(N).xdc)(Math.max(0,Math.min(1,1-(e2-x2)/xd)))}}
+  if(!fi&&!fo)return g;
   const ba=cumAt(a),bb=cumAt(b)+(segD(segs[b])),x=cumAt(i)+(t-s.start)/spdOf(s);
   /* v664: 曲線(fic/foc) */if(fi&&x-ba<fi)g*=fcv(segA(segs[a]).fic)(Math.max(0,Math.min(1,(x-ba)/fi)));if(fo&&bb-x<fo)g*=fcv(segA(segs[b]).foc)(Math.max(0,Math.min(1,(bb-x)/fo)));return g}
 /* v664: クリップの四隅の□でフェード。左上=動画のフェードイン(音声も一緒)、右上=動画のフェードアウト(音声も一緒)、左下=音声だけのフェードイン、右下=音声だけのフェードアウト。
@@ -2678,47 +2683,78 @@ function vFadeAt(t){const L=locate(t),i=L&&L.i,s=segs[i];if(!s||!s.clip)return 1
   const ba=cumAt(a),bb=cumAt(b)+segD(segs[b]);let g=1;if(vi&&t-ba<vi)g*=fcv(A.vic)(Math.max(0,Math.min(1,(t-ba)/vi)));if(vo&&bb-t<vo)g*=fcv(B.voc)(Math.max(0,Math.min(1,(bb-t)/vo)));return g}
 /* 曲線の形の小さい絵(SVGのpath)。w×h の箱で、左下→右上 */
 const fdPath=(k,x0,y0,w,h,n=16)=>{let d='';for(let j=0;j<=n;j++){const u=j/n;d+=(j?'L':'M')+(x0+u*w).toFixed(1)+' '+(y0-fcv(k)(u)*h).toFixed(1)}return d};
+/* v670: クロスディゾルブ。次のまとまりの頭のブロック H に fx.fd.xd(秒)・xdc(曲線)。H.start を xd 分だけ後ろにずらして(全体が短くなる)、
+   前のまとまりの最後 xd 秒に、H の削った頭を「上の動画」と同じしくみで重ねて描く(ovAt)。音は前を (1-曲線)、H の頭を 曲線 で混ぜる */
+function xdList(){const R=[];let x=0;for(let i=0;i<segs.length;i++){const s=segs[i],d=segF(s).xd||0;
+  if(d>0&&i>0&&s.clip&&segs[i-1].clip&&visBlk(i)[0]===i){const K=spdOf(s);R.push({lane:8,xd:true,i,start:x-d,end:x,off:s.start-d*K,spd:K,xdc:segF(s).xdc||'lin',ck:s.clip.key,clip:s.clip,fx:{v:segV(s)}})}x+=segD(s)}return R}
+const xdAt=t=>{if(!segs.some(s=>s.fx&&s.fx.fd&&s.fx.fd.xd))return undefined;return xdList().find(r=>t>=r.start&&t<r.end)};
+const xdNx=i=>{const b=visBlk(i)[1],N=segs[b+1];return !!(N&&N.clip&&segF(N).xd>0)};
 /* 選んでいるクリップに□と三角形を出す */
 function fdHandles(cv){
   if(actLane!==0||!selVid||!segs.includes(selVid)||!selVid.clip)return;
   const L0=cv.querySelector('.lane[data-ln="0"]'),L7=cv.querySelector('.lane[data-ln="7"]');if(!L0)return;
   const k=segs.indexOf(selVid),[a,b]=visBlk(k),sa=segs[a],sb=segs[b],t0=cumAt(a),t1=cumAt(b)+segD(sb),D=t1-t0,V=viewR();
   if(cview&&(t1<=V.a||t0>=V.b))return;
-  const NS='http://www.w3.org/2000/svg';
-  const tri=(ln,x0,len,dir,k0,col,key)=>{if(!ln)return;const H=ln.clientHeight||laneH(+ln.dataset.ln),top=ln.classList.contains('mg7')?0:4,bot=ln.classList.contains('mg0')?H:H-4;
+  const NS='http://www.w3.org/2000/svg',P=fdHandles.pend;
+  const prevOK=a>0&&!!segs[a-1].clip,nextN=segs[b+1]&&segs[b+1].clip?segs[b+1]:null;
+  const xdIn=P&&P.k==='vi'?P.d:(prevOK?segF(sa).xd||0:0),xdOut=P&&P.k==='vo'?P.d:(nextN?segF(nextN).xd||0:0);
+  const geo=ln=>{const H=ln.clientHeight||laneH(+ln.dataset.ln);return{H,top:ln.classList.contains('mg7')?0:4,bot:ln.classList.contains('mg0')?H:H-4}};
+  const lpBind=(el,key)=>{el.style.pointerEvents='auto';el.addEventListener('pointerdown',e=>{e.stopPropagation();dragBusy=true;const T=setTimeout(()=>{buzz();fdMenu(key)},500),x1=e.clientX,c2=()=>{clearTimeout(T);removeEventListener('pointerup',c2,true);removeEventListener('pointermove',m2,true)},m2=ev=>{if(Math.abs(ev.clientX-x1)>8)c2()};addEventListener('pointerup',c2,true);addEventListener('pointermove',m2,true)});el.addEventListener('click',e=>e.stopPropagation())};
+  const tri=(ln,x0,len,dir,k0,col,key)=>{if(!ln||!(len>0))return;const{H,top,bot}=geo(ln);
     const sv=document.createElementNS(NS,'svg');sv.setAttribute('class','fdtri');const w=Math.max(1,len*pps);sv.style.cssText='position:absolute;top:0;height:'+H+'px;z-index:6;overflow:visible;pointer-events:none;left:'+(dir>0?x0:x0-w)+'px;width:'+w+'px';
-    if(len>0){const p=document.createElementNS(NS,'path'),q=document.createElementNS(NS,'path');const c=fdPath(k0,0,bot,w,bot-top);
-      /* フェードの所(薄い色の三角形)。右側は左右反転 *//* v668: 音声は左上(動画の線と同じ起点)から下の□へ。上下反転 */const fv=key[0]==='a'?' translate(0,'+(top+bot)+') scale(1,-1)':'',tf=(dir>0?'':'translate('+w+',0) scale(-1,1)')+fv;p.setAttribute('d',c+' L0 '+top+' Z');p.setAttribute('transform',tf);p.setAttribute('fill',col);p.setAttribute('fill-opacity','.35');
-      q.setAttribute('d',c);q.setAttribute('transform',tf);q.setAttribute('fill','none');q.setAttribute('stroke','#fff');q.setAttribute('stroke-width','2');sv.append(p,q);
-      p.style.pointerEvents='auto';p.addEventListener('pointerdown',e=>{e.stopPropagation();dragBusy=true;const T=setTimeout(()=>{buzz();fdMenu(key)},500),c2=()=>{clearTimeout(T);removeEventListener('pointerup',c2,true);removeEventListener('pointermove',m2,true)},x1=e.clientX,m2=ev=>{if(Math.abs(ev.clientX-x1)>8)c2()};addEventListener('pointerup',c2,true);addEventListener('pointermove',m2,true)});p.addEventListener('click',e=>e.stopPropagation())}
-    ln.appendChild(sv)};
+    const p=document.createElementNS(NS,'path'),q=document.createElementNS(NS,'path');const c=fdPath(k0,0,bot,w,bot-top);
+    /* フェードの所(薄い色の三角形)。右側は左右反転。v668: 音声は左上(動画の線と同じ起点)から下の□へ。上下反転 */const fv=key[0]==='a'?' translate(0,'+(top+bot)+') scale(1,-1)':'',tf=(dir>0?'':'translate('+w+',0) scale(-1,1)')+fv;p.setAttribute('d',c+' L0 '+top+' Z');p.setAttribute('transform',tf);p.setAttribute('fill',col);p.setAttribute('fill-opacity','.35');
+    q.setAttribute('d',c);q.setAttribute('transform',tf);q.setAttribute('fill','none');q.setAttribute('stroke','#fff');q.setAttribute('stroke-width','2');sv.append(p,q);lpBind(p,key);ln.appendChild(sv)};
+  /* クロスディゾルブの所: 境目 xb の手前 d 秒に ×(前=下がる線・次=上がる線) */
+  const xdraw=(ln,xb,d,c,key,audio)=>{if(!ln||!(d>0))return;const{H,top,bot}=geo(ln),w=Math.max(1,d*pps);
+    const sv=document.createElementNS(NS,'svg');sv.setAttribute('class','fdtri xdv');sv.style.cssText='position:absolute;top:0;height:'+H+'px;z-index:6;overflow:visible;pointer-events:none;left:'+(xb-w)+'px;width:'+w+'px';
+    const up=fdPath(c,0,bot,w,bot-top),fl=document.createElementNS(NS,'path'),l1=document.createElementNS(NS,'path'),l2=document.createElementNS(NS,'path');
+    fl.setAttribute('d','M0 '+top+' L'+w+' '+top+' L'+w+' '+bot+' L0 '+bot+' Z');fl.setAttribute('fill',audio?'#4aa3ff':'#fff');fl.setAttribute('fill-opacity','.18');
+    l1.setAttribute('d',up);l2.setAttribute('d',up);l2.setAttribute('transform','translate('+w+',0) scale(-1,1)');[l1,l2].forEach(l=>{l.setAttribute('fill','none');l.setAttribute('stroke','#fff');l.setAttribute('stroke-width','2')});
+    sv.append(fl,l1,l2);lpBind(fl,key);ln.appendChild(sv)};
   const vi=segF(sa).vi||0,vo=segF(sb).vo||0,ai=segA(sa).fi||0,ao=segA(sb).fo||0,x0=t0*pps,x1=t1*pps;
-  tri(L0,x0,vi,1,segF(sa).vic,'#000','vi');tri(L0,x1,vo,-1,segF(sb).voc,'#000','vo');tri(L7,x0,ai,1,segA(sa).fic,'#4aa3ff','ai');tri(L7,x1,ao,-1,segA(sb).foc,'#4aa3ff','ao');
+  if(xdIn>0){xdraw(L0,x0,xdIn,P&&P.k==='vi'?(segF(sa).xdc||fdDef()):segF(sa).xdc,'xi');xdraw(L7,x0,xdIn,segF(sa).xdc,'xi',true)}else tri(L0,x0,vi,1,segF(sa).vic,'#000','vi');
+  if(xdOut>0){const c=nextN&&segF(nextN).xdc||fdDef();xdraw(L0,x1,xdOut,c,'xo');xdraw(L7,x1,xdOut,c,'xo',true)}else tri(L0,x1,vo,-1,segF(sb).voc,'#000','vo');
+  if(!(xdIn>0))tri(L7,x0,ai,1,segA(sa).fic,'#4aa3ff','ai');if(!(xdOut>0))tri(L7,x1,ao,-1,segA(sb).foc,'#4aa3ff','ao');
   const box=(ln,key,x,bottom)=>{if(!ln)return;if(fdHandles.drag===key){const o=ln.querySelector('.fdh[data-k="'+key+'"]');if(o){o.style.left=x+'px';return}}const h=document.createElement('div');h.className='fdh';h.dataset.k=key;
     h.style.cssText='position:absolute;z-index:8;width:22px;height:22px;margin-left:-11px;box-sizing:border-box;border:2px solid #fff;background:rgba(0,0,0,.55);border-radius:3px;touch-action:none;'+(bottom?'bottom:2px;':'top:2px;')+'left:'+x+'px';
     h.addEventListener('click',e=>e.stopPropagation());
     h.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();dragBusy=true;pausePreview();try{h.setPointerCapture(e.pointerId)}catch(_){}
-      const sx=e.clientX,vid=key[0]==='v',inS=key[1]==='i',S=inS?sa:sb,ot=inS?(vid?segF(sb).vo:segA(sb).fo):(vid?segF(sa).vi:segA(sa).fi),v0=vid?(inS?vi:vo):(inS?ai:ao);
-      fdHandles.drag=key;let moved=false,hist=false,lp=setTimeout(()=>{if(!moved){buzz();fdMenu(key)}},550);
-      const mv=ev=>{const dx=ev.clientX-sx;if(!moved&&Math.abs(dx)<6)return;if(!moved){moved=true;clearTimeout(lp)}if(!hist){segHist();hist=true}
-        let v=v0+(inS?dx:-dx)/pps;const mx=Math.max(0,D-(ot||0));if(v>mx){v=mx}if(v<0)v=0;v=Math.round(v*20)/20;
+      const sx=e.clientX,vid=key[0]==='v',inS=key[1]==='i',S=inS?sa:sb,ot=inS?(vid?segF(sb).vo:segA(sb).fo):(vid?segF(sa).vi:segA(sa).fi);
+      /* クロスディゾルブの相手: 左上=前のまとまり、右上=次のまとまり。H=次のまとまりの頭(xd を持つ方)、Aq=前のまとまりの最後 */
+      const H=vid?(inS?(prevOK?sa:null):nextN):null,Aq=H?(inS?segs[a-1]:sb):null,dOld=H?segF(H).xd||0:0;
+      const maxX=H?Math.max(0,Math.min(segD(Aq)-0.05,(H.end-(H.start-dOld*spdOf(H)))/spdOf(H)-0.1)):0;
+      const v0=vid?(dOld>0?-dOld:(inS?vi:vo)):(inS?ai:ao);
+      fdHandles.drag=key;let moved=false,hist=false,lp=setTimeout(()=>{if(!moved){buzz();fdMenu(dOld>0?(inS?'xi':'xo'):key)}},550);
+      const mv=ev=>{const dx=ev.clientX-sx;if(!moved&&Math.abs(dx)<6)return;if(!moved){moved=true;clearTimeout(lp)}
+        let v=v0+(inS?dx:-dx)/pps;
+        if(v<0&&H){/* 隣へ出した=クロスディゾルブ(離した時に入れる) */let d=Math.min(-v,maxX);d=Math.round(d*20)/20;fdHandles.pend={k:key,d};if(-v>maxX+0.02)flashSel('ここまでです（'+maxX.toFixed(2)+'秒）');else flashSel('クロスディゾルブ '+d.toFixed(2)+'秒');
+          const o=h;o.style.left=(inS?x0-d*pps:x1+d*pps)+'px';if(!fdHandles.q)fdHandles.q=requestAnimationFrame(()=>{fdHandles.q=0;fdRe()});return}
+        fdHandles.pend=dOld>0?{k:key,d:0}:null;if(!hist){segHist();hist=true}
+        const mx=Math.max(0,D-(ot||0));if(v>mx){v=mx}if(v<0)v=0;v=Math.round(v*20)/20;
         const C=fdDef();if(vid){fdPut(S,'fd',inS?'vi':'vo',v);if(v&&!segF(S)[inS?'vic':'voc'])fdPut(S,'fd',inS?'vic':'voc',C)}
         /* 動画を動かした時は音声も一緒、音声は音声だけ */fdPut(S,'a',inS?'fi':'fo',v);if(v&&!segA(S)[inS?'fic':'foc'])fdPut(S,'a',inS?'fic':'foc',C);
         flashSel((vid?'動画':'音声')+'のフェード'+(inS?'イン ':'アウト ')+v.toFixed(2)+'秒');if(!fdHandles.q)fdHandles.q=requestAnimationFrame(()=>{fdHandles.q=0;fdRe()})};
-      const up=()=>{fdHandles.drag=null;clearTimeout(lp);h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);dragBusy=false;if(moved){fdRe();try{renderPreview()}catch(_){}}};
+      const up=()=>{fdHandles.drag=null;clearTimeout(lp);h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);dragBusy=false;
+        const pd=fdHandles.pend;fdHandles.pend=null;if(moved&&pd&&H&&Math.abs(pd.d-dOld)>1e-6){xdSet(H,Aq,pd.d,dOld);return}if(moved){fdRe();try{renderPreview()}catch(_){}}};
       h.addEventListener('pointermove',mv);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up)});
     ln.appendChild(h)};
-  box(L0,'vi',x0+vi*pps,false);box(L0,'vo',x1-vo*pps,false);box(L7||null,'ai',x0+ai*pps,true);box(L7||null,'ao',x1-ao*pps,true)}
+  box(L0,'vi',xdIn>0?x0-xdIn*pps:x0+vi*pps,false);box(L0,'vo',xdOut>0?x1:x1-vo*pps,false);if(!(xdIn>0))box(L7||null,'ai',x0+ai*pps,true);if(!(xdOut>0))box(L7||null,'ao',x1-ao*pps,true)}
+/* クロスディゾルブを入れる・変える・消す。H の頭を削って(戻して)全体の長さを変え、後ろの字幕などもずらす */
+function xdSet(H,Aq,d,dOld){const i=segs.indexOf(H);if(i<0)return;segHist();segU[segU.length-1].items=cloneItems();
+  const xb=cumAt(i),dl=d-dOld;H.start+=dl*spdOf(H);fdPut(H,'fd','xd',d>0?d:null);
+  if(d>0){if(!segF(H).xdc)fdPut(H,'fd','xdc',fdDef());fdPut(H,'fd','vi',null);fdPut(H,'fd','vic',null);fdPut(H,'a','fi',null);if(Aq){fdPut(Aq,'fd','vo',null);fdPut(Aq,'fd','voc',null);fdPut(Aq,'a','fo',null)}}else fdPut(H,'fd','xdc',null);
+  tlShift(xb,-dl,H.cn);if(corners.length)cornerSync();else cornerRebase();resetOut();renderLanes();try{renderSegs()}catch(_){}try{renderPreview()}catch(_){}flashSel(d>0?'クロスディゾルブ '+d.toFixed(2)+'秒':'クロスディゾルブを消しました')}
 function fdRe(){const cv=$('cv');if(!cv)return;cv.querySelectorAll('.fdh,.fdtri').forEach(e=>{if(!(fdHandles.drag&&e.dataset.k===fdHandles.drag))e.remove()});fdHandles(cv)}
 /* 曲線を選ぶ(三角形・□の長押し)。チェック=新しいフェードのデフォルト */
-function fdMenu(key){if(!selVid||!segs.includes(selVid))return;const k=segs.indexOf(selVid),[a,b]=visBlk(k),S=key[1]==='i'?segs[a]:segs[b],vid=key[0]==='v',ck=key[1]==='i'?'ic':'oc';
-  const cur=vid?segF(S)['v'+ck]:segA(S)['f'+ck];let P=$('fdP');if(P)P.remove();P=document.createElement('div');P.id='fdP';
+function fdMenu(key){if(!selVid||!segs.includes(selVid))return;const k=segs.indexOf(selVid),[a,b]=visBlk(k),xk=key[0]==='x',S=xk?(key[1]==='i'?segs[a]:segs[b+1]):(key[1]==='i'?segs[a]:segs[b]),vid=key[0]==='v',ck=key[1]==='i'?'ic':'oc';if(!S)return;
+  const cur=xk?segF(S).xdc:vid?segF(S)['v'+ck]:segA(S)['f'+ck];let P=$('fdP');if(P)P.remove();P=document.createElement('div');P.id='fdP';
   P.style.cssText='position:fixed;left:8px;right:8px;bottom:12px;z-index:9500;background:var(--panel,#222);color:var(--fg,#fff);border:1px solid var(--line,#555);border-radius:14px;padding:10px;box-shadow:0 4px 20px #000a';
-  const hd=document.createElement('div');hd.style.cssText='font-weight:700;margin-bottom:6px';hd.textContent=(vid?'動画':'音声')+'のフェード'+(key[1]==='i'?'イン':'アウト')+'の曲線';P.appendChild(hd);
+  const hd=document.createElement('div');hd.style.cssText='font-weight:700;margin-bottom:6px';hd.textContent=xk?'クロスディゾルブの曲線':(vid?'動画':'音声')+'のフェード'+(key[1]==='i'?'イン':'アウト')+'の曲線';P.appendChild(hd);
   const def=fdDef();Object.keys(FCV).forEach(c=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px;margin:4px 0';
     const bt=document.createElement('button');bt.style.cssText='flex:1;display:flex;align-items:center;gap:10px;min-height:48px;text-align:left'+(c===(cur||'lin')?';background:var(--accent);color:var(--accent-fg);border-color:var(--accent)':'');
     bt.innerHTML='<svg width="44" height="30" viewBox="0 0 44 30"><path d="'+fdPath(c,2,28,40,26)+'" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>'+FCN[c]+'</span>';
-    bt.onclick=()=>{segHist();if(vid)fdPut(S,'fd','v'+ck,c);fdPut(S,'a','f'+ck,c);P.remove();fdRe();try{renderPreview()}catch(_){}flashSel(FCN[c]+'にしました')};
+    bt.onclick=()=>{segHist();if(xk)fdPut(S,'fd','xdc',c);else{if(vid)fdPut(S,'fd','v'+ck,c);fdPut(S,'a','f'+ck,c)}P.remove();fdRe();try{renderPreview()}catch(_){}flashSel(FCN[c]+'にしました')};
     const lb=document.createElement('label');lb.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap';const cb=document.createElement('input');cb.type='checkbox';cb.checked=c===def;cb.style.cssText='width:22px;height:22px';
     cb.onchange=()=>{try{localStorage.setItem('fdCurve',cb.checked?c:'lin')}catch(_){}P.querySelectorAll('input[type=checkbox]').forEach(x=>{if(x!==cb)x.checked=false});if(!cb.checked&&c!=='lin'){const l=P.querySelector('input[data-c="lin"]');if(l)l.checked=true}};cb.dataset.c=c;
     lb.append(cb,document.createTextNode('デフォルト'));r.append(bt,lb);P.appendChild(r)});
@@ -5026,9 +5062,13 @@ async function xAudWin(ex,A,B,XR){
     P.setValueAtTime(1,0);
     if(!contP&&ga<=sa+1e-6){P.setValueAtTime(0,ga-A);P.linearRampToValueAtTime(1,ga-A+FD)}
     if(!contN&&gb>=sb-1e-6){P.setValueAtTime(1,Math.max(0,gb-A-FD));P.linearRampToValueAtTime(0,gb-A)}
-    /* v361: 動画の音の調整(音量・ミュート・フェード・ノーマライズ・声の強調・ノイズ除去) */{const ia=segs.indexOf(s);if(s.fx&&s.fx.a||tltV()!==1||ia>=0&&(segA(segs[visBlk(ia)[0]]).fi||segA(segs[visBlk(ia)[1]]).fo)){const ag=ctx.createGain();src.disconnect();audFx(ctx,segA(s),src).connect(ag);ag.connect(g);const n=Math.max(2,Math.ceil((gb-ga)*20));
+    /* v361: 動画の音の調整(音量・ミュート・フェード・ノーマライズ・声の強調・ノイズ除去) */{const ia=segs.indexOf(s);if(s.fx&&s.fx.a||tltV()!==1||ia>=0&&(segA(segs[visBlk(ia)[0]]).fi||segA(segs[visBlk(ia)[1]]).fo||xdNx(ia))){const ag=ctx.createGain();src.disconnect();audFx(ctx,segA(s),src).connect(ag);ag.connect(g);const n=Math.max(2,Math.ceil((gb-ga)*20));
       for(let j=0;j<=n;j++){const t=ga+(gb-ga)*j/n;ag.gain.setValueAtTime(audG(ia,s.start+(t-sa)*K),Math.max(0,t-A))}}}
     src.start(ga-A,Math.max(0,r.off),gb-ga)}
+  /* v670: クロスディゾルブの次の頭の音(曲線どおりに上げる) */for(const r of xdList()){const ga=Math.max(A,r.start),gb=Math.min(B,r.end);if(gb<=ga+1e-4||r.spd>=8)continue;
+    const K=r.spd,c0=r.off+(ga-r.start)*K,c1=r.off+(gb-r.start)*K;let q=await xAud(await xOpen(r.clip),c0,c1,xcCK(r.clip));if(!q)continue;if(K!==1)q={buf:tStretch(q.buf,K),off:q.off/K};
+    const src=ctx.createBufferSource();src.buffer=q.buf;const ag=ctx.createGain();audFx(ctx,segA(segs[r.i]),src).connect(ag);ag.connect(mg);const n=Math.max(2,Math.ceil((gb-ga)*20)),base=audG(r.i,segs[r.i].start);
+    for(let j=0;j<=n;j++){const t=ga+(gb-ga)*j/n;ag.gain.setValueAtTime(base*fcv(r.xdc)((t-r.start)/(r.end-r.start)),Math.max(0,t-A))}src.start(ga-A,Math.max(0,q.off),gb-ga)}
   scheduleNarr(ctx,mg,A,0,1);
   if(window.subTLSeAll)try{window.subTLSeAll(ctx,mg,A,B)}catch(e){}
   if(B>=XR.b-1e-6){const e=B-A;mg.gain.setValueAtTime(1,Math.max(0,e-FD));mg.gain.linearRampToValueAtTime(0,e)}
@@ -5332,7 +5372,7 @@ async function exportX0(PV,noC,BG){
     /* 1コマの指紋(書き出しと同じ描き方で、別のキャンバスに描く) */
     const xcSigF=async fi=>{const T=XR.a+fi/XFPS,q=segOf(T);XC.RB=false;let src=null;
       if(q&&q.s.clip){const c=q.s.clip,X=await xOpen(c),K=spdOf(q.s),ct=Math.min(q.s.end-0.001,q.s.start+(T-q.sa)*K),ts=K>=8||S0.kf?xcKeyTs(X,ct):xcFrTs(X,ct);if(ts==null)return null;src=xcPh(sfc,c,X,ts,xcDm(c,X))}
-      const it=ovAt(T);if(it){const c=ovClip(it),X=await xOpen(c),ts=xcFrTs(X,Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start))));if(ts==null)return null;ovX={it,f:xcPh(sov,c,X,ts,xcDm(c,X))}}else ovX={f:null};
+      const it=ovAt(T);if(it){const c=ovClip(it),X=await xOpen(c),ts=xcFrTs(X,Math.max(0,Math.min(c.d-0.001,(it.off||0)+(T-it.start)*(it.spd||1))));if(ts==null)return null;ovX={it,f:xcPh(sov,c,X,ts,xcDm(c,X))}}else ovX={f:null};
       try{xcFrame0(gS,W,H);drawFrame(gS,W,H,src||{videoWidth:0,videoHeight:0},T);return xcSig(gS,W,H)}finally{ovX=null}};
     const xcSigG=async f0=>{const n=Math.min(G,N-f0),o={f0,n,sig:null,name:null,hit:false,rp:null};if(!xc.doSig||!xc.files.size)return o;
       const s0=pn(),sig=[];try{for(let i=0;i<n;i++){if(BG)await xbgYield(BG);const s=await xcSigF(f0+i);if(!s){xc.st.unc++;return o}sig.push(s)}}finally{PF.s+=pn()-s0}
@@ -5881,8 +5921,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v669';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v670';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
