@@ -2443,7 +2443,7 @@ function sbUI(box,tg,M,only){let pushed=false;const g0=()=>{const l=tg();return(
 function drawFrame(g,W,H,vid,t){
   g.fillStyle='#000';g.fillRect(0,0,W,H);
   try{const vw=vid.videoWidth,vh=vid.videoHeight;
-    if(vw&&vh&&t<segSum()-0.001&&isVidAt(t)){const sv=segV(segs[locate(t).i]),tc=tltCol();/* v395: ズーム・回転だけの時は、テンプレートの色も使う */vDraw(g,W,H,vid,vw,vh,sv&&tc&&Object.keys(sv).every(k=>VTF.includes(k))?{...tc,...sv}:sv||tc)}}catch(e){}
+    if(vw&&vh&&t<segSum()-0.001&&isVidAt(t)){const sv=segV(segs[locate(t).i]),tc=tltCol(),fa=vFadeAt(t);/* v664: 動画のフェード(黒から/黒へ) */g.globalAlpha=fa;/* v395: ズーム・回転だけの時は、テンプレートの色も使う */vDraw(g,W,H,vid,vw,vh,sv&&tc&&Object.keys(sv).every(k=>VTF.includes(k))?{...tc,...sv}:sv||tc);g.globalAlpha=1}}catch(e){g.globalAlpha=1}
   /* v652: NOT FOUND の所は赤い✕ */try{const L=locate(t),q=L&&segs[L.i];if(q&&q.nf){g.save();g.strokeStyle='#ff2d3d';g.lineWidth=Math.max(6,W*0.012);const m=Math.min(W,H)*0.28;g.beginPath();g.moveTo(W/2-m,H/2-m);g.lineTo(W/2+m,H/2+m);g.moveTo(W/2+m,H/2-m);g.lineTo(W/2-m,H/2+m);g.stroke();g.fillStyle='#ff2d3d';g.font='bold '+Math.round(H*0.08)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('NOT FOUND',W/2,H/2+m+H*0.08);g.font=Math.round(H*0.04)+'px sans-serif';g.fillText(String(q.nf.c&&q.nf.c.name||''),W/2,H/2+m+H*0.15);g.restore()}}catch(e){}
   /* v412: 上の動画レーン(8)。下の動画の上に重ねる */try{ovDraw(g,W,H,t)}catch(e){}
   let blankBg=null,blankAt=0;for(const q of segs){const d=segD(q);if(t<blankAt+d){if(q.bg)blankBg=q.bg;break}blankAt+=d}
@@ -2667,7 +2667,64 @@ function visBlk(i){const c=segs[i]&&segs[i].clip;let a=i,b=i;if(!c)return[i,i];w
 function audG(i,t){const s=segs[i];if(!s||!s.clip)return 1;const u=segA(s);if(u.m)return 0;let g=(u.vol==null?tltV():u.vol)*audNm(u);
   const[a,b]=visBlk(i),fi=segA(segs[a]).fi||0,fo=segA(segs[b]).fo||0;if(!fi&&!fo)return g;
   const ba=cumAt(a),bb=cumAt(b)+(segD(segs[b])),x=cumAt(i)+(t-s.start)/spdOf(s);
-  if(fi&&x-ba<fi)g*=Math.max(0,(x-ba)/fi);if(fo&&bb-x<fo)g*=Math.max(0,(bb-x)/fo);return g}
+  /* v664: 曲線(fic/foc) */if(fi&&x-ba<fi)g*=fcv(segA(segs[a]).fic)(Math.max(0,Math.min(1,(x-ba)/fi)));if(fo&&bb-x<fo)g*=fcv(segA(segs[b]).foc)(Math.max(0,Math.min(1,(bb-x)/fo)));return g}
+/* v664: クリップの四隅の□でフェード。左上=動画のフェードイン(音声も一緒)、右上=動画のフェードアウト(音声も一緒)、左下=音声だけのフェードイン、右下=音声だけのフェードアウト。
+   動画は s.fx.fd {vi,vo,vic,voc}(まとまりの最初/最後のブロックに入れる)、音声は今までの s.fx.a.fi/fo に曲線 fic/foc を足した。曲線は lin/in/out/s。チェックした曲線が新しいフェードのデフォルト */
+const FCV={lin:x=>x,in:x=>x*x,out:x=>1-(1-x)*(1-x),s:x=>x*x*(3-2*x)},FCN={lin:'直線',in:'ゆっくり始まる',out:'ゆっくり終わる',s:'S字'};
+const fcv=k=>FCV[k]||FCV.lin,fdDef=()=>{try{const k=localStorage.getItem('fdCurve');return FCV[k]?k:'lin'}catch(e){return'lin'}};
+const segF=s=>(s&&s.fx&&s.fx.fd)||{};
+function fdPut(s,part,k,v){s.fx=fxC(s.fx)||{};const o=s.fx[part]=s.fx[part]||{};if(v==null||v===0||v==='')delete o[k];else o[k]=v;if(!Object.keys(o).length)delete s.fx[part];if(!Object.keys(s.fx).length)delete s.fx}
+/* 動画のフェードの濃さ(0〜1)。t=全体の時刻 */
+function vFadeAt(t){const L=locate(t),i=L&&L.i,s=segs[i];if(!s||!s.clip)return 1;const[a,b]=visBlk(i),A=segF(segs[a]),B=segF(segs[b]),vi=A.vi||0,vo=B.vo||0;if(!vi&&!vo)return 1;
+  const ba=cumAt(a),bb=cumAt(b)+segD(segs[b]);let g=1;if(vi&&t-ba<vi)g*=fcv(A.vic)(Math.max(0,Math.min(1,(t-ba)/vi)));if(vo&&bb-t<vo)g*=fcv(B.voc)(Math.max(0,Math.min(1,(bb-t)/vo)));return g}
+/* 曲線の形の小さい絵(SVGのpath)。w×h の箱で、左下→右上 */
+const fdPath=(k,x0,y0,w,h,n=16)=>{let d='';for(let j=0;j<=n;j++){const u=j/n;d+=(j?'L':'M')+(x0+u*w).toFixed(1)+' '+(y0-fcv(k)(u)*h).toFixed(1)}return d};
+/* 選んでいるクリップに□と三角形を出す */
+function fdHandles(cv){
+  if(actLane!==0||!selVid||!segs.includes(selVid)||!selVid.clip)return;
+  const L0=cv.querySelector('.lane[data-ln="0"]'),L7=cv.querySelector('.lane[data-ln="7"]');if(!L0)return;
+  const k=segs.indexOf(selVid),[a,b]=visBlk(k),sa=segs[a],sb=segs[b],t0=cumAt(a),t1=cumAt(b)+segD(sb),D=t1-t0,V=viewR();
+  if(cview&&(t1<=V.a||t0>=V.b))return;
+  const NS='http://www.w3.org/2000/svg';
+  const tri=(ln,x0,len,dir,k0,col,key)=>{if(!ln)return;const H=ln.clientHeight||laneH(+ln.dataset.ln),top=ln.classList.contains('mg7')?0:4,bot=ln.classList.contains('mg0')?H:H-4;
+    const sv=document.createElementNS(NS,'svg');sv.setAttribute('class','fdtri');const w=Math.max(1,len*pps);sv.style.cssText='position:absolute;top:0;height:'+H+'px;z-index:6;overflow:visible;pointer-events:none;left:'+(dir>0?x0:x0-w)+'px;width:'+w+'px';
+    if(len>0){const p=document.createElementNS(NS,'path'),q=document.createElementNS(NS,'path');const c=fdPath(k0,0,bot,w,bot-top);
+      /* フェードの所(薄い色の三角形)。右側は左右反転 */const tf=dir>0?'':'translate('+w+',0) scale(-1,1)';p.setAttribute('d',c+' L0 '+top+' Z');p.setAttribute('transform',tf);p.setAttribute('fill',col);p.setAttribute('fill-opacity','.35');
+      q.setAttribute('d',c);q.setAttribute('transform',tf);q.setAttribute('fill','none');q.setAttribute('stroke','#fff');q.setAttribute('stroke-width','2');sv.append(p,q);
+      p.style.pointerEvents='auto';p.addEventListener('pointerdown',e=>{e.stopPropagation();dragBusy=true;const T=setTimeout(()=>{buzz();fdMenu(key)},500),c2=()=>{clearTimeout(T);removeEventListener('pointerup',c2,true);removeEventListener('pointermove',m2,true)},x1=e.clientX,m2=ev=>{if(Math.abs(ev.clientX-x1)>8)c2()};addEventListener('pointerup',c2,true);addEventListener('pointermove',m2,true)});p.addEventListener('click',e=>e.stopPropagation())}
+    ln.appendChild(sv)};
+  const vi=segF(sa).vi||0,vo=segF(sb).vo||0,ai=segA(sa).fi||0,ao=segA(sb).fo||0,x0=t0*pps,x1=t1*pps;
+  tri(L0,x0,vi,1,segF(sa).vic,'#000','vi');tri(L0,x1,vo,-1,segF(sb).voc,'#000','vo');tri(L7,x0,ai,1,segA(sa).fic,'#4aa3ff','ai');tri(L7,x1,ao,-1,segA(sb).foc,'#4aa3ff','ao');
+  const box=(ln,key,x,bottom)=>{if(!ln)return;if(fdHandles.drag===key){const o=ln.querySelector('.fdh[data-k="'+key+'"]');if(o){o.style.left=x+'px';return}}const h=document.createElement('div');h.className='fdh';h.dataset.k=key;
+    h.style.cssText='position:absolute;z-index:8;width:22px;height:22px;margin-left:-11px;box-sizing:border-box;border:2px solid #fff;background:rgba(0,0,0,.55);border-radius:3px;touch-action:none;'+(bottom?'bottom:2px;':'top:2px;')+'left:'+x+'px';
+    h.addEventListener('click',e=>e.stopPropagation());
+    h.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();dragBusy=true;pausePreview();try{h.setPointerCapture(e.pointerId)}catch(_){}
+      const sx=e.clientX,vid=key[0]==='v',inS=key[1]==='i',S=inS?sa:sb,ot=inS?(vid?segF(sb).vo:segA(sb).fo):(vid?segF(sa).vi:segA(sa).fi),v0=vid?(inS?vi:vo):(inS?ai:ao);
+      fdHandles.drag=key;let moved=false,hist=false,lp=setTimeout(()=>{if(!moved){buzz();fdMenu(key)}},550);
+      const mv=ev=>{const dx=ev.clientX-sx;if(!moved&&Math.abs(dx)<6)return;if(!moved){moved=true;clearTimeout(lp)}if(!hist){segHist();hist=true}
+        let v=v0+(inS?dx:-dx)/pps;const mx=Math.max(0,D-(ot||0));if(v>mx){v=mx}if(v<0)v=0;v=Math.round(v*20)/20;
+        const C=fdDef();if(vid){fdPut(S,'fd',inS?'vi':'vo',v);if(v&&!segF(S)[inS?'vic':'voc'])fdPut(S,'fd',inS?'vic':'voc',C)}
+        /* 動画を動かした時は音声も一緒、音声は音声だけ */fdPut(S,'a',inS?'fi':'fo',v);if(v&&!segA(S)[inS?'fic':'foc'])fdPut(S,'a',inS?'fic':'foc',C);
+        flashSel((vid?'動画':'音声')+'のフェード'+(inS?'イン ':'アウト ')+v.toFixed(2)+'秒');if(!fdHandles.q)fdHandles.q=requestAnimationFrame(()=>{fdHandles.q=0;fdRe()})};
+      const up=()=>{fdHandles.drag=null;clearTimeout(lp);h.removeEventListener('pointermove',mv);h.removeEventListener('pointerup',up);h.removeEventListener('pointercancel',up);dragBusy=false;if(moved){fdRe();try{renderPreview()}catch(_){}}};
+      h.addEventListener('pointermove',mv);h.addEventListener('pointerup',up);h.addEventListener('pointercancel',up)});
+    ln.appendChild(h)};
+  box(L0,'vi',x0+vi*pps,false);box(L0,'vo',x1-vo*pps,false);box(L7||null,'ai',x0+ai*pps,true);box(L7||null,'ao',x1-ao*pps,true)}
+function fdRe(){const cv=$('cv');if(!cv)return;cv.querySelectorAll('.fdh,.fdtri').forEach(e=>{if(!(fdHandles.drag&&e.dataset.k===fdHandles.drag))e.remove()});fdHandles(cv)}
+/* 曲線を選ぶ(三角形・□の長押し)。チェック=新しいフェードのデフォルト */
+function fdMenu(key){if(!selVid||!segs.includes(selVid))return;const k=segs.indexOf(selVid),[a,b]=visBlk(k),S=key[1]==='i'?segs[a]:segs[b],vid=key[0]==='v',ck=key[1]==='i'?'ic':'oc';
+  const cur=vid?segF(S)['v'+ck]:segA(S)['f'+ck];let P=$('fdP');if(P)P.remove();P=document.createElement('div');P.id='fdP';
+  P.style.cssText='position:fixed;left:8px;right:8px;bottom:12px;z-index:9500;background:var(--panel,#222);color:var(--fg,#fff);border:1px solid var(--line,#555);border-radius:14px;padding:10px;box-shadow:0 4px 20px #000a';
+  const hd=document.createElement('div');hd.style.cssText='font-weight:700;margin-bottom:6px';hd.textContent=(vid?'動画':'音声')+'のフェード'+(key[1]==='i'?'イン':'アウト')+'の曲線';P.appendChild(hd);
+  const def=fdDef();Object.keys(FCV).forEach(c=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:8px;margin:4px 0';
+    const bt=document.createElement('button');bt.style.cssText='flex:1;display:flex;align-items:center;gap:10px;min-height:48px;text-align:left'+(c===(cur||'lin')?';background:var(--accent);color:var(--accent-fg);border-color:var(--accent)':'');
+    bt.innerHTML='<svg width="44" height="30" viewBox="0 0 44 30"><path d="'+fdPath(c,2,28,40,26)+'" fill="none" stroke="currentColor" stroke-width="2.5"/></svg><span>'+FCN[c]+'</span>';
+    bt.onclick=()=>{segHist();if(vid)fdPut(S,'fd','v'+ck,c);fdPut(S,'a','f'+ck,c);P.remove();fdRe();try{renderPreview()}catch(_){}flashSel(FCN[c]+'にしました')};
+    const lb=document.createElement('label');lb.style.cssText='display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap';const cb=document.createElement('input');cb.type='checkbox';cb.checked=c===def;cb.style.cssText='width:22px;height:22px';
+    cb.onchange=()=>{try{localStorage.setItem('fdCurve',cb.checked?c:'lin')}catch(_){}P.querySelectorAll('input[type=checkbox]').forEach(x=>{if(x!==cb)x.checked=false});if(!cb.checked&&c!=='lin'){const l=P.querySelector('input[data-c="lin"]');if(l)l.checked=true}};cb.dataset.c=c;
+    lb.append(cb,document.createTextNode('デフォルト'));r.append(bt,lb);P.appendChild(r)});
+  const cl=document.createElement('button');cl.textContent='閉じる';cl.style.cssText='width:100%;margin-top:6px;min-height:44px';cl.onclick=()=>P.remove();P.appendChild(cl);document.body.appendChild(P)}
+
 /* 動画ブロックのインスペクタ(ビデオ/オーディオのタブ)。tab 'v' / 'a' = 最初に出すタブ */
 /* v522: SEL=速度ボタンで選んだ物(あれば、設定は選んだ全部に入る) */
 function segIns(i,kind,SEL,keep){
@@ -2742,7 +2799,7 @@ function vDraw(g,W,H,vid,vw,vh,v){
   if(!v){const k=Math.min(W/vw,H/vh);g.drawImage(vid,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);return}
   const kl=(v.kl||0)/100,kt=(v.kt||0)/100,sw=vw*(1-kl-(v.kr||0)/100),sh=vh*(1-kt-(v.kb||0)/100),k=Math.min(W/sw,H/sh),dw=sw*k,dh=sh*k,dx=(W-dw)/2,dy=(H-dh)/2;
   g.save();const f=[];if(v.br)f.push('brightness('+(1+v.br/100)+')');if(v.ct)f.push('contrast('+(1+v.ct/100)+')');if(v.sa)f.push('saturate('+(1+v.sa/100)+')');if(v.fl&&FXP[v.fl])f.push(FXP[v.fl][1]);if(v.sh>0)f.push(shId(Math.round(v.sh/10)));
-  if(f.length)g.filter=f.join(' ');if(v.op!=null&&v.op<100)g.globalAlpha=v.op/100;
+  if(f.length)g.filter=f.join(' ');if(v.op!=null&&v.op<100)g.globalAlpha*=v.op/100;/* v664: フェードと掛け合わせる */
   /* v395: ピンチのズーム・回転・移動 */if(v.zm||v.rt||v.px||v.py){g.translate(W/2+(v.px||0)*W,H/2+(v.py||0)*H);g.rotate((v.rt||0)*Math.PI/180);g.scale(v.zm||1,v.zm||1);g.translate(-W/2,-H/2)}
   if(v.fh||v.fv){g.translate(W/2,H/2);g.scale(v.fh?-1:1,v.fv?-1:1);g.translate(-W/2,-H/2)}
   g.drawImage(vid,vw*kl,vh*kt,sw,sh,dx,dy,dw,dh);g.restore();
@@ -3450,7 +3507,7 @@ function renderLanes0(){try{sbMigrate()}catch(e){}
   cv.appendChild(ru);
   for(const i of ordNow()){
     const ln=document.createElement('div');ln.className='lane'+(i===3?' g3':i===4?' g4':'')+(i?' empty':'')+(i===0?' vlane':'')+(actLane===i?' act':'');
-    ln.onclick=e=>laneTap(i,e);ln.oncontextmenu=e=>e.preventDefault();if(i>=2&&i<=4)bindLaneLP(ln,i);if(i===6)bgmLaneLP(ln);ln.style.position='relative';ln.style.height=laneH(i)+'px';/* v659: 動画と動画音声は見た目を1つのクリップにする(上半分=サムネ、下半分=波形) */{const O=ordNow(),q=O.indexOf(i);if(i===0&&O[q+1]===7)ln.classList.add('mg0');if(i===7&&O[q-1]===0)ln.classList.add('mg7')}
+    ln.onclick=e=>laneTap(i,e);ln.oncontextmenu=e=>e.preventDefault();if(i>=2&&i<=4)bindLaneLP(ln,i);if(i===6)bgmLaneLP(ln);ln.style.position='relative';ln.style.height=laneH(i)+'px';ln.dataset.ln=i;/* v659: 動画と動画音声は見た目を1つのクリップにする(上半分=サムネ、下半分=波形) */{const O=ordNow(),q=O.indexOf(i);if(i===0&&O[q+1]===7)ln.classList.add('mg0');if(i===7&&O[q-1]===0)ln.classList.add('mg7')}
     
     if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});/* v610: タップで選んだ動画は、まとまり(同じ動画の続き)全体を選んだ表示にする */const XR=selVid&&actLane===0&&segs.includes(selVid)?segRun(selVid):null;
       segs.forEach((s,k)=>{
@@ -3525,6 +3582,7 @@ function renderLanes0(){try{sbMigrate()}catch(e){}
   cornerDeco(cv,V);renderCBar();
   if(cview){const m=document.createElement('div');m.style.cssText='position:absolute;top:0;bottom:0;left:'+(V.b*pps)+'px;right:0;background:var(--bg);border-left:1px solid var(--line);z-index:3;pointer-events:none';cv.appendChild(m)}
   if(cview&&V.empty){const w0=Math.max(200,szOf($('scr')).w);cv.style.width=(V.a*pps+w0)+'px';const m=document.createElement('div');m.textContent='このコーナーには まだ動画がありません';m.style.cssText='position:absolute;top:0;bottom:0;left:'+(V.a*pps)+'px;width:'+w0+'px;z-index:7;display:flex;align-items:center;justify-content:center;background:var(--panel);color:var(--muted);font-size:13px';cv.appendChild(m)}
+  try{fdHandles(cv)}catch(e){}/* v664 */
   ph=document.createElement('div');ph.className='ph';cv.appendChild(ph);updatePlayhead();renderLbls();renderSelBar();lzRun();try{insMark()}catch(e){}try{if(selA!=null)selDraw()}catch(e){}
   try{window.xfTA&&xfTA()}catch(e){}/* v540 */
 }
@@ -5824,8 +5882,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v663';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v664';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
