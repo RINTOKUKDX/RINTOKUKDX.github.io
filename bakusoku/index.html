@@ -2904,7 +2904,7 @@ function renderTimeline(){
 }
 const gcol=g=>'hsl('+((g*67)%360)+' 70% 42%)';
 let blkMap={},curGrp=0,pvFill=null,pinching=false,pinchUsed=false,panGuard=false;
-/* v359: 動画の下に動画の音声レーン(7) *//* v475: ナレーション字幕(9)はナレーション(5)の下・同じ括り */const ORDER=[0,10,7,3,5,9,8,4,6,11,1,2];/* v637: 11=FX(CHの上) *//* v621: 10=速度表記(動画の下) *//* v620: 動画の枠=動画・動画音声・字幕・ナレ・ナレ字幕。動画2・(T)・BGM・CH/見出しは別の枠 */
+/* v359: 動画の下に動画の音声レーン(7) *//* v475: ナレーション字幕(9)はナレーション(5)の下・同じ括り */const ORDER=[0,7,10,3,5,9,8,4,6,11,1,2];/* v659: 動画音声(7)は動画(0)のすぐ下(見た目は1つのクリップ) *//* v637: 11=FX(CHの上) *//* v621: 10=速度表記(動画の下) *//* v620: 動画の枠=動画・動画音声・字幕・ナレ・ナレ字幕。動画2・(T)・BGM・CH/見出しは別の枠 */
 let lowOpen=false;
 let stk=null;
 let ustack=[],segU=[];
@@ -2912,7 +2912,7 @@ const subFocus=()=>actLane===3||actLane===4;
 const chFocus=()=>actLane===1||actLane===2;
 const hidL=new Set();try{(JSON.parse(localStorage.getItem('hidLanes')||'[]')||[]).forEach(x=>hidL.add(x))}catch(e){}
 /* レーンのセット: 今必要なレーンだけ出す */
-/* v424: 動画2(8)は動画音声(7)の下。下のレーンほど画面では上に重なる */const LSETS={va:[0,10,7,3,5,9],v2:[0,8],tl:[0,4],bgm:[0,6],fx:[0,11],tel:[0,1,2]};
+/* v424: 動画2(8)は動画音声(7)の下。下のレーンほど画面では上に重なる */const LSETS={va:[0,7,10,3,5,9],v2:[0,8],tl:[0,4],bgm:[0,6],fx:[0,11],tel:[0,1,2]};
 /* v437: レーンのグループ(きんきんさん)。動画は常に表示。見出しをダブルタップ=そのグループだけ、左上の「全部」=全部 */
 const LGRP={11:'fx',10:'va',0:'va',7:'va',3:'va',5:'va',9:'va',8:'v2',4:'tl',6:'bgm',1:'tel',2:'tel'},GCOL={fx:'#9b6bff',va:'#4caf72',v2:'#3b8fd9',tl:'#21a99a',bgm:'#d9468f',tel:'#e08a2e'};
 /* v620: 見出しのワンタップ=選ぶ(複数)。1つでも選ぶと左上が「表示」→押すと選んだレーンだけ(lset='sel')。その間は「全体」で全部に戻る */
@@ -3119,7 +3119,7 @@ function rlDown(e){
 const customH={};
 /* v543: 同じ種類のクリップが重なる時の「レーンを追加」=同じ種類のレーンの下に1段足す(it.row=1,2…)。高さは段の数だけ増える */
 const rowsOf=i=>{let m=0;for(const o of items)if(o.lane===i&&(o.row||0)>m)m=o.row;return m+1};
-const laneH0=i=>autoH?autoH:customH[i]!=null?customH[i]:Math.round((i===0?76:smallL.has(i)?40:actLane===i?112:76)*laneSc);
+const laneH0=i=>(i===7&&(i=0),autoH)?autoH:customH[i]!=null?customH[i]:Math.round((i===0?76:smallL.has(i)?40:actLane===i?112:76)*laneSc);
 const laneH=i=>laneH0(i)*rowsOf(i);
 const LSK='cutapp-lanes';
 try{const s=JSON.parse(localStorage.getItem(LSK)||'null');if(s){laneSc=s.sc||1;Object.assign(customH,s.h||{});lowOpen=!!s.lo}}catch(e){}
@@ -3450,7 +3450,7 @@ function renderLanes0(){try{sbMigrate()}catch(e){}
   cv.appendChild(ru);
   for(const i of ordNow()){
     const ln=document.createElement('div');ln.className='lane'+(i===3?' g3':i===4?' g4':'')+(i?' empty':'')+(i===0?' vlane':'')+(actLane===i?' act':'');
-    ln.onclick=e=>laneTap(i,e);ln.oncontextmenu=e=>e.preventDefault();if(i>=2&&i<=4)bindLaneLP(ln,i);if(i===6)bgmLaneLP(ln);ln.style.position='relative';ln.style.height=laneH(i)+'px';
+    ln.onclick=e=>laneTap(i,e);ln.oncontextmenu=e=>e.preventDefault();if(i>=2&&i<=4)bindLaneLP(ln,i);if(i===6)bgmLaneLP(ln);ln.style.position='relative';ln.style.height=laneH(i)+'px';/* v659: 動画と動画音声は見た目を1つのクリップにする(上半分=サムネ、下半分=波形) */{const O=ordNow(),q=O.indexOf(i);if(i===0&&O[q+1]===7)ln.classList.add('mg0');if(i===7&&O[q-1]===0)ln.classList.add('mg7')}
     
     if(i===0){let x=0;videoBlks=[];/* v474: まとまり(同じ動画の続き)の中の部分はサムネを作らず、まとまり全体で1本のサムネ帯にする(細かい無音カットでサムネを何百枚も作っていた) */const inRun=segs.map(q=>{const R=segRun(q);return R[1]>R[0]});/* v610: タップで選んだ動画は、まとまり(同じ動画の続き)全体を選んだ表示にする */const XR=selVid&&actLane===0&&segs.includes(selVid)?segRun(selVid):null;
       segs.forEach((s,k)=>{
@@ -3952,6 +3952,7 @@ function renderLbls(){
     el.onclick=e=>{if(lpFlag||adjLane)return;if(dbl('lbl',e.clientY)){if(lblSel.has(i))lblSel.delete(i);else lblSel.add(i);lblSelSave();renderLbls();return}
         if((i===0||i===7||i===6)&&lset!=='all'){renderLbls();lblIns(i);return}if(i===7||i===9){renderLbls();return}
         smallL.delete(i);actLane=actLane===i?null:i;if(selItem&&selItem.lane!==actLane){selItem=null;ed.hidden=true;$('s2').style.paddingBottom=''}renderLanes()}});
+  /* v659: 動画と動画音声の見出しも1つに見せる */{const O=ordNow(),q=O.indexOf(0);if(q>=0&&O[q+1]===7){const C=$('lbls').children,a=C[q+1],b=C[q+2];if(a&&b){a.style.borderBottom='0';a.style.alignItems='flex-end';a.style.paddingBottom='0';b.style.color='transparent'}}}
 }
 let subRate=0.25;
 function openSubAdd(){
@@ -5822,8 +5823,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v658';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v659';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -12110,6 +12111,11 @@ input,textarea,[contenteditable=true]{-webkit-user-select:text!important;user-se
 #tplStudio .tsChoices{display:flex;flex-direction:column;gap:8px}
 #tplStudio .tsNote{color:var(--muted);font-size:12px;line-height:1.6}
 #tplStudio .tsPane[hidden]{display:none}
+/* v659: 動画と動画音声は見た目を1つのクリップに(上=サムネ、下=波形)。高さは合わせて他のレーンの2倍 */
+#cv .lane.mg0{border-bottom:0}
+#cv .lane.mg0>.blk.v,#cv .lane.mg0>.fstrip.vrun{bottom:0!important;border-bottom-width:0!important;border-bottom-left-radius:0!important;border-bottom-right-radius:0!important}
+#cv .lane.mg7>.blk{top:0!important;border-top-width:0!important;border-top-left-radius:0!important;border-top-right-radius:0!important}
+#cv .lane.mg7>.blk.wvb{border-color:var(--ok)}
 /* v649: クリップ同士の境目をはっきり(左右に暗い線を重ねる・選択中は除く) */#cv .blk.v::before,#cv .blk.wvb::before{content:'';position:absolute;inset:0;border-left:2px solid rgba(0,0,0,.75);border-right:2px solid rgba(0,0,0,.75);pointer-events:none;z-index:5;box-sizing:border-box}#cv .blk.thin::before{display:none}
 </style>
 <main id="tplStudio" hidden>
