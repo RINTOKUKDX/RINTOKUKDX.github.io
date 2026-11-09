@@ -1640,11 +1640,11 @@ $('delCur2').onclick=()=>$('delCur').onclick();
 {const st=pv.parentElement,P=new Map();let G=null,D=null,dragged=false;
  const segAt=()=>{if(!cur)return null;const t=pv.currentTime;return segs.find(s=>s.clip===cur&&t>=s.start-1e-3&&t<s.end)||null};
  const tf=v=>v&&(v.zm||v.rt||v.px||v.py)?'translate('+((v.px||0)*100)+'%,'+((v.py||0)*100)+'%) rotate('+(v.rt||0)+'deg) scale('+(v.zm||1)+')':'';
- const show=()=>{try{pv.style.transform=tf(segV(segAt()))}catch(e){}};window.cutTfShow=show;
+ const show=()=>{try{pv.style.transform=tf(segVt(segAt(),pv.currentTime))}catch(e){}};window.cutTfShow=show;
  ['timeupdate','seeked','loadedmetadata','emptied'].forEach(ev=>pv.addEventListener(ev,()=>{if(!G)show()}));
  const ang=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
- st.addEventListener('pointerdown',e=>{if(e.isPrimary){P.clear();G=null}/* v396: 前の指が残らないように */if(e.pointerType==='mouse')return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});/* v655: 1本指ドラッグ=今の位置の残す範囲を動かす(少し動いてから始まる) */if(P.size===1&&cur&&!G){const s1=segAt();if(s1){const v1=segV(s1)||{},rc1=st.getBoundingClientRect();D={s:s1,x:e.clientX,y:e.clientY,x0:v1.px||0,y0:v1.py||0,W:rc1.width,H:rc1.height,on:false,v:{zm:v1.zm||1,rt:v1.rt||0,px:v1.px||0,py:v1.py||0}}}}else D=null;if(P.size!==2||!cur)return;const s=segAt();if(!s){cutMsg('残す範囲の上で使えます');return}
-   const [a,b]=[...P.values()],v=segV(s)||{},rc=st.getBoundingClientRect();
+ st.addEventListener('pointerdown',e=>{if(e.isPrimary){P.clear();G=null}/* v396: 前の指が残らないように */if(e.pointerType==='mouse')return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});/* v655: 1本指ドラッグ=今の位置の残す範囲を動かす(少し動いてから始まる) */if(P.size===1&&cur&&!G){const s1=segAt();if(s1){const v1=segVt(s1,pv.currentTime)||{},rc1=st.getBoundingClientRect();D={s:s1,x:e.clientX,y:e.clientY,x0:v1.px||0,y0:v1.py||0,W:rc1.width,H:rc1.height,on:false,v:{zm:v1.zm||1,rt:v1.rt||0,px:v1.px||0,py:v1.py||0}}}}else D=null;if(P.size!==2||!cur)return;const s=segAt();if(!s){cutMsg('残す範囲の上で使えます');return}
+   const [a,b]=[...P.values()],v=segVt(s,pv.currentTime)||{},rc=st.getBoundingClientRect();
    G={s,d0:Math.hypot(b.x-a.x,b.y-a.y)||1,a0:ang(a,b),m0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},z0:v.zm||1,r0:v.rt||0,x0:v.px||0,y0:v.py||0,W:rc.width,H:rc.height,v:{zm:v.zm||1,rt:v.rt||0,px:v.px||0,py:v.py||0}};pv.pause()},true);
  st.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});if(D&&P.size===1&&!G){const dx=e.clientX-D.x,dy=e.clientY-D.y;if(!D.on&&Math.hypot(dx,dy)<8)return;if(!D.on){D.on=true;pv.pause()}e.preventDefault();e.stopPropagation();let px=D.x0+dx/D.W,py=D.y0+dy/D.H;if(Math.abs(px)<0.015)px=0;if(Math.abs(py)<0.015)py=0;D.v={...D.v,px,py};pv.style.transform=tf(D.v);cutMsg('位置 '+Math.round(px*100)+'%, '+Math.round(py*100)+'%');return}
    if(!G||P.size<2)return;e.preventDefault();e.stopPropagation();
@@ -1652,11 +1652,16 @@ $('delCur2').onclick=()=>$('delCur').onclick();
    let zm=Math.max(0.3,Math.min(6,G.z0*d/G.d0)),rt=G.r0+ang(a,b)-G.a0;rt=((rt+540)%360)-180;if(Math.abs(zm-1)<0.04)zm=1;if(Math.abs(rt)<3)rt=0;
    let px=G.x0+(m.x-G.m0.x)/G.W,py=G.y0+(m.y-G.m0.y)/G.H;if(Math.abs(px)<0.015)px=0;if(Math.abs(py)<0.015)py=0;
    G.v={zm,rt,px,py};pv.style.transform=tf(G.v);cutMsg('ズーム '+zm.toFixed(2)+'倍・回転 '+Math.round(rt)+'°')},true);
- const up=e=>{P.delete(e.pointerId);if(D&&D.on&&!G&&!P.size){const d=D;D=null;dragged=true;setTimeout(()=>dragged=false,350);apply(d.s,d.v);show();return}if(!P.size)D=null;if(!G||P.size)return;const g=G;G=null;apply(g.s,g.v);show()};
+ const up=e=>{P.delete(e.pointerId);/* v681: 動かした後の指離しを「タップ=再生」にしない */if((D&&D.on)||G)window.cutDragT=Date.now();if(D&&D.on&&!G&&!P.size){const d=D;D=null;dragged=true;setTimeout(()=>dragged=false,350);apply(d.s,d.v);show();return}if(!P.size)D=null;if(!G||P.size)return;const g=G;G=null;apply(g.s,g.v);show()};
  st.addEventListener('pointerup',up,true);st.addEventListener('pointercancel',up,true);
  st.addEventListener('touchmove',e=>{if(e.touches.length>1||(D&&D.on))e.preventDefault()},{passive:false});st.addEventListener('click',e=>{if(dragged){e.stopPropagation();e.preventDefault()}},true);
  function apply(s,v){if(!segs.includes(s))return;
    hist.push({segs:segs.map(q=>({...q,fx:fxC(q.fx)})),cur,clip:cur});if(hist.length>30)hist.shift();
+   /* v681: ◇オン=再生ヘッドの所にズーム・位置のキーフレーム(この動画の全部の範囲に同じものを入れる)。◇オフでキーフレームがあれば全体をずらす */
+   {const L=segs.filter(q=>q.clip===cur),k0=(L.find(q=>segV(q)&&segV(q).k)||{}),K=k0.fx?segV(k0).k.map(r=>r.slice()):[],t=Math.round(pv.currentTime*FPS)/FPS,r=x=>[+x.zm.toFixed(3),+x.rt.toFixed(1),+x.px.toFixed(4),+x.py.toFixed(4)];
+    const put=nk=>{L.forEach(q=>{q.fx=fxC(q.fx)||{};const o=q.fx.v=q.fx.v||{};if(nk.length)o.k=nk.map(z=>z.slice());else delete o.k;if(!Object.keys(o).length)delete q.fx.v;if(!Object.keys(q.fx).length)delete q.fx});resetOut();renderSegs();renderCut()};
+    if(window.cwMode==='kf'){const i=K.findIndex(z=>Math.abs(z[0]-t)<1.5/FPS),row=[t,...r(v)];if(i>=0)K[i]=row;else{K.push(row);K.sort((a,b)=>a[0]-b[0])}put(K);cutMsg('◇ ズーム '+v.zm.toFixed(2)+'倍・位置 '+Math.round(v.px*100)+'%, '+Math.round(v.py*100)+'%');window.cwfDraw&&cwfDraw();return}
+    if(K.length){const b=vtAt(K,pv.currentTime),dz=v.zm/(b.zm||1);put(K.map(z=>[z[0],+(z[1]*dz).toFixed(3),+(z[2]+v.rt-b.rt).toFixed(1),+(z[3]+v.px-b.px).toFixed(4),+(z[4]+v.py-b.py).toFixed(4)]));cutMsg('◇の全体をずらしました');window.cwfDraw&&cwfDraw();return}}
    const t=pv.currentTime,M=window.cutMk().filter(x=>x>s.start+0.05&&x<s.end-0.05).sort((x,y)=>x-y);let a=s.start,b=s.end;M.forEach(x=>{if(x<=t)a=x;else if(x<b)b=x});
    let tg=s;if(a>s.start||b<s.end){const i=segs.indexOf(s),ps=[];if(a>s.start)ps.push({...s,end:a,fx:fxC(s.fx)});tg={...s,start:a,end:b,fx:fxC(s.fx)};ps.push(tg);if(b<s.end)ps.push({...s,start:b,fx:fxC(s.fx)});segs.splice(i,1,...ps)}
    const o=fxC(segV(tg))||{};o.zm=+v.zm.toFixed(3);o.rt=+v.rt.toFixed(1);o.px=+v.px.toFixed(4);o.py=+v.py.toFixed(4);VTF.forEach(k=>{if(k==='zm'?o[k]===1:!o[k])delete o[k]});
@@ -1871,7 +1876,7 @@ function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector(
 /* v472: 波形の操作は3つから1つ選ぶ。del=削除(赤いかたまりをタップで消す) / rng=範囲を削除(タップ=黄色い印、長押し→左右で消す。最初) / fix=修正(消した所を表示して、長押し→左右で戻す) */
 window.cwMode='rng';window.rngMode=false;
 function setCwMode(m){cwMode=m;rngMode=m==='del';[['rngDel','del'],['rngCut','rng'],['fixB','fix'],['kfB','kf']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(m===k)));
-  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'波形を上下になぞると、再生ヘッドの所に音量の◇を置きます（◇タップ=移動・長押し=削除）':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
+  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'波形の下半分をタップ/上下になぞる=音量の◇、動画をピンチ/ドラッグ=ズーム・位置の◇(青)。◇タップ=移動・長押し=削除':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
 window.setCwMode=setCwMode;
 $('rngDel').onclick=()=>setCwMode('del');$('rngCut').onclick=()=>setCwMode('rng');$('fixB').onclick=()=>setCwMode('fix');$('kfB').onclick=()=>setCwMode('kf');
 $('auto').onclick=e=>{auto=!auto;e.currentTarget.setAttribute('aria-pressed',auto);
@@ -2468,7 +2473,7 @@ function sbUI(box,tg,M,only){let pushed=false;const g0=()=>{const l=tg();return(
 function drawFrame(g,W,H,vid,t){
   g.fillStyle='#000';g.fillRect(0,0,W,H);
   try{const vw=vid.videoWidth,vh=vid.videoHeight;
-    if(vw&&vh&&t<segSum()-0.001&&isVidAt(t)){const sv=segV(segs[locate(t).i]),tc=tltCol(),fa=vFadeAt(t);/* v664: 動画のフェード(黒から/黒へ) */g.globalAlpha=fa;/* v395: ズーム・回転だけの時は、テンプレートの色も使う */vDraw(g,W,H,vid,vw,vh,sv&&tc&&Object.keys(sv).every(k=>VTF.includes(k))?{...tc,...sv}:sv||tc);g.globalAlpha=1}}catch(e){g.globalAlpha=1}
+    if(vw&&vh&&t<segSum()-0.001&&isVidAt(t)){const L0=locate(t),s0=segs[L0.i],sv=segVt(s0,s0.start+(t-L0.off)*spdOf(s0)),tc=tltCol(),fa=vFadeAt(t);/* v664: 動画のフェード(黒から/黒へ) */g.globalAlpha=fa;/* v395: ズーム・回転だけの時は、テンプレートの色も使う */vDraw(g,W,H,vid,vw,vh,sv&&tc&&Object.keys(sv).every(k=>VTF.includes(k))?{...tc,...sv}:sv||tc);g.globalAlpha=1}}catch(e){g.globalAlpha=1}
   /* v652: NOT FOUND の所は赤い✕ */try{const L=locate(t),q=L&&segs[L.i];if(q&&q.nf){g.save();g.strokeStyle='#ff2d3d';g.lineWidth=Math.max(6,W*0.012);const m=Math.min(W,H)*0.28;g.beginPath();g.moveTo(W/2-m,H/2-m);g.lineTo(W/2+m,H/2+m);g.moveTo(W/2+m,H/2-m);g.lineTo(W/2-m,H/2+m);g.stroke();g.fillStyle='#ff2d3d';g.font='bold '+Math.round(H*0.08)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('NOT FOUND',W/2,H/2+m+H*0.08);g.font=Math.round(H*0.04)+'px sans-serif';g.fillText(String(q.nf.c&&q.nf.c.name||''),W/2,H/2+m+H*0.15);g.restore()}}catch(e){}
   /* v412: 上の動画レーン(8)。下の動画の上に重ねる */try{ovDraw(g,W,H,t)}catch(e){}
   let blankBg=null,blankAt=0;for(const q of segs){const d=segD(q);if(t<blankAt+d){if(q.bg)blankBg=q.bg;break}blankAt+=d}
@@ -2858,6 +2863,9 @@ function shId(n){if(!shF){shF=document.createElementNS('http://www.w3.org/2000/s
   const id='bkSh'+n;if(!document.getElementById(id)){const a=n/10,f=document.createElementNS('http://www.w3.org/2000/svg','filter');f.id=id;
     f.innerHTML='<feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 '+(-a)+' 0 '+(-a)+' '+(1+4*a)+' '+(-a)+' 0 '+(-a)+' 0"/>';shF.appendChild(f)}return'url(#'+id+')'}
 const VTF=['zm','rt','px','py'];
+/* v681: ズーム・位置のキーフレーム。fx.v.k=[[元動画の秒,zm,rt,px,py],...]。間は直線、前後は端の値 */
+function vtAt(k,t){const o=r=>({zm:r[1],rt:r[2],px:r[3],py:r[4]});if(t<=k[0][0])return o(k[0]);for(let i=1;i<k.length;i++){const a=k[i-1],b=k[i];if(t<=b[0]){const f=b[0]>a[0]?(t-a[0])/(b[0]-a[0]):1;return{zm:a[1]+(b[1]-a[1])*f,rt:a[2]+(b[2]-a[2])*f,px:a[3]+(b[3]-a[3])*f,py:a[4]+(b[4]-a[4])*f}}}return o(k[k.length-1])}
+function segVt(s,ts){const v=segV(s);if(!v||!v.k||!v.k.length)return v;const o={...v,...vtAt(v.k,ts)};delete o.k;return o}
 function vDraw(g,W,H,vid,vw,vh,v){
   if(!v){const k=Math.min(W/vw,H/vh);g.drawImage(vid,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);return}
   const kl=(v.kl||0)/100,kt=(v.kt||0)/100,sw=vw*(1-kl-(v.kr||0)/100),sh=vh*(1-kt-(v.kb||0)/100),k=Math.min(W/sw,H/sh),dw=sw*k,dh=sh*k,dx=(W-dw)/2,dy=(H-dh)/2;
@@ -5959,8 +5967,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v682';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v682','カット画面の波形の左に再生ボタン(波形の上に重ねる)'],['v681','コーナー帯を動画の後ろへ(動画が手前・ボタンが後ろから生える)'],['v680','音量の横棒とキーフレーム(◇)。波形を上下になぞると音量、◇オンで再生ヘッドの所に◇'],['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v683';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v683','ズーム・位置のキーフレーム(青い◇)。◇オンで動画をピンチ/ドラッグ、波形の下半分タップで音量の◇'],['v682','カット画面の波形の左に再生ボタン(波形の上に重ねる)'],['v681','コーナー帯を動画の後ろへ(動画が手前・ボタンが後ろから生える)'],['v680','音量の横棒とキーフレーム(◇)。波形を上下になぞると音量、◇オンで再生ヘッドの所に◇'],['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -7228,7 +7236,7 @@ function subEnter(v,p){
       x.strokeStyle=ch?'#ff9f1a':'rgba(255,255,255,.8)';x.lineWidth=ch?2:1.2;x.beginPath();let st=false;
       for(let px=0;px<=W;px+=3){const u=A+(B-A)*px/W;if(u<0||u>cmap.U){st=false;continue}const t=cmap.u2t(u);if(cmap.hide&&!kept(t)){st=false;continue}const y=Y(volAt(t));if(st)x.lineTo(px,y);else{x.moveTo(px,y);st=true}}
       x.stroke();
-      const kf=cwMode==='kf';vk.forEach(([t])=>{if(t2u(t)<A||t2u(t)>B)return;const X=sx(t),y=H-8;x.beginPath();x.moveTo(X,y-6);x.lineTo(X+6,y);x.lineTo(X,y+6);x.lineTo(X-6,y);x.closePath();x.fillStyle=kf?'#ff9f1a':'rgba(255,159,26,.55)';x.fill();x.strokeStyle='#fff';x.lineWidth=1;x.stroke()})}
+      const kf=cwMode==='kf';/* v683: ズーム・位置の◇は波形の上(青) */vtOf().forEach(([t])=>{if(t2u(t)<A||t2u(t)>B)return;const X=sx(t),y=9;x.beginPath();x.moveTo(X,y-6);x.lineTo(X+6,y);x.lineTo(X,y+6);x.lineTo(X-6,y);x.closePath();x.fillStyle=kf?'#2f6bff':'rgba(47,107,255,.6)';x.fill();x.strokeStyle='#fff';x.lineWidth=1;x.stroke()});vk.forEach(([t])=>{if(t2u(t)<A||t2u(t)>B)return;const X=sx(t),y=H-8;x.beginPath();x.moveTo(X,y-6);x.lineTo(X+6,y);x.lineTo(X,y+6);x.lineTo(X-6,y);x.closePath();x.fillStyle=kf?'#ff9f1a':'rgba(255,159,26,.55)';x.fill();x.strokeStyle='#fff';x.lineWidth=1;x.stroke()})}
     x.fillStyle=warn;x.fillRect(sx(lpT!=null?lpT:phT!=null?phT:pv.currentTime)-1,0,2.5,H)
     if(!fine&&B-A<cmap.U+2*edgePad()-0.01){x.fillStyle=g('--muted');const U=Math.max(0.1,cmap.U),bw=Math.max(16,W*(B-A)/U);x.globalAlpha=.6;x.fillRect(Math.max(0,Math.min(W-bw,W*A/U)),H-3,bw,3);x.globalAlpha=1}
     ['caR','caL','czR','czL'].forEach(id=>$(id).disabled=!s);['cbP','cbA'].forEach(id=>$(id).disabled=false);
@@ -7332,7 +7340,7 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
   /* v156: スマホは止めるのが少し遅れて範囲外の声が入るので、約0.06秒手前で音を消して止める(v157: まだ入ったので0.12秒に) */
   pv.addEventListener('play',()=>{try{pv.volume=1}catch(_){}});
   const chkEnd=()=>{if(pEnd!=null&&pv.currentTime>=pEnd-0.12){try{pv.volume=0}catch(_){}pv.pause();pEnd=null;if(pRet!=null){try{pv.currentTime=pRet}catch(_){}}pRet=null}};
-  const loop=()=>{chkEnd();/* v678: カット画面の再生にも音量(100%まで)を反映 */if(cur&&!pv.paused&&pEnd==null){try{pv.volume=Math.max(0,Math.min(1,volAt(pv.currentTime)))}catch(_){}}draw();if(!pv.paused)raf=requestAnimationFrame(loop);else raf=0};
+  const loop=()=>{chkEnd();/* v678: カット画面の再生にも音量(100%まで)を反映 */if(cur&&!pv.paused&&pEnd==null){try{pv.volume=Math.max(0,Math.min(1,volAt(pv.currentTime)))}catch(_){}/* v681 */if(window.cutTfShow&&vtOf().length)cutTfShow()}draw();if(!pv.paused)raf=requestAnimationFrame(loop);else raf=0};
   pv.addEventListener('play',()=>{if(!raf)raf=requestAnimationFrame(loop)});
   ['pause','seeked','loadedmetadata','timeupdate'].forEach(ev=>pv.addEventListener(ev,()=>{if(!raf)draw()}));
   pv.addEventListener('timeupdate',chkEnd);
@@ -7364,6 +7372,8 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
   window.cutVolAt=volAt;
   function vkOf(){const q=mine().find(o=>segA(o).vk&&segA(o).vk.length);return q?segA(q).vk.map(x=>x.slice()):[]}
   window.cutVk=vkOf;
+  function vtOf(){const q=mine().find(o=>segV(o)&&segV(o).k&&segV(o).k.length);return q?segV(q).k.map(x=>x.slice()):[]}
+  window.cutVt=vtOf;
   function volSet(fn){mine().forEach(q=>{q.fx=fxC(q.fx)||{};const a=q.fx.a=q.fx.a||{};fn(a,q);if(a.vol!=null&&Math.abs(a.vol-1)<0.005)delete a.vol;if(a.vk&&!a.vk.length)delete a.vk;if(!Object.keys(a).length)delete q.fx.a;if(!Object.keys(q.fx).length)delete q.fx})}
   const vClamp=v=>{v=Math.max(0,Math.min(2,v));if(Math.abs(v-1)<0.03)v=1;return Math.round(v*100)/100};
   function edge(s,side,v){const o=mine().filter(q=>q!==s),D=cur.d,MIN=3/FPS;
@@ -7396,8 +7406,8 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
     if(ptrs.size>2)return;
     wdrag={x0:e.clientX,y0:e.clientY,side:(e.clientX-r.left)<r.width/2?-1:1,map:{...wmap},moved:false,r,s:fine?okSel():null};
     if(wdrag.s){wdrag.a=wdrag.s.start;wdrag.b=wdrag.s.end}
-    /* v678: ◇(波形の下)をタップ=そこへ移動、長押し=削除 */{const Y=e.clientY-r.top,X=e.clientX-r.left,W=r.width,H=r.height;if(Y>H-22){const m=wmap,sx=t=>(m.t2u(t)-m.A)/(m.B-m.A)*W;let best=null,bd=14;vkOf().forEach(([t])=>{const dd=Math.abs(sx(t)-X);if(dd<bd){bd=dd;best=t}});
-      if(best!=null){const d=wdrag;d.kd=best;d.lt=setTimeout(()=>{if(wdrag!==d||d.moved)return;d.kdDel=true;buzz();pushH();volSet(a=>{if(a.vk)a.vk=a.vk.filter(([t])=>Math.abs(t-best)>1e-4)});resetOut();renderSegs();draw();wfToast('◇を削除しました')},450);return}}}
+    /* v678: ◇(波形の下)をタップ=そこへ移動、長押し=削除 */{const Y=e.clientY-r.top,X=e.clientX-r.left,W=r.width,H=r.height;const top=Y<22;if(Y>H-22||top){const m=wmap,sx=t=>(m.t2u(t)-m.A)/(m.B-m.A)*W;let best=null,bd=14;(top?vtOf():vkOf()).forEach(([t])=>{const dd=Math.abs(sx(t)-X);if(dd<bd){bd=dd;best=t}});
+      if(best!=null){const d=wdrag;d.kd=best;d.lt=setTimeout(()=>{if(wdrag!==d||d.moved)return;d.kdDel=true;buzz();pushH();if(top)mine().forEach(q=>{const v=segV(q);if(!v||!v.k)return;q.fx=fxC(q.fx);const o=q.fx.v;o.k=o.k.filter(([t])=>Math.abs(t-best)>1e-4);if(!o.k.length)delete o.k;if(!Object.keys(o).length)delete q.fx.v;if(!Object.keys(q.fx).length)delete q.fx});else volSet(a=>{if(a.vk)a.vk=a.vk.filter(([t])=>Math.abs(t-best)>1e-4)});resetOut();renderSegs();draw();window.cutTfShow&&cutTfShow();wfToast('◇を削除しました')},450);return}}}
     if(!fine){const d=wdrag;d.lt=setTimeout(()=>{if(wdrag!==d||d.moved)return;d.long=true;buzz();pv.pause();pEnd=null;frz={...zoom()};lpT=phT!=null?phT:pv.currentTime;d.lp0=lpT;d.lx0=d.lx!=null?d.lx:d.x0;delR=null;cutMsg(cwMode==='fix'?'右へ動かす=左を戻す / 左へ=右を戻す':'右へ動かす=左を削除 / 左へ=右を削除');draw()},450)}});
   wf.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,e.clientX);
     if(pinch){if(ptrs.size<2)return;const [x1,x2]=[...ptrs.values()],d=Math.max(20,Math.abs(x2-x1));setW(pinch.w0*pinch.d0/d);draw();return}
@@ -7444,6 +7454,8 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
     /* v152: タップ=その範囲を選ぶ(再生位置は動かさない)。範囲の外なら選択を外す。選んだ範囲は左の＞＜でイン、右の＞＜でアウトを1フレーム調整 */
     if(fine){wsel=pickAt(t);draw();return}
     /* v461: 範囲を削除モード=タップした赤いひとかたまり(残す範囲)を消す(グレーになる) */if(window.rngMode){const s2=pickAt(headT());if(s2){pushH();segs.splice(segs.indexOf(s2),1);wsel=null;resetOut();renderSegs();renderTL();draw();cutMsg('');/* v473: 波形の上に「削除しました」を2秒 */wfToast('削除しました')}return}
+    /* v683: ◇オンの時は中間点を置かない。波形の下半分をタップ=再生ヘッドの所に音量の◇(今の音量のまま) */
+    if(cwMode==='kf'){if(d.y0-d.r.top>d.r.height/2){const h=snap(headT()),vk=vkOf(),px=(d.map.B-d.map.A)*6/d.r.width;if(!vk.some(([t])=>Math.abs(t-h)<px)){pushH();vk.push([h,volAt(h)]);vk.sort((a,b)=>a[0]-b[0]);volSet(a=>{a.vk=vk.map(q=>q.slice())});resetOut();renderSegs();wfToast('音量の◇を置きました')}draw()}return}
     /* v341: タップ=再生ヘッドの位置に中間点を置く。そこに既にあれば消す */
     const ms=mk(),h=headT(),px=(d.map.B-d.map.A)*6/d.r.width,k=ms.findIndex(q=>Math.abs(q-h)<px);
     if(k>=0)ms.splice(k,1);else ms.push(snap(h));draw()};
@@ -7461,7 +7473,7 @@ function stopChain(){if(!chain)return;const A=cvs[chain.act],t=A.currentTime;cha
        if(!s){cdlg('範囲を選んでいません\n波形の色の付いた所をタップすると選べます',[['閉じる']]);return}
        cdlg('選んだ範囲('+(s.end-s.start).toFixed(1)+'秒)を削除しますか?',[['削除する',()=>{pushH();
          segs.splice(segs.indexOf(s),1);wsel=null;resetOut();renderSegs();renderTL();draw()},'warn'],['閉じる']]);return}
-     if(!tm)return;clearTimeout(tm);tm=null;if(!cur)return;
+     if(!tm)return;clearTimeout(tm);tm=null;if(!cur)return;if(Date.now()-(window.cutDragT||0)<400)return;
      /* v155: タップ=カットしていない所も含めて全部再生/停止 */
      if(chain){stopChain();return}if(pv.paused){pEnd=null;pv.play().catch(()=>{})}else{pv.pause();pEnd=null}})}
   /* 範囲を作った・選び直した時に追従 */
