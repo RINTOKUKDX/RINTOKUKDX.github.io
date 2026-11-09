@@ -487,7 +487,8 @@ body.cnTint:has(#s2:not([hidden])){--bg:color-mix(in srgb,var(--cx) 11%,var(--bg
 }
 .pgnav{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;padding:4px 0 8px;grid-column:1/-1}
 .pgnav button{min-height:48px;padding:0 1px;font-size:12px;letter-spacing:-.02em}
-.pgnav button.pgTl{grid-column:1/-1;order:9;min-height:38px}
+.pgnav button.pgTl{grid-column:span 5;order:9;min-height:38px}
+/* v673: ホームへ(タイムラインの左) */.pgnav button.pgHome{grid-column:span 1;order:9;min-height:38px}
 .pgnav button[aria-current=page]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 #s2>.pgnav{flex:none;padding:6px 8px}
 body.editing .pgnav{display:none!important}
@@ -527,6 +528,14 @@ body.editing .pgnav{display:none!important}
 #restoreClip{width:100%;margin-top:8px}
 /* v499: 全区画を控えめな色のカードで囲む。カットも同じ余白・角丸に統一 */
 #s1{gap:18px}
+/* v673: ホーム画面 */#homeSc{position:fixed;inset:0;z-index:50;background:var(--bg);color:var(--fg);overflow:auto;padding:12px max(12px,env(safe-area-inset-left,0px)) 40px;box-sizing:border-box;display:none}
+#homeSc .topbar2{flex-wrap:wrap;background:color-mix(in srgb,var(--c1) 8%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 20%,var(--btnl));border-radius:12px;padding:12px;box-sizing:border-box}#homeSc #topBtns2 button{flex:1 1 auto}
+#homeHd{display:flex;align-items:center;justify-content:space-between;margin:16px 2px 8px}#homeHd b{font-size:16px}
+#homeGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.hCard{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sec);cursor:pointer;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.hCard.cur{border:2px solid var(--accent)}
+.hTh{position:relative;aspect-ratio:16/9;background:#111;display:flex;align-items:center;justify-content:center;color:#888;font-size:28px;overflow:hidden}.hTh img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hTh .hBadge{position:absolute;left:6px;top:6px;background:var(--accent);color:var(--accent-fg);font-size:11px;padding:2px 6px;border-radius:6px;z-index:1}
+.hNm{font-size:14px;font-weight:700;padding:6px 8px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.hSub{font-size:11px;color:var(--muted);padding:2px 8px 8px}
 #s1>.topbar2,#s1>.pgnav{background:color-mix(in srgb,var(--c1) 8%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 20%,var(--btnl));border-radius:12px;padding:12px;box-sizing:border-box}
 #s1>section.a{background:color-mix(in srgb,var(--c1) 6%,var(--sec));border:2px solid color-mix(in srgb,var(--c1) 20%,var(--btnl));border-radius:12px}
 #s1>section.b{background:color-mix(in srgb,var(--c2) 6%,var(--sec));border:2px solid color-mix(in srgb,var(--c2) 20%,var(--btnl));border-radius:12px;margin-inline:0;padding:12px}
@@ -544,7 +553,7 @@ body.editing .pgnav{display:none!important}
 }
 </style>
 <main id="s1">
-  <div class="topbar2"><h1>爆速☆YouTuber</h1><button id="newp" class="sm">新規</button></div>
+  <div class="topbar2" id="mainTop"><h1>爆速☆YouTuber</h1><button id="newp" class="sm">新規</button></div>
 
   <section class="a">
     <h2>動画</h2>
@@ -5926,8 +5935,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v672';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v673';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -6883,7 +6892,13 @@ window.cacheCare=async()=>{const A=CA();if(!A)return;const wt=()=>new Promise(r=
     const ok=await ask('「'+m.name+'」プロジェクトは'+days+'日間変更されてません。\nキャッシュを削除しますか？\n(スマホの空きが'+gbT(mine.reduce((s,q)=>s+q.size,0))+'増えます。また使う時は外部ストレージから読み込めます)',[['はい',1,'warn'],['×',0]]);
     if(ok){try{A.cacheDel(JSON.stringify(mine))}catch(e){}flashSel('「'+m.name+'」のキャッシュを削除しました')}
     else{N[m.id]=now;try{localStorage.setItem('cacheNo',JSON.stringify(N))}catch(e){}}}};
-async function pList(){try{const ks=(await pKeys()).filter(k=>String(k).startsWith('m|'));const out=[];for(const k of ks){const m=await pGet(k);if(m)out.push({id:m.id,name:m.name,ty:m.ty,at:m.at,n:m.n,ck:ckOf(m.st)})}return out.sort((a,b)=>b.at-a.at)}catch(e){return[]}}
+async function pList(){try{const ks=(await pKeys()).filter(k=>String(k).startsWith('m|'));const out=[];for(const k of ks){const m=await pGet(k);if(m)out.push({id:m.id,name:m.name,ty:m.ty,at:m.at,n:m.n,ck:ckOf(m.st),th:m.th||''})}return out.sort((a,b)=>b.at-a.at)}catch(e){return[]}}
+/* v673: 動画(Blob)の t 秒の絵を 320x180 の JPEG(data URL)にする。読めない・8秒かかる時は '' */
+function vidShot(blob,t){return new Promise(res=>{let done=false,u='';const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';
+  const fin=x=>{if(done)return;done=true;clearTimeout(tm);try{v.removeAttribute('src');v.load()}catch(e){}if(u)URL.revokeObjectURL(u);res(x||'')};const tm=setTimeout(()=>fin(''),8000);
+  v.onerror=()=>fin('');v.onloadedmetadata=()=>{try{v.currentTime=Math.max(0,Math.min(t||0,(v.duration||1)-0.1))}catch(e){fin('')}};
+  v.onseeked=()=>{try{const W=320,H=180,c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,W,H);const vw=v.videoWidth||16,vh=v.videoHeight||9,k=Math.max(W/vw,H/vh);g.drawImage(v,(W-vw*k)/2,(H-vh*k)/2,vw*k,vh*k);fin(c.toDataURL('image/jpeg',.72))}catch(e){fin('')}};
+  try{u=URL.createObjectURL(blob);v.src=u}catch(e){fin('')}})}
 async function pSave(name,id){
   id=id||('p'+Date.now().toString(36));const st=snapshot();try{await idbPut('state','project',st)}catch(e){}
   for(const k of (await pKeys()).filter(k=>String(k).startsWith('b|'+id+'|')))await pDel(k);
@@ -6891,7 +6906,7 @@ async function pSave(name,id){
   for(const k of fks){const r=await idbGet('files',k);if(r)await pPut('b|'+id+'|'+k,r)}
   const ck=clips.map(c=>c.key),kvs={};
   try{const ak=await aTx('readonly',o=>o.getAllKeys());for(const k of ak){const s=String(k);if(P_NAR.includes(s)||(s.startsWith('res_')&&ck.some(c=>s.endsWith('|'+c))))kvs[s]=await aTx('readonly',o=>o.get(k))}}catch(e){}
-  const m={id,name,ty:tpl,at:Date.now(),n:clips.length,st,kv:kvs};await pPut('m|'+id,m);pSetCur(m);try{tKeep()}catch(e){}return m}
+  const m={id,name,ty:tpl,at:Date.now(),n:clips.length,st,kv:kvs};/* v673: ホーム用のサムネ(最初のクリップから1枚) */try{const q=tlSegs().find(z=>z.clip&&z.clip.file);if(q)m.th=await vidShot(q.clip.file,q.start+Math.min(1,(q.end-q.start)/2))||''}catch(e){}await pPut('m|'+id,m);pSetCur(m);try{tKeep()}catch(e){}return m}
 async function pOpen(meta){
   const m=await pGet('m|'+meta.id);if(!m)throw new Error('データが見つかりません');
   restored=false;/* 自動保存を止める */
@@ -6918,19 +6933,19 @@ async function pMenu(){
     else asNew()};
   const fmtD=t=>{const d=new Date(t),p=n=>String(n).padStart(2,'0');return (d.getMonth()+1)+'/'+d.getDate()+' '+p(d.getHours())+':'+p(d.getMinutes())};
   const open=m=>()=>cdlg('「'+m.name+'」を開きます。\n今の作業は、保存していなければ消えます。本当にいいですか?',[['開く',async()=>{pBusy=true;try{await pOpen(m)}catch(e){cdlg('開けませんでした: '+(e&&e.message||e),[['閉じる']])}finally{pBusy=2}}],['いいえ']]);
-  const del=m=>cdlg('「'+m.name+'」を削除しますか?\n(元に戻せません)',[['削除する',async()=>{for(const k of (await pKeys()).filter(k=>String(k).startsWith('b|'+m.id+'|')||k==='m|'+m.id))await pDel(k);if(curProj&&curProj.id===m.id)pSetCur(null);flashSel('削除しました');pPick()},'warn'],['いいえ',pPick]]);
+  const del=(m,af)=>cdlg('「'+m.name+'」を削除しますか?\n(元に戻せません)',[['削除する',async()=>{for(const k of (await pKeys()).filter(k=>String(k).startsWith('b|'+m.id+'|')||k==='m|'+m.id))await pDel(k);if(curProj&&curProj.id===m.id)pSetCur(null);flashSel('削除しました');(af||pPick)()},'warn'],['いいえ',()=>(af||pPick)()]]);
+  const opn=(m,k)=>k&&k.x?()=>cdlg((k.c?'キャッシュが一部有りません。':'キャッシュが有りません。')+'外部ストレージから読み込みますか？\n(外部ストレージを挿してから「はい」を押してください。今の作業は、保存していなければ消えます)',[['はい',async()=>{pBusy=true;try{await pOpen(m)}catch(e){cdlg('開けませんでした: '+(e&&e.message||e),[['閉じる']])}finally{pBusy=2}},'primary'],['×']]):open(m);
   /* v334: 一覧。タップ=開く、長押し=削除するか聞く */
   async function pPick(){const L=await pList();if(!L.length){cdlg('保存した作品はありません',[['閉じる']]);return}
     /* v632: 作品名の後ろに「キャッシュあり/無し/一部」とスマホに保存している大きさ。キャッシュが無い作品は外部ストレージから読み込むか聞く */
     const K=await pCache(L);
-    const opn=(m,k)=>k&&k.x?()=>cdlg((k.c?'キャッシュが一部有りません。':'キャッシュが有りません。')+'外部ストレージから読み込みますか？\n(外部ストレージを挿してから「はい」を押してください。今の作業は、保存していなければ消えます)',[['はい',async()=>{pBusy=true;try{await pOpen(m)}catch(e){cdlg('開けませんでした: '+(e&&e.message||e),[['閉じる']])}finally{pBusy=2}},'primary'],['×']]):open(m);
     cdlg('開く作品を選んでください\n(長押しで削除)',L.map((m,i)=>{const k=K[i]||{};return[m.name+'（'+fmtD(m.at)+'）'+(k.t?' '+k.t:'')+(k.b>0?' '+gbT(k.b):''),opn(m,k)]}).concat([['閉じる']]));
     const bs=[...document.querySelectorAll('.cdlg button')];
     L.forEach((m,i)=>{const b=bs[i];if(!b)return;let lp=null,fired=false;
       b.addEventListener('pointerdown',()=>{fired=false;clearTimeout(lp);lp=setTimeout(()=>{fired=true;try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}del(m)},600)});
       ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>clearTimeout(lp)));
       b.addEventListener('click',e=>{if(fired){e.stopImmediatePropagation();e.preventDefault();fired=false}},true)})}
-  if(arguments[0]===true)return pPick();if(arguments[0]==='save')return save();
+  if(arguments[0]===true)return pPick();/* v673: ホームのカードから */if(arguments[0]==='open'){const m=arguments[1],k=(await pCache([m]))[0]||{};return opn(m,k)()}if(arguments[0]==='del')return del(arguments[1],arguments[2]);if(arguments[0]==='save')return save();
   cdlg('作品'+(cur?'\n(今開いているのは「'+cur.name+'」)':''),[['今の作業を保存',save],['作品を開く',pPick],['引っ越し（全部まとめて保存・読み込み）',mvMenu],['閉じる']])}
 /* v337: 引っ越し。アプリの全データ(IndexedDB: cutapp/asrtest/cuttpl/cutproj と設定 localStorage)を1つのZIPに。別の場所で開いたアプリで読み込むと全部戻る。
    中身: move.json {mv:1,ls,dbs:[{n,v,st:[{n,kp,ai,rows:[[key,val]]}]}]} と b/0,b/1…(Blob・バイト列)。値の中の Blob は {$b:i}、Uint8Array等は {$u:i,t}、ArrayBuffer は {$a:i} */
@@ -7541,6 +7556,7 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   /* v447: 範囲を選ばずに字幕・ナレーションへ来たら案内して、×でタイムラインへ */
   /* v529: 範囲が無くても、Blockを選んでいればそのBlock全体で開く *//* v533: 範囲選択が無くても、警告なしでそのままページを開く(範囲がある時はその範囲、無ければBlock全体/今の動画) */const needSel=()=>false;
   let chipGo=0;const go={
+    /* v673: ホーム画面(プロジェクトの一覧) */'ホーム':()=>{leave4();if(exOpen())ex.classList.remove('open');window.homeOpen&&window.homeOpen()},
     'カット':()=>{if(leave4())return;if(exOpen())ex.classList.remove('open');if(!$('s2').hidden)$('back').click()},
     /* v435: タイムラインで範囲を選んでいたら、字幕・ナレーションのページはその範囲だけ(window.subRange) */
     '字幕':async()=>{if(!chipGo)window.subBlk=cview||null;if(needSel())return;window.subRange=window.tlSel&&window.tlSel()||subBlkR()||null;if(window.subRange){const P=window.trRange(window.subRange,false);if(!P.c){window.subRange=null}else{if(P.c!==cur){if(!$('s4').hidden)window.subClose&&window.subClose();window.subRange=window.tlSel();await select(P.c)}pv.pause();window.subOpen&&window.subOpen();return}}
@@ -7556,7 +7572,7 @@ $('cTrR').onclick=()=>{if(!window.trSrc().length){cdlg('先に残す範囲を作
   /* v537: 起動後に前回の画面へ(sb=字幕・ナレーションで選んでいたBlock) */
   window.goPage=(t,sb)=>{if(!go[t])return;if(t==='字幕'||t==='ナレーション'){window.subBlk=sb||null;chipGo=1;try{return go[t]()}finally{chipGo=0}}return go[t]()};
   const mk=(par,cur)=>{const n=document.createElement('nav');n.className='pgnav';n.setAttribute('aria-label','ページ移動');
-    Object.keys(go).forEach(t=>{const b=document.createElement('button');b.textContent=t;if(t==='タイムライン')b.className='pgTl';if(t===cur)b.setAttribute('aria-current','page');
+    Object.keys(go).forEach(t=>{const b=document.createElement('button');b.textContent=t;if(t==='タイムライン')b.className='pgTl';if(t==='ホーム')b.className='pgHome';if(t===cur)b.setAttribute('aria-current','page');
       b.onclick=()=>{if(t===(par.id==='s4'&&window.subMode&&window.subMode()==='nar'?'ナレーション':cur))return;pausePreview();if(!$('s5').hidden&&t!=='投稿'){$('s5').hidden=true;$('s1').hidden=false}go[t]()};n.appendChild(b)});/* v528: カット画面=見出し枠の下／それ以外=一番上 */const hd=par.querySelector(':scope>.topbar2');if(hd)hd.after(n);else par.insertBefore(n,par.firstChild);return n};
   const n4=mk($('s4'),'字幕');
 
@@ -7769,11 +7785,42 @@ window.enSt=enSt;window.enFont=enFont;window.EN_F=EN_F;window.EN_DEF=EN_DEF;}
    const b=document.createElement('button');b.id='stoBtn';b.textContent='📦容量';b.className=$('newp').className;
    b.onclick=()=>{pausePreview();sc.hidden=false;sc.style.display='flex';scrollTo(0,0);draw()};
    /* v345: ボタンは横1列: 新規 作品 ⚙️ 容量 ⛶ */
-   const lay=()=>{const tb=document.querySelector('#s1>.topbar2');if(!tb)return;let g=$('topBtns');if(!g){g=document.createElement('div');g.id='topBtns';tb.appendChild(g)}
+   const lay=()=>{const tb=$('mainTop');if(!tb)return;let g=$('topBtns');if(!g){g=document.createElement('div');g.id='topBtns';tb.appendChild(g)}
      const fs=[...tb.querySelectorAll('button')].find(e=>e.textContent==='⛶');
      [$('setBtn'),b,fs].forEach(e=>{if(e)g.appendChild(e)});
      /* v449: 新規・保存・プロジェクトから開く は2段目に横いっぱい */let g2=$('topBtns2');if(!g2){g2=document.createElement('div');g2.id='topBtns2';tb.appendChild(g2)}[$('newp'),$('projBtn'),$('projOpen')].forEach(e=>{if(e)g2.appendChild(e)})};
    lay();setTimeout(lay,0);setTimeout(lay,900)}
+
+  /* v673: ホーム画面。上の枠(新規・保存・プロジェクトから開く・⚙・容量)と、保存したプロジェクトのサムネ一覧。タップ=開く、長押し=削除 */
+  {const sc=document.createElement('div');sc.id='homeSc';sc.setAttribute('aria-label','ホーム');
+   sc.innerHTML='<div id="homeTop"></div><div id="homeHd"><b>プロジェクト</b><button id="homeBack" class="primary" style="min-height:40px;padding:0 14px">作業に戻る ▶</button></div><div id="homeGrid"></div><p class="hx-help" style="color:var(--muted);font-size:12px;margin-top:10px">タップで開く・長押しで削除</p>';
+   document.body.appendChild(sc);const tb=$('mainTop');if(tb)sc.querySelector('#homeTop').appendChild(tb);
+   const G=sc.querySelector('#homeGrid');let tok=0;
+   const fmtD=t=>{const d=new Date(t),q=n=>String(n).padStart(2,'0');return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+q(d.getHours())+':'+q(d.getMinutes())};
+   /* 前に保存したプロジェクトのサムネを1回だけ作る(作品に入っている最初の動画から) */
+   async function fill(id){const m=await pGet('m|'+id);if(!m)return'';if(m.th)return m.th;
+     const q=((m.st&&m.st.segs)||[]).find(z=>z.k&&z.k!=='gap');if(!q)return'';
+     /* 動画はアプリにコピーしない作りなので、今読み込んでいる動画に同じ物があればそれを使う。無ければ作品に入っている控え */
+     const cl=clips.find(c=>c.file&&bkey(c.key)===bkey(q.k));let b=cl?cl.file:null;
+     if(!b){let r=null;try{r=await pGet('b|'+id+'|'+q.k)||await pGet('b|'+id+'|'+bkey(q.k))}catch(e){}b=r&&(r.blob||(r instanceof Blob?r:null))}if(!b&&curProj&&curProj.id===id){try{const f=await idbGet('files',bkey(q.k));b=f&&f.blob}catch(e){}}
+     if(!b)return'';const th=await vidShot(b,q.start+Math.min(1,(q.end-q.start)/2));if(!th)return'';
+     try{const m2=await pGet('m|'+id);if(m2){m2.th=th;await pPut('m|'+id,m2)}}catch(e){}return th}
+   async function draw(){const my=++tok;const L=await pList();if(my!==tok)return;G.textContent='';
+     if(!L.length){const p=document.createElement('p');p.style.cssText='color:var(--muted);grid-column:1/-1';p.textContent='保存したプロジェクトはありません。上の「保存」で今の作業を保存できます';G.appendChild(p);return}
+     const need=[];
+     L.forEach(m=>{const c=document.createElement('div');c.className='hCard'+(curProj&&curProj.id===m.id?' cur':'');c.setAttribute('role','button');c.dataset.id=m.id;
+       const th=document.createElement('div');th.className='hTh';th.textContent='🎬';
+       if(m.th){const im=document.createElement('img');im.src=m.th;im.alt='';th.appendChild(im)}else need.push([m.id,th]);
+       if(curProj&&curProj.id===m.id){const bd=document.createElement('span');bd.className='hBadge';bd.textContent='開いています';th.appendChild(bd)}
+       const nm=document.createElement('div');nm.className='hNm';nm.textContent=m.name;const sb=document.createElement('div');sb.className='hSub';sb.textContent=fmtD(m.at)+'・動画'+(m.n||0)+'本';
+       c.append(th,nm,sb);
+       let lp=0,fired=false;c.addEventListener('pointerdown',()=>{fired=false;clearTimeout(lp);lp=setTimeout(()=>{fired=true;try{navigator.vibrate&&navigator.vibrate(20)}catch(e){}pMenu('del',m,draw)},600)});
+       ['pointerup','pointerleave','pointercancel'].forEach(ev=>c.addEventListener(ev,()=>clearTimeout(lp)));c.oncontextmenu=e=>e.preventDefault();
+       c.addEventListener('click',()=>{if(fired){fired=false;return}if(curProj&&curProj.id===m.id){homeClose();return}pMenu('open',m)});G.appendChild(c)});
+     for(const[id,th]of need){if(my!==tok||sc.style.display==='none')return;let u='';try{u=await fill(id)}catch(e){}if(u&&th.isConnected){const im=document.createElement('img');im.src=u;im.alt='';th.prepend(im)}}}
+   const homeClose=()=>{sc.style.display='none'};
+   window.homeOpen=()=>{try{pausePreview()}catch(e){}sc.style.display='block';sc.scrollTop=0;draw()};window.homeClose=homeClose;window.homeDraw=draw;
+   sc.querySelector('#homeBack').onclick=homeClose}
 
 }
 
