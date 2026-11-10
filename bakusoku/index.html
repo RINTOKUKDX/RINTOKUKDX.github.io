@@ -1102,6 +1102,7 @@ html.s4open{overflow-anchor:none}/* 行の高さが変わっても勝手に画�
     <p>「しょかきうたげ」「ラノベPOP」は、公式サイトからダウンロードしたフォントファイル(.ttf か .otf)をここで選ぶと使えます。zipの場合は先にファイルアプリで展開してください。選ぶのは最初の1回だけです。</p>
     <div class="links"><a href="https://www.google.com/search?q=%E3%81%97%E3%82%87%E3%81%8B%E3%81%8D%E3%81%86%E3%81%9F%E3%81%92+%E3%83%95%E3%83%AA%E3%83%BC%E3%83%95%E3%82%A9%E3%83%B3%E3%83%88" target="_blank" rel="noopener" id="t_fU">しょかきうたげ を探す</a><a href="https://www.google.com/search?q=%E3%83%A9%E3%83%8E%E3%83%99POP+%E3%83%95%E3%83%AA%E3%83%BC%E3%83%95%E3%82%A9%E3%83%B3%E3%83%88" target="_blank" rel="noopener" id="t_fL">ラノベPOP を探す</a></div>
     <div class="pick"><span id="t_fLbl">フォントファイルを選ぶ</span><input id="t_fIn" type="file" multiple></div>
+    <button id="t_fG" type="button" style="width:100%;margin-top:8px">無料フォントの一覧から追加</button><div id="t_fGL" hidden></div>
   </div>
   </div></details>
   <details id="t_seD"><summary>SEを登録</summary><div class="fold"><div class="tsec">
@@ -6011,8 +6012,8 @@ themeApply();
  document.addEventListener('focusin',ev=>{if(!isIn(ev.target))return;KB.on=true;KB.el=ev.target;document.documentElement.classList.add('kbd');fit();[150,400,800].forEach(t=>setTimeout(fit,t))});
  document.addEventListener('focusout',ev=>{if(ev.target!==KB.el)return;setTimeout(()=>{if(document.activeElement===KB.el)return;KB.on=false;KB.el=null;reset()},120)});
  if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(KB.on)fit()})}
-{const v=document.createElement('div');v.textContent='v709';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v709','字幕テンプレートのフィルターを動画インスペクタと同じ項目に(明るさ・コントラスト・彩度・色温度・シャープ・不透明度・フィルター)。□範囲1 □範囲2…「＋追加」で重ねがけ'],['v708','フォント・位置・スタイルのポップアップに「元の〜」の行・□デフォルト(字幕を作った時に最初に使う)・一括適用・「保存」を追加。❌は保存せずに戻る'],['v707','起動時のホームで「▶ 前回の続き」を押した後に、もう一度「前回の続き」が出て2回押す必要があったのを直す(1回で動画も渡す)'],['v706','字幕・ナレーションの再生ボタンを波形と同じ高さの正方形に(波形をピンチで高くしても合わせる)'],['v705','タイムライン・字幕・ナレーションの再生ボタンをカット画面と同じに(波形の左の正方形▶・再生中は⏸)。⏯・▶‖・▶▶は無くした'],['v704','動画を削除の警告に「今後表示しない」と×を追加'],['v703','音声波形での音量調整を500%までに。線は200%で一番上、それを越えると一番上のまま黄色。波形は音量に合わせて大きくなる'],['v702','「動画」見出しの右に「挿入した動画を非表示」のチェックを追加(入れるとタイムラインに入った動画のサムネを一覧から隠す)'],['v701','カット画面: 動画を切り替えた直後に▶を押しても再生されないことがあったのを直す。再生中に切り替えた時、前の動画の位置から始まっていたのも直す'],['v700','カットページの「タイムラインに挿入された動画」の欄を非表示に'],['v699','カット済みの色を青に戻す(オレンジは見ずらいため)'],['v698','サムネの下の横棒が見えなかったのを直す(棒の位置がずれて切れていた)'],['v697','カット済みをオレンジに。各動画のサムネの下に、カット済み(オレンジ)・挿入済み(黄)の横棒'],['v696','動画名の右に「カット済み(青)」「挿入済み(黄)」を表示'],['v695','前へ・後ろへで動かした後も、選んでいる動画が一覧の真ん中に来る'],['v694','Insta360の動画を見分ける: カットページの一覧は青い枠、タイムラインは動画名(倍速)の後ろに赤字で「360」'],['v693','ボタンの配置を変更(前へ・削除・後ろへを1段に、秒以下・短い動画を削除を次の段に)'],['v692','動画の並びを手で直せる「◀前へ」「後ろへ▶」を追加(Insta360の書き出しは撮影順が分からないため)'],['v691','キーフレームは手動で打つ(自動で打たない)。◇の上でだけ値を変える・◇にピタッと止まる・▶の再生にもズーム・位置を反映'],['v690','再生ボタン: 再生中に押すと止まる(今までは止まらずカクつくだけ)・再生中は⏸'],['v689','◇オンで波形の上半分をタップ=再生ヘッドの所にズーム・位置の◇を置く'],['v688','フルサイズのダブルタップの直後に、別の動画が選ばれてしまうのを直した'],['v687','◇オンの時は画面の長押し削除なし・画面の下2割はタップで再生しない'],['v686','カットの再生画面の位置変更の長押しを0.2秒に・動いたり動かなかったりを直した(ページのスクロールは自前に)'],['v685','カットの再生画面の位置変更は長押ししてからスライド(上下スクロールの時の誤爆を防ぐ)'],['v684','波形の左の再生ボタンを波形と同じ高さの正方形・不透明に。押すと残す範囲を続けて最後まで再生(途中で止まって戻らない)'],['v683','ズーム・位置のキーフレーム(青い◇)。◇オンで動画をピンチ/ドラッグ、波形の下半分タップで音量の◇'],['v682','カット画面の波形の左に再生ボタン(波形の上に重ねる)'],['v681','コーナー帯を動画の後ろへ(動画が手前・ボタンが後ろから生える)'],['v680','音量の横棒とキーフレーム(◇)。波形を上下になぞると音量、◇オンで再生ヘッドの所に◇'],['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
+{const v=document.createElement('div');v.textContent='v710';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく3秒出す */{const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v710','フォントを無料フォントの一覧からタップで追加できるように(最初の1回だけ通信して保存・以後は通信なし)。字幕のフォントのポップアップと設定の「字幕のフォントを追加」から'],['v709','字幕テンプレートのフィルターを動画インスペクタと同じ項目に(明るさ・コントラスト・彩度・色温度・シャープ・不透明度・フィルター)。□範囲1 □範囲2…「＋追加」で重ねがけ'],['v708','フォント・位置・スタイルのポップアップに「元の〜」の行・□デフォルト(字幕を作った時に最初に使う)・一括適用・「保存」を追加。❌は保存せずに戻る'],['v707','起動時のホームで「▶ 前回の続き」を押した後に、もう一度「前回の続き」が出て2回押す必要があったのを直す(1回で動画も渡す)'],['v706','字幕・ナレーションの再生ボタンを波形と同じ高さの正方形に(波形をピンチで高くしても合わせる)'],['v705','タイムライン・字幕・ナレーションの再生ボタンをカット画面と同じに(波形の左の正方形▶・再生中は⏸)。⏯・▶‖・▶▶は無くした'],['v704','動画を削除の警告に「今後表示しない」と×を追加'],['v703','音声波形での音量調整を500%までに。線は200%で一番上、それを越えると一番上のまま黄色。波形は音量に合わせて大きくなる'],['v702','「動画」見出しの右に「挿入した動画を非表示」のチェックを追加(入れるとタイムラインに入った動画のサムネを一覧から隠す)'],['v701','カット画面: 動画を切り替えた直後に▶を押しても再生されないことがあったのを直す。再生中に切り替えた時、前の動画の位置から始まっていたのも直す'],['v700','カットページの「タイムラインに挿入された動画」の欄を非表示に'],['v699','カット済みの色を青に戻す(オレンジは見ずらいため)'],['v698','サムネの下の横棒が見えなかったのを直す(棒の位置がずれて切れていた)'],['v697','カット済みをオレンジに。各動画のサムネの下に、カット済み(オレンジ)・挿入済み(黄)の横棒'],['v696','動画名の右に「カット済み(青)」「挿入済み(黄)」を表示'],['v695','前へ・後ろへで動かした後も、選んでいる動画が一覧の真ん中に来る'],['v694','Insta360の動画を見分ける: カットページの一覧は青い枠、タイムラインは動画名(倍速)の後ろに赤字で「360」'],['v693','ボタンの配置を変更(前へ・削除・後ろへを1段に、秒以下・短い動画を削除を次の段に)'],['v692','動画の並びを手で直せる「◀前へ」「後ろへ▶」を追加(Insta360の書き出しは撮影順が分からないため)'],['v691','キーフレームは手動で打つ(自動で打たない)。◇の上でだけ値を変える・◇にピタッと止まる・▶の再生にもズーム・位置を反映'],['v690','再生ボタン: 再生中に押すと止まる(今までは止まらずカクつくだけ)・再生中は⏸'],['v689','◇オンで波形の上半分をタップ=再生ヘッドの所にズーム・位置の◇を置く'],['v688','フルサイズのダブルタップの直後に、別の動画が選ばれてしまうのを直した'],['v687','◇オンの時は画面の長押し削除なし・画面の下2割はタップで再生しない'],['v686','カットの再生画面の位置変更の長押しを0.2秒に・動いたり動かなかったりを直した(ページのスクロールは自前に)'],['v685','カットの再生画面の位置変更は長押ししてからスライド(上下スクロールの時の誤爆を防ぐ)'],['v684','波形の左の再生ボタンを波形と同じ高さの正方形・不透明に。押すと残す範囲を続けて最後まで再生(途中で止まって戻らない)'],['v683','ズーム・位置のキーフレーム(青い◇)。◇オンで動画をピンチ/ドラッグ、波形の下半分タップで音量の◇'],['v682','カット画面の波形の左に再生ボタン(波形の上に重ねる)'],['v681','コーナー帯を動画の後ろへ(動画が手前・ボタンが後ろから生える)'],['v680','音量の横棒とキーフレーム(◇)。波形を上下になぞると音量、◇オンで再生ヘッドの所に◇'],['v679','マグネットはタイムラインだけ(波形では効かない)・入替の右に🧲ボタン(ON/OFF)'],['v678','タイムラインのコーナー帯を再生画面の上へ移動し、字幕ページと一緒に少し下げて動画から生えているように重ねた'],['v677','起動したらホームを出しながら裏で前回の続きを準備・開いているプロジェクトのカードは前に保存した所から開く'],['v676','カット画面の下の3つのボタンが縦に伸びすぎるのを直した'],['v675','▶‖▶▶を廃止し、削除🗑・カット✂・修正✎・キーフレーム◇を点線の枠で囲んで並べる'],['v674','起動した時にホーム画面を出す・ホームのボタンは🏠'],['v673','ホーム画面(上の枠のボタンと、サムネ付きのプロジェクト一覧)'],['v672','再生画面下の波形をなぞった時も、クリップの端でピタッと止まる'],['v671','タイムラインを横に送ると、クリップの端でピタッと止まる(マグネット)'],['v670','□を隣のクリップへ出すとクロスディゾルブ(全体が短くなる)・曲線を選べる'],['v669','カット・修正・削除の4つボタンを同じ大きさに、3つを囲む6辺の枠'],['v668','音声のフェードの線を左上(動画の線と同じ起点)から引く'],['v667','カット・修正・削除を1つの点線の枠に、動画を削除は枠の外'],['v666','削除を縦半分にして上に動画を削除、カット・修正・削除を点線の枠で囲む'],['v665','カット/修正を点線の枠で囲む'],['v664','選んだクリップの四隅の□でフェード(動画・音声)・曲線を選べる'],['v663','カット/修正を1つの薄い枠で囲み、カットの文字が切れないように'],['v662','カット/修正を小さく枠で囲み、削除・挿入・スキップを同じ幅に'],['v661','タイムラインの再生ヘッドを真ん中に固定・横に送ると再生位置が動く・タップでは動かない'],['v660','挿入とスキップを削除と同じ縦書きに'],['v659','タイムラインの動画と動画音声を1つのクリップの見た目に'],['v658','カット画面の配置を変更(削除を左・カット/修正は半分の幅・挿入/スキップは右)'],['v657','開いた時に最近の変更を表示'],['v656','カット画面のプレビューを1本指ドラッグで動かせる'],['v655','動画レーンは再生中のクリップだけ明るく表示']];
   {const w=document.createElement('div');w.style.cssText='font:13px/1.5 sans-serif;text-align:left;margin-top:12px;padding-top:10px;border-top:1px solid #667;max-width:80vw';w.innerHTML='<div style="opacity:.7;margin-bottom:2px">最近の変更</div>'+CHANGELOG.slice(0,3).map(r=>'<div><b>'+r[0]+'</b> '+r[1]+'</div>').join('');s.appendChild(w)}
   s.style.cssText='position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);font:700 64px/1.2 var(--mono,monospace);color:#fff;background:rgba(0,0,0,.72);padding:18px 32px;border-radius:20px;pointer-events:none;z-index:100000;transition:opacity .4s;text-align:center';document.body.appendChild(s);setTimeout(()=>{s.style.opacity='0';setTimeout(()=>s.remove(),450)},5000)}}
 {
@@ -8551,7 +8552,7 @@ const EXN=['ウイスキーラベル','アンティーク地図','黒板','ホ�
 /* v200: 文字をタップ=フォント切替(6種類) */
 /* v203: まるポップ・勢い筆文字・太明朝・Rounded M+ は外した。行にはフォントの名前(fk)で保存 */
 /* v205: 「いつもの」と極太ゴシックを外し、ラノベPOPを最初(何も選んでいない行)にした。ホラー風・ツッコミ風を追加 */
-const FONTS=[{k:'lanove',n:'ラノベPOP',file:1},{k:'yusei',n:'マジック手書き(どうでしょう風)'},{k:'klee',n:'教科書体風(Klee One)'},{k:'utage',n:'しょかきうたげ',file:1},{k:'horror',n:'ホラー風'},{k:'tsukkomi',n:'激しいツッコミ風'}];
+const FONTS=[{k:'lanove',n:'ラノベPOP',file:1,t:'s'},{k:'yusei',n:'マジック手書き(どうでしょう風)',t:'s'},{k:'klee',n:'教科書体風(Klee One)',t:'s'},{k:'utage',n:'しょかきうたげ',file:1,t:'s'},{k:'horror',n:'ホラー風',t:'s'},{k:'tsukkomi',n:'激しいツッコミ風',t:'s'}];/* v710: t=タグ(m明朝 gゴシック s書体 e英語) */
 const OLDF=[null,'yusei','dela','mochiy','reggae','kaisei','mplus','klee','utage','lanove'];
 const fkey=g=>{const k=g.fk!==undefined?g.fk:(OLDF[g.fnt|0]||null);return FONTS.some(f=>f.k===k)?k:'lanove'};
 /* v240: 1行の字幕の中の改行(g.br=改行を入れる文字の位置) */
@@ -8800,9 +8801,13 @@ window.addEventListener('storage',e=>{if(e.key==='stpl')STC=null});
 /* この字幕が使っている位置テンプレート(無ければ null) */
 function stP(g){if(!g||!g.pz)return null;const T=stAll()[STK(g)];return T&&T.pos.find(p=>p.id===g.pz)||null}
 /* 名前(ボタンと見分けが付くよう点線の下線＋✏️。タップで名前を変える) */
-function stName(txt,onSet){const s=document.createElement('span');s.className='stNm';s.setAttribute('role','button');s.tabIndex=0;
+function stName(txt,onSet,onTap){const s=document.createElement('span');s.className='stNm';s.setAttribute('role','button');s.tabIndex=0;
   s.style.cssText='text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;padding:6px 2px';
-  const put=t=>{s.textContent=t+' ✏️';s.dataset.n=t};put(txt);s.onclick=e=>{e.stopPropagation();stAskName(s.dataset.n,n=>{onSet(n);put(n)})};return s}
+  const put=t=>{s.textContent=t+' ✏️';s.dataset.n=t};put(txt);const ren=()=>stAskName(s.dataset.n,n=>{onSet(n);put(n)});
+  /* v710: onTap があれば タップ=使う(赤い枠が移る)・ダブルタップ=名前の変更 */
+  let tm=0;s.onclick=e=>{e.stopPropagation();if(!onTap){ren();return}if(tm){clearTimeout(tm);tm=0;ren();return}tm=setTimeout(()=>{tm=0;onTap()},280)};return s}
+/* 行の空いたところのタップ=使う(ボタン・□デフォルト・名前は除く) */
+const stTapRow=(r,f)=>{r.style.cursor='pointer';r.addEventListener('click',e=>{if(e.target.closest('button,label,input,.stNm'))return;f()})};
 function stAskName(v,fn){sheet((b,close)=>{const h=document.createElement('h2');h.textContent='名前を変える';const i=document.createElement('input');i.type='text';i.id='t_stNm';i.value=v;i.style.cssText='width:100%;font-size:16px;padding:10px;box-sizing:border-box';
   const w=document.createElement('div');w.className='two';const n=document.createElement('button');n.className='no';n.textContent='やめる';n.onclick=close;const y=document.createElement('button');y.textContent='決定';y.onclick=()=>{const t=i.value.trim().slice(0,30);close();if(t)fn(t)};
   w.append(n,y);b.append(h,i,w);setTimeout(()=>{try{i.focus();i.select()}catch(_){}},50)})}
@@ -8848,10 +8853,58 @@ function tapFont(g){const L=stAll()[STK(g)].font.filter(fUse);if(!L.length){show
 /* スマホのファイルから足したフォント(全体の一覧に入る。kv 'font|ulist'=[{k,n}]・'font|'+k=ファイル) */
 let UFL=[];
 function uFontReg(k,n){FF[k]='BkU_'+k;window.PFAM[k]='"BkU_'+k+'",sans-serif';if(!FONTS.some(f=>f.k===k))FONTS.push({k,n,file:1,u:1})}
-async function uFontAdd(file){const k='u'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),n=(file.name||'').replace(/\.[^.]+$/,'')||'フォント';
+async function uFontAdd(file,nm,key){const k=key||'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),n=nm||(file.name||'').replace(/\.[^.]+$/,'')||'フォント';
   uFontReg(k,n);if(!(await addFont(k,file))){const i=FONTS.findIndex(f=>f.k===k);if(i>=0)FONTS.splice(i,1);delete FF[k];return null}
   await kv('font|'+k,file);UFL.push({k,n});await kv('font|ulist',UFL);return k}
 (async()=>{const l=await kv('font|ulist');if(!Array.isArray(l))return;UFL=l;for(const u of l){uFontReg(u.k,u.n);const b=await kv('font|'+u.k);if(b)await addFont(u.k,b)}try{showOv(pos)}catch(_){}})();
+/* v710: 無料フォント(Google Fonts・OFL等=商用可)の一覧からタップで追加。最初の1回だけダウンロードして 'font|g_xxx' に保存=以後は通信なし。保存の形はスマホのファイルから足したフォントと同じ(UFL) */
+const GFL=[['delagothicone','極太ゴシック（Dela Gothic One）','Dela Gothic One','ofl/delagothicone/DelaGothicOne-Regular.ttf',2.5,'g'],
+ ['zenkakugothicnew','太ゴシック（Zen角ゴシック）','Zen Kaku Gothic New:wght@900','ofl/zenkakugothicnew/ZenKakuGothicNew-Black.ttf',2.3,'g'],
+ ['zenmarugothic','丸ゴシック（Zen丸ゴシック）','Zen Maru Gothic:wght@700','ofl/zenmarugothic/ZenMaruGothic-Bold.ttf',3.8,'g'],
+ ['mplusrounded1c','丸ゴシック（M PLUS Rounded）','M PLUS Rounded 1c:wght@700','ofl/mplusrounded1c/MPLUSRounded1c-Bold.ttf',3.5,'g'],
+ ['kiwimaru','やわらか丸文字（Kiwi Maru）','Kiwi Maru:wght@500','ofl/kiwimaru/KiwiMaru-Medium.ttf',5.1,'gs'],
+ ['hachimarupop','丸文字ポップ（はちまるポップ）','Hachi Maru Pop','ofl/hachimarupop/HachiMaruPop-Regular.ttf',4.4,'s'],
+ ['mochiypopone','もちっとポップ（Mochiy Pop One）','Mochiy Pop One','ofl/mochiypopone/MochiyPopOne-Regular.ttf',5.2,'s'],
+ ['rocknrollone','ロックンロール（RocknRoll One）','RocknRoll One','ofl/rocknrollone/RocknRollOne-Regular.ttf',2.7,'s'],
+ ['reggaeone','レゲエ（Reggae One）','Reggae One','ofl/reggaeone/ReggaeOne-Regular.ttf',2.2,'s'],
+ ['rampartone','立体ふちどり（Rampart One）','Rampart One','ofl/rampartone/RampartOne-Regular.ttf',3.7,'s'],
+ ['trainone','電車の文字（Train One）','Train One','ofl/trainone/TrainOne-Regular.ttf',2.2,'s'],
+ ['dotgothic16','ドット文字（DotGothic16）','DotGothic16','ofl/dotgothic16/DotGothic16-Regular.ttf',2.1,'gs'],
+ ['stick','木の枝（Stick）','Stick','ofl/stick/Stick-Regular.ttf',2.2,'s'],
+ ['yomogi','ゆる手書き（よもぎ）','Yomogi','ofl/yomogi/Yomogi-Regular.ttf',4.0,'s'],
+ ['zenkurenaido','筆ペン手書き（Zen Kurenaido）','Zen Kurenaido','ofl/zenkurenaido/ZenKurenaido-Regular.ttf',4.3,'s'],
+ ['kaiseidecol','デコ明朝（Kaisei Decol）','Kaisei Decol:wght@700','ofl/kaiseidecol/KaiseiDecol-Bold.ttf',4.3,'m'],
+ ['newtegomin','レトロ明朝（New Tegomin）','New Tegomin','ofl/newtegomin/NewTegomin-Regular.ttf',7.5,'m'],
+ ['yujisyuku','毛筆（Yuji Syuku）','Yuji Syuku','ofl/yujisyuku/YujiSyuku-Regular.ttf',8.4,'s'],
+ ['bebasneue','Bebas Neue（英語・細長い太字）','Bebas Neue','ofl/bebasneue/BebasNeue-Regular.ttf',0.1,'e'],
+ ['anton','Anton（英語・極太）','Anton','ofl/anton/Anton-Regular.ttf',0.2,'e'],
+ ['bangers','Bangers（英語・アメコミ）','Bangers','ofl/bangers/Bangers-Regular.ttf',0.1,'e'],
+ ['righteous','Righteous（英語・丸み）','Righteous','ofl/righteous/Righteous-Regular.ttf',0.1,'e'],
+ ['permanentmarker','Permanent Marker（英語・マーカー）','Permanent Marker','apache/permanentmarker/PermanentMarker-Regular.ttf',0.1,'e'],
+ ['pacifico','Pacifico（英語・筆記体）','Pacifico','ofl/pacifico/Pacifico-Regular.ttf',0.3,'e'],
+ ['lobster','Lobster（英語・筆記体太）','Lobster','ofl/lobster/Lobster-Regular.ttf',0.4,'e']];
+/* v710: スマホに最初から入っているフォント(Androidの標準。アプリから一覧は読めないので、どの機種にもある名前を並べる) */
+const SYSF=[['s_sans','ゴシック（スマホ標準）','sans-serif','g'],['s_serif','明朝（スマホ標準）','serif','m'],['s_roboto','Roboto（英語・スマホ標準）','Roboto,sans-serif','e'],['s_cond','Roboto 細め（英語・スマホ標準）','"sans-serif-condensed","Roboto Condensed",sans-serif','e'],
+ ['s_nserif','Noto Serif（英語・スマホ標準）','"Noto Serif",serif','em'],['s_cursive','筆記体（英語・スマホ標準）','cursive','e'],['s_casual','カジュアル（英語・スマホ標準）','casual,"Coming Soon",cursive','e'],['s_mono','等幅（英語・スマホ標準）','monospace','e']];
+SYSF.forEach(([k,n,fam,t])=>{window.PFAM[k]=fam;if(!FONTS.some(f=>f.k===k))FONTS.push({k,n,t,u:1,sys:1})});
+const fTag=k=>{const f=FONTS.find(x=>x.k===k);if(f&&f.t)return f.t;const g=/^g_/.test(k)&&GFL.find(x=>'g_'+x[0]===k);return g?g[5]:''};
+const fFav=()=>{try{const a=JSON.parse(localStorage.getItem('fontFav')||'[]');return Array.isArray(a)?a:[]}catch(e){return[]}};
+const fFavSet=(k,on)=>{const a=fFav().filter(x=>x!==k);if(on)a.push(k);try{localStorage.setItem('fontFav',JSON.stringify(a))}catch(e){}};
+async function gFontGet(path){for(const u of['https://raw.githubusercontent.com/google/fonts/main/','https://cdn.jsdelivr.net/gh/google/fonts@main/']){try{const r=await fetch(u+path);if(r.ok){const b=await r.blob();if(b.size>10000)return b}}catch(e){}}return null}
+/* 一覧の見本: 名前の文字だけの小さいフォントをGoogleから借りて表示(通信できない時は普通の文字) */
+let gPrev=false;function gFontPrev(){if(gPrev)return;gPrev=true;try{const l=document.createElement('link');l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?'+GFL.map(x=>'family='+encodeURIComponent(x[2]).replace(/%20/g,'+').replace(/%3A/g,':').replace(/%40/g,'@')).join('&')+'&text='+encodeURIComponent([...new Set(GFL.map(x=>x[1].replace(/（.*$/,'')).join(''))].join(''))+'&display=swap';document.head.appendChild(l)}catch(e){}}
+function gFontList(box,onAdd){box.innerHTML='';gFontPrev();
+  const h=document.createElement('div');h.style.cssText='font-size:12px;color:var(--muted);margin:6px 0 2px;line-height:1.5';h.textContent='タップで追加（最初の1回だけ通信してスマホに保存。そのあとは通信なしで使えます。どれも無料・商用OK）';box.appendChild(h);
+  GFL.forEach(([id,n,fam,path,mb])=>{const k='g_'+id,got=()=>UFL.some(u=>u.k===k);
+    const b=stBtn('','','width:100%;text-align:left;margin-top:4px;font-size:16px;display:flex;justify-content:space-between;align-items:center;gap:8px');b.dataset.g=id;
+    const a=document.createElement('span');a.textContent=n.replace(/（.*$/,'');a.style.fontFamily="'"+fam.split(':')[0]+"',sans-serif";const z=document.createElement('span');z.style.cssText='font-size:12px;color:var(--muted);white-space:nowrap';
+    const lbl=()=>{z.textContent=got()?'✓ 追加済み':'＋ '+mb+'MB'};lbl();b.title=n;b.append(a,z);
+    b.onclick=async()=>{if(b.dataset.busy)return;if(got()){onAdd&&onAdd(k);showFn(n+' は追加済みです');return}
+      b.dataset.busy=1;z.textContent='ダウンロード中…';const bl=await gFontGet(path);let r=null;if(bl)r=await uFontAdd(bl,n.replace(/（.*$/,''),k);delete b.dataset.busy;lbl();
+      if(r){onAdd&&onAdd(r);showFn(n.replace(/（.*$/,'')+' を追加しました')}else showFn(bl?'フォントとして読めませんでした':'ダウンロードできませんでした（通信を確認してください）')};
+    box.appendChild(b)})}
+window.gFontList=gFontList;
+{const b=document.getElementById('t_fG'),l=document.getElementById('t_fGL');if(b&&l)b.onclick=()=>{l.hidden=!l.hidden;if(!l.hidden)gFontList(l)}}
 /* フォントのポップアップ: 「名前✏️」「削除」の行 ＋「フォントを追加」「❌」 */
 function popFont(g){const w=stPop(g,'フォント'),k0=w.k0;w.dataset.kind='font';stSnap(w);
   const box=document.createElement('div');box.id='t_stFL';const add=document.createElement('div');add.id='t_stFA';add.hidden=true;w.body.append(box,add);
@@ -8860,16 +8913,29 @@ function popFont(g){const w=stPop(g,'フォント'),k0=w.k0;w.dataset.kind='font
   const draw=()=>{const T=stAll()[k0];box.innerHTML='';
     if(!T.font.length)box.appendChild(stEmpty('まだありません。「フォントを追加」で追加してください'));
     T.font.forEach(k=>{if(!FONTS.some(x=>x.k===k))return;const r=stRow(fkey(g)===k);r.appendChild(stDefBox(k0,'font',k,draw));
-      const nm=stName(fName(k)+(fUse(k)?'':'（ファイル未登録）'),n=>{const o=stAll();o.fn[k]=n.replace(/（ファイル未登録）$/,'');stSave(o);showOv(pos)});nm.style.cssText+=';flex:1;font-size:17px'+ff(k);
+      const use=()=>{if(!fUse(k)){showFn('ファイルが未登録です');return}stFk(g,k);save();showOv(pos);fLoad(k);draw()};stTapRow(r,use);
+      const nm=stName(fName(k)+(fUse(k)?'':'（ファイル未登録）'),n=>{const o=stAll();o.fn[k]=n.replace(/（ファイル未登録）$/,'');stSave(o);showOv(pos)},use);nm.style.cssText+=';flex:1;font-size:17px'+ff(k);
       const x=stBtn('削除',()=>{const o=stAll();o[k0].font=o[k0].font.filter(z=>z!==k);if(o[k0].dfk===k)delete o[k0].dfk;stSave(o);draw();drawAdd()},'font-size:13px;min-width:64px');
       r.append(nm,x);box.appendChild(r)});
     if(T.font.length)box.appendChild(stAllBtn(g,'font','フォント'))};
-  /* 追加: アプリ内の一覧(この字幕にまだ無いもの) と スマホのファイル */
-  const drawAdd=()=>{add.innerHTML='';const T=stAll()[k0],rest=FONTS.filter(f=>!T.font.includes(f.k));
-    const l=document.createElement('div');l.style.cssText='font-size:12px;color:var(--muted);margin-top:6px';l.textContent='アプリ内の一覧から追加';add.appendChild(l);
-    if(!rest.length)add.appendChild(stEmpty('全部入っています'));
-    rest.forEach(f=>{const b=stBtn('＋ '+fName(f.k)+(fUse(f.k)?'':'（ファイル未登録）'),()=>{const o=stAll();if(!o[k0].font.includes(f.k))o[k0].font.push(f.k);stSave(o);draw();drawAdd()},'width:100%;text-align:left;margin-top:4px;font-size:15px'+ff(f.k));add.appendChild(b)});
-    const b2=stBtn('＋ スマホのファイルから追加',()=>fi.click(),'width:100%;margin-top:6px');b2.id='t_stFA2';add.appendChild(b2)};
+  /* 追加(v710): 上にタグ [すべて][明朝体][ゴシック][書体][英語][☆]。アプリのフォント・スマホ標準・無料フォント(タップで初回だけダウンロード)を1つの一覧に。☆でお気に入り */
+  const drawAdd=()=>{add.innerHTML='';const T=stAll()[k0];gFontPrev();
+    const tb=document.createElement('div');tb.id='t_stFT';tb.style.cssText='display:flex;gap:4px;overflow-x:auto;margin:6px 0 2px;scrollbar-width:none';
+    [['','すべて'],['m','明朝体'],['g','ゴシック'],['s','書体'],['e','英語'],['fav','☆']].forEach(([v,n])=>{const b=stBtn(n,()=>{fTagSel=v;drawAdd()},'flex:none;min-height:36px;padding:0 12px;font-size:13px;border-radius:18px'+(fTagSel===v?';background:var(--accent);color:var(--accent-fg,#fff);border-color:var(--accent)':''));b.dataset.tag=v;b.setAttribute('aria-pressed',fTagSel===v);tb.appendChild(b)});add.appendChild(tb);
+    const fav=fFav(),L=[];FONTS.forEach(f=>L.push({k:f.k,n:fName(f.k),fam:window.PFAM[f.k]}));
+    GFL.forEach(x=>{if(!L.some(z=>z.k==='g_'+x[0]))L.push({k:'g_'+x[0],n:x[1],fam:"'"+x[2].split(':')[0]+"',sans-serif",dl:x})});
+    const V=L.filter(z=>fTagSel==='fav'?fav.includes(z.k):!fTagSel||fTag(z.k).includes(fTagSel));
+    if(!V.length)add.appendChild(stEmpty(fTagSel==='fav'?'☆をタップするとお気に入りに入ります':'ありません'));
+    V.forEach(z=>{const r=document.createElement('div');r.className='fAddR';r.dataset.k=z.k;r.style.cssText='display:flex;gap:4px;margin-top:4px;align-items:stretch';const on=fav.includes(z.k);
+      const st=stBtn(on?'★':'☆',()=>{fFavSet(z.k,!on);drawAdd()},'flex:none;width:44px;padding:0;font-size:20px'+(on?';color:#f5b400':''));st.className='fFav';
+      const has=T.font.includes(z.k),m=stBtn('',async()=>{if(has){showFn('もう入っています');return}if(m.dataset.busy)return;let k=z.k;
+          if(z.dl){m.dataset.busy=1;rt.textContent='ダウンロード中…';const bl=await gFontGet(z.dl[3]);k=bl?await uFontAdd(bl,z.dl[1].replace(/（.*$/,''),z.k):null;delete m.dataset.busy;if(!k){showFn(bl?'フォントとして読めませんでした':'ダウンロードできませんでした（通信を確認してください）');drawAdd();return}}
+          const o=stAll();if(!o[k0].font.includes(k))o[k0].font.push(k);stSave(o);draw();drawAdd();showFn(fName(k)+' を追加しました')},'flex:1;min-width:0;text-align:left;font-size:15px;display:flex;justify-content:space-between;align-items:center;gap:6px');
+      const lt=document.createElement('span');lt.textContent=z.n+(z.dl||fUse(z.k)?'':'（ファイル未登録）');lt.style.cssText='overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0';if(z.fam)lt.style.fontFamily=z.fam;
+      const rt=document.createElement('span');rt.style.cssText='font-size:12px;color:var(--muted);white-space:nowrap;flex:none';rt.textContent=has?'✓ 入っています':z.dl?'＋ '+z.dl[4]+'MB':'＋';m.append(lt,rt);
+      r.append(st,m);add.appendChild(r)});
+    const h=document.createElement('div');h.style.cssText='font-size:11px;color:var(--muted);margin-top:6px;line-height:1.5';h.textContent='「MB」が付いたものは無料フォント（商用OK）。最初の1回だけ通信してスマホに保存し、そのあとは通信なしで使えます';add.appendChild(h);
+    const b2=stBtn('＋ スマホのファイルから追加',()=>fi.click(),'width:100%;margin-top:6px');b2.id='t_stFA2';add.appendChild(b2)};let fTagSel='';
   fi.onchange=async()=>{const fs=[...fi.files];fi.value='';let n=0,bad=0;for(const f of fs){const k=await uFontAdd(f);if(!k){bad++;continue}n++;const o=stAll();if(!o[k0].font.includes(k))o[k0].font.push(k);stSave(o)}
     draw();drawAdd();showFn(n?n+'個のフォントを追加しました'+(bad?'（読めないファイル'+bad+'個）':''):'フォントとして読めませんでした')};
   const ab=stBtn('フォントを追加',()=>{add.hidden=!add.hidden;ab.textContent=add.hidden?'フォントを追加':'追加を閉じる';if(!add.hidden)drawAdd()},'');ab.id='t_stFA1';
@@ -8891,8 +8957,8 @@ function stList(w,g){const k0=w.k0;delete w.dataset.ed;stArOff();w.body.innerHTM
   const box=document.createElement('div');box.id='t_stPL';w.body.appendChild(box);
   const T=stAll()[k0],rd=()=>stList(w,g);box.appendChild(stOrig('元の位置',!g.pz,()=>{stPosClr(g);save();showOv(pos);rd()},k0,'pos',rd));
   if(!T.pos.length)box.appendChild(stEmpty('まだありません。「登録」で今の字幕の位置を登録します'));
-  T.pos.forEach(p=>{const r=stRow(g.pz===p.id);r.appendChild(stDefBox(k0,'pos',p.id,rd));
-    const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}});nm.style.flex='1';
+  T.pos.forEach(p=>{const r=stRow(g.pz===p.id);r.appendChild(stDefBox(k0,'pos',p.id,rd));const use=()=>{stPz(g,p);save();showOv(pos);rd()};stTapRow(r,use);
+    const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].pos.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}},use);nm.style.flex='1';
     const e=stBtn('編集',()=>{stPz(g,p);save();showOv(pos);stEdit(w,g,p.id)},'font-size:13px;min-width:64px');
     const x=stBtn('削除',()=>ask('「'+p.n+'」を削除しますか？','削除する',()=>{const o=stAll();o[k0].pos=o[k0].pos.filter(z=>z.id!==p.id);if(o[k0].dpz===p.id)delete o[k0].dpz;stSave(o);if(g.pz===p.id)delete g.pz;save();stList(w,g)}),'font-size:13px;min-width:64px');
     r.append(nm,e,x);box.appendChild(r)});box.appendChild(stAllBtn(g,'pos','位置'));
@@ -9158,8 +9224,8 @@ function styList(w,g){const k0=w.k0;stArOff();stClr(w);const hd=w.querySelector(
   const box=document.createElement('div');box.id='t_syL';w.body.appendChild(box);const T=stAll()[k0];
   const rd=()=>styList(w,g);box.appendChild(stOrig('元のスタイル',!g.sy,()=>{delete g.sy;save();showOv(pos);rd()},k0,'sty',rd));
   if(!T.sty.length)box.appendChild(stEmpty('まだありません。「登録」で今の見た目を登録します'));
-  T.sty.forEach(p=>{const r=stRow(g.sy===p.id);r.appendChild(stDefBox(k0,'sty',p.id,rd));
-    const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].sty.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}});nm.style.flex='1';
+  T.sty.forEach(p=>{const r=stRow(g.sy===p.id);r.appendChild(stDefBox(k0,'sty',p.id,rd));const use=()=>{g.sy=p.id;save();showOv(pos);rd()};stTapRow(r,use);
+    const nm=stName(p.n,n=>{const o=stAll(),q=o[k0].sty.find(z=>z.id===p.id);if(q){q.n=n;stSave(o)}},use);nm.style.flex='1';
     const e=stBtn('編集',()=>{g.sy=p.id;save();showOv(pos);styEdit(w,g,p.id)},'font-size:13px;min-width:64px');
     const x=stBtn('削除',()=>ask('「'+p.n+'」を削除しますか？','削除する',()=>{const o=stAll();o[k0].sty=o[k0].sty.filter(z=>z.id!==p.id);if(o[k0].dsy===p.id)delete o[k0].dsy;stSave(o);if(g.sy===p.id)delete g.sy;save();showOv(pos);styList(w,g)}),'font-size:13px;min-width:64px');
     r.append(nm,e,x);box.appendChild(r)});box.appendChild(stAllBtn(g,'sty','スタイル'));
