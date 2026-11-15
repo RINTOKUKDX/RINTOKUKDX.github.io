@@ -8993,7 +8993,7 @@ function fzSheet(bk,fresh,h0){const I=window.fzAt&&window.fzAt(bk);if(!I)return;
     const ok=document.createElement('button');ok.type='button';ok.id='t_fzOk';ok.textContent='決定';ok.onclick=close;w.append(cx,dx,ok);b.appendChild(w)})}
 /* v734: 空白挿入ボタン(🧲の右)から呼ぶ。再生ヘッドの位置に空白を入れる。文字は最初から「サンプル」 */window.subAddBlank=()=>{if(!cur)return;addBlank({b:posSet?pos:(sel?sel.a:pos)},'s','サンプル')};
 /* v879: ＋ = 再生ヘッドの位置に3秒の字幕クリップ「サンプルテキスト」を入れる。入れる列=今選んでいる字幕の列(選んでいなければ下=自分で追加する列)。テンプレートは画面の左上のボタン(フォルダ1)のテンプレート */
-window.subAddSample=()=>{if(!cur||!cur.list)return;const v=posSet?pos:(sel&&!sel.gap?sel.a:pos),ln=sel&&!sel.gap?(sel.ln===1?1:0):1,ng={a:v,b:v+3,t:'サンプルテキスト',sp:'m',spv:3,man:true};if(ln)ng.ln=1;
+window.subAddSample=()=>{if(!cur||!cur.list)return;const v=posSet?pos:(sel&&!sel.gap?sel.a:pos),ln=sel&&!sel.gap?(sel.ln===1?1:0):window.txAR!=null?window.txAR:1,ng={a:v,b:v+3,t:'サンプルテキスト',sp:'m',spv:3,man:true};if(ln)ng.ln=1;
   try{const o=stAll(),f=tzFd('n',0),k=f!=null?stOrd().find(z=>o[z].fd===f):null;if(k)ng.sp=k;else ng.sp=STK({})}catch(_){}ng.spm=true;try{stDefOn(ng)}catch(_){}
   cur.list.push(ng);cur.list.sort((x,z)=>x.a-z.a);sel=ng;save();drawResults();try{showOv(v+.01)}catch(_){}try{st('字幕を入れました（3秒・'+(ln?'下の列':'上の列')+'）')}catch(_){}};
 window.subUndo=()=>{if(UH.length<2){st('これ以上戻せません');setTimeout(()=>{if($('st').textContent==='これ以上戻せません')st('')},1500);return}
@@ -9312,7 +9312,7 @@ function withGaps(list){const cov=list.map(g=>[g.a,g.b]).sort((x,y)=>x[0]-y[0]);
 /* v172: 再生中の行をシークバーの真下(見える位置)に持ってくる */
 function toRow(d){const stk=$('stk'),y=d.getBoundingClientRect().top-stk.getBoundingClientRect().bottom;if(Math.abs(y)>2)$('root').scrollBy({top:y,behavior:'smooth'})}/* v551: 下の文字は #t_root の中でスクロール */
 /* v727: 再生ヘッドの位置の字幕クリップをアクティブに(動かして追従。タップで選んだ物はそのまま) */function selAtPos(t){if(!cur)return;const g=withGaps(cur.list).find(x=>t>=x.a&&t<x.b);if(!g||(sel&&sel.a===g.a&&sel.b===g.b))return;sel=g;[...$('rows').children].forEach(d=>d.classList.toggle('sel',!!d._g&&d._g.a===g.a&&d._g.b===g.b))}
-function pick(g){sel=g;[...$('rows').children].forEach(d=>d.classList.toggle('sel',d._g===g));showSel()}
+function pick(g){sel=g;if(g&&!g.gap&&typeof g.t==='string')window.txAR=g.ln===1?1:0;/* v881: 選んだ字幕の列がアクティブ */[...$('rows').children].forEach(d=>d.classList.toggle('sel',d._g===g));showSel()}
 /* v713: rKeep=描き直しても再生ヘッドはその場(字幕の長さを変えた・字幕調整の削除の後) */let rKeep=false,rJump=false;
 function showSel(){stopPlay();posSet=false;showOv();const ok=!!sel;['bP','bA'].forEach(i=>$(i).disabled=!ok&&!JOB.length);/* v724: 再生ヘッドは勝手に動かさない(描き直し・字幕を選ぶ・画面のタップ・削除の後もその場)。動かすのは「次へ」・開いた時・一覧の行タップ(rJump)だけ */const jp=rJump;rJump=false;rKeep=false;if(jp&&sel)showAt(sel.a+0.01);else{const t=pos;showAt(t);posSet=true;showOv(t)}drawWf()}
 /* 動画2本で、つなげた後の時間(仮想の時間)を再生する。切替はカットページの▶▶と同じやり方 */
@@ -10690,12 +10690,19 @@ function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return
   if(cutPrev&&!cutPrev.sub){x.fillStyle='rgba(255,40,40,.38)';x.fillRect(sx(cutPrev.x),0,Math.max(2,sx(cutPrev.y)-sx(cutPrev.x)),H)}
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H);drawTx(A,B)}
 /* v373: 文字のタイムライン。波形と同じ A〜B を描く。ブロックはタイムラインの字幕ブロック(.blk.l3)と同じ色・角丸・白文字 */
+/* v881: 字幕タイムラインの一番左に「1」「2」(タイムラインページのレーン名と同じ見た目)。押すとその列がアクティブ(＋で入れる列)。1=自動・2=自分で追加 */
+function txLbl(c,AR,RT){let w=c.parentNode;if(!w||w.id!=='t_txW'){const x=document.createElement('div');x.id='t_txW';x.style.cssText='position:relative';c.parentNode.insertBefore(x,c);x.appendChild(c);w=x}
+  let L=document.getElementById('t_txL');if(!L){L=document.createElement('div');L.id='t_txL';L.style.cssText='position:absolute;left:0;top:0;bottom:0;width:44px;z-index:3';
+    [0,1].forEach(r=>{const b=document.createElement('button');b.type='button';b.className='txLn';b.dataset.r=r;b.textContent=String(r+1);b.setAttribute('aria-label',r?'字幕タイムライン2(自分で追加)を選ぶ':'字幕タイムライン1(自動)を選ぶ');
+      b.style.cssText='position:absolute;left:2px;width:40px;box-sizing:border-box;padding:0;margin:0;border-radius:6px;border:2px solid var(--c3,#12867a);background:#241c16;color:var(--fg,#fff);font-size:14px;font-weight:700;min-height:0';
+      b.onclick=e=>{e.stopPropagation();window.txAR=r;if(sel&&!sel.gap&&typeof sel.t==='string'&&(sel.ln===1?1:0)!==r){sel=null;try{showSel()}catch(_){}}drawWf();try{st(r?'字幕タイムライン2(自分で追加)を選びました':'字幕タイムライン1(自動)を選びました')}catch(_){}};L.appendChild(b)});w.appendChild(L)}
+  [...L.children].forEach(b=>{const r=+b.dataset.r,[y,h]=RT(r),on=r===AR;b.style.top=(y+2)+'px';b.style.height=Math.max(10,h-4)+'px';b.style.background=on?'var(--accent)':'#241c16';b.style.color=on?'var(--accent-fg,#fff)':'var(--fg,#fff)';b.setAttribute('aria-pressed',String(on))})}
 function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clientHeight;if(!W)return;const dp=devicePixelRatio||1;
   if(c.width!==W*dp){c.width=W*dp;c.height=H*dp}const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
   const cs=getComputedStyle(document.documentElement),c3=cs.getPropertyValue('--c3').trim()||'#12867a',fg=cs.getPropertyValue('--fg').trim()||'#fff',warn=cs.getPropertyValue('--warn').trim()||'#d33';
   const sx=v=>(v-A)/(B-A)*W;txMap={A,B,W,rects:[],AR:0};
   /* v876: 2列。上=自動で作った字幕、下=自分で追加した字幕(g.ln===1)。選んでいる(なければ再生ヘッドの)クリップがある列は高く、もう一方は半分の高さ。v878: 2列の間に細い線 */
-  const SL=(cur&&cur.list||[]).filter(q=>!q.gap&&typeof q.t==='string').sort((p,q)=>p.a-q.a),RW=new Map(SL.map(q=>[q,q.ln===1?1:0])),mid=(A+B)/2,hit=(sel&&RW.has(sel)?sel:null)||SL.find(q=>mid>=q.a&&mid<q.b)||null,AR=hit?RW.get(hit):0,hA=Math.round(H*2/3),hI=H-hA,RT=r=>r===AR?[AR===0?0:hI,hA]:[AR===0?hA:0,hI];txMap.AR=AR;
+  const SL=(cur&&cur.list||[]).filter(q=>!q.gap&&typeof q.t==='string').sort((p,q)=>p.a-q.a),RW=new Map(SL.map(q=>[q,q.ln===1?1:0])),mid=(A+B)/2,hit=(sel&&RW.has(sel)?sel:null)||SL.find(q=>mid>=q.a&&mid<q.b)||null,AR=sel&&RW.has(sel)?RW.get(sel):window.txAR!=null?window.txAR:hit?RW.get(hit):0,hA=Math.round(H*2/3),hI=H-hA,RT=r=>r===AR?[AR===0?0:hI,hA]:[AR===0?hA:0,hI];txMap.AR=AR;txMap.by=AR===0?hA:hI;try{txLbl(c,AR,RT)}catch(_){}
   {const by=AR===0?hA:hI;x.fillStyle='rgba(255,255,255,.28)';x.fillRect(0,by-.5,W,1)}
   SL.forEach(g=>{if(g.b<=A||g.a>=B)return;const [RY,RH]=RT(RW.get(g)),Y0=RY+4,HH=RH-8,big=RH>H/2,X0=sx(g.a)+2,X1=sx(g.b)-2,w=Math.max(4,X1-X0);/* v866: 隣り合う字幕クリップの境目が見えるように、すき間を広げて縁を暗くする */
     /* v766: 変更済み=紫・⧉一括変更オンの時に変わる字幕=少し光る */const bl=window.bulkMode&&!g.ed,rs=window.subRng&&window.subRngSel&&window.subRngSel.has(g);x.save();if(bl){x.shadowColor='rgba(150,240,255,.95)';x.shadowBlur=10}x.fillStyle=g===window.magHit?'#e0443a':rs?'#ff8c1a':g.ed?'#7d5bd0':c3;/* v803: 当たった隣=赤 *//* v776: 範囲で選んだ字幕=オレンジ */x.beginPath();x.roundRect?x.roundRect(X0,Y0,w,HH,6):x.rect(X0,Y0,w,HH);x.fill();if(bl){x.shadowBlur=0;x.strokeStyle='rgba(190,250,255,.9)';x.lineWidth=1.5;x.stroke()}else{x.strokeStyle='rgba(0,0,0,.55)';x.lineWidth=1.5;x.stroke()}x.restore();
