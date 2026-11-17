@@ -6866,8 +6866,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v946';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
+{const v=document.createElement('div');v.textContent='v947';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v947','字幕ページの＋: 3秒入る隙間が無ければ次の字幕の手前まで。既に字幕がある所で押すと警告して入れない'],['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
   ['v945','タイムライン: カットページで分かれた所(タイムラインでは1つのクリップ)でも✂で分けられる'],['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v943','文字別編集: 選んだ文字を大きくしても、ほかの行(縦書きは別の列)は動かない(揃えの基準を等倍の長さに)'],
@@ -9100,8 +9100,14 @@ function fzSheet(bk,fresh,h0){const I=window.fzAt&&window.fzAt(bk);if(!I)return;
 /* v734: 空白挿入ボタン(🧲の右)から呼ぶ。再生ヘッドの位置に空白を入れる。文字は最初から「サンプル」 */window.subAddBlank=()=>{if(!cur)return;addBlank({b:posSet?pos:(sel?sel.a:pos)},'s','サンプル')};
 /* v879: ＋ = 再生ヘッドの位置に3秒の字幕クリップ「サンプルテキスト」を入れる。入れる列=今選んでいる字幕の列(選んでいなければ下=自分で追加する列)。テンプレートは画面の左上のボタン(フォルダ1)のテンプレート */
 window.subAddSample=()=>{if(!cur||!cur.list)return;const v=posSet?pos:(sel&&!sel.gap?sel.a:pos),ln=sel&&!sel.gap?(sel.ln===1?1:0):window.txAR!=null?window.txAR:1,ng={a:v,b:v+3,t:'サンプルテキスト',sp:'m',spv:3,man:true};if(ln)ng.ln=1;
+  /* v947: 同じ列の字幕に重ねない。再生ヘッドの所に既に字幕があれば警告して入れない。3秒入らなければ次の字幕の手前まで */
+  {const same=cur.list.filter(x=>x&&!x.gap&&(x.ln===1?1:0)===(ln?1:0)&&x.b>x.a),E=0.05;
+   if(same.some(x=>x.a<=v+E&&x.b>v+E)){try{showFn('ここには既に字幕があります')}catch(_){}try{st('ここには既に字幕があります（＋は字幕の無い所で押してください）')}catch(_){}try{navigator.vibrate&&navigator.vibrate([40,60,40])}catch(_){}return}
+   const nx=same.filter(x=>x.a>v+E).reduce((m,x)=>Math.min(m,x.a),Infinity);
+   if(nx-v<0.3){try{showFn('次の字幕までの隙間が短すぎます')}catch(_){}try{st('次の字幕までの隙間が短すぎて入れられません')}catch(_){}return}
+   if(nx<ng.b)ng.b=nx}
   try{const o=stAll(),f=tzFd('n',0),k=f!=null?stOrd().find(z=>o[z].fd===f):null;if(k)ng.sp=k;else ng.sp=STK({})}catch(_){}ng.spm=true;try{stDefOn(ng)}catch(_){}
-  cur.list.push(ng);cur.list.sort((x,z)=>x.a-z.a);sel=ng;save();drawResults();try{showOv(v+.01)}catch(_){}try{st('字幕を入れました（3秒・'+(ln?'下の列':'上の列')+'）')}catch(_){}};
+  cur.list.push(ng);cur.list.sort((x,z)=>x.a-z.a);sel=ng;save();drawResults();try{showOv(v+.01)}catch(_){}try{st('字幕を入れました（'+(Math.round((ng.b-ng.a)*10)/10)+'秒・'+(ln?'下の列':'上の列')+'）')}catch(_){}};
 window.subUndo=()=>{if(UH.length<2){st('これ以上戻せません');setTimeout(()=>{if($('st').textContent==='これ以上戻せません')st('')},1500);return}
   UR.push(UH.pop());applyFull(UH[UH.length-1],'元に戻した')};
 /* v536: やり直し(⟳)。戻した状態をURに積み、新しい変更が入ったら捨てる */
