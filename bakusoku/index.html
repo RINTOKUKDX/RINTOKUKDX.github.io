@@ -6863,8 +6863,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v955';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v955','画面のボタンの設定: 空いたマスの「＋」を押しても何も起こらなかったのを直す'],
+{const v=document.createElement('div');v.textContent='v956';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v956','直した: SE・字幕テンプレート・スタイルの一覧で行を長押しして離すと、調整の窓が開かずに閉じてしまう事がある(離した後のタップが外の暗い所に当たっていた)'],
+['v955','画面のボタンの設定: 空いたマスの「＋」を押しても何も起こらなかったのを直す'],
 ['v954','画面のボタンの設定: 「＋ボタンを追加（SE）」を無くす(空いたマスの「＋」で追加)・空いたマスの「＋」が見えなかったのを直す・選んだボタンが光らなかったのを直す。「最初の並びに戻す」「ショートカット」のボタンを無くす'],
 ['v953','スタイルのボタンの長押しをSE一覧と同じに: 使用中が光る・1回タップ=画面の字幕に見本・もう一度タップ=決定して閉じる・長押しして離す=調整(名前の欄・保存して閉じる・✕は保存しない)・長押しして動かす=iPhone風に並べ替え・一番下に「スタイルの追加と削除」(中に「＋ 今の見た目で追加」)'],
 ['v952','字幕テンプレートのボタン(基本字幕・テロップ・特殊字幕)の長押しをSE一覧と同じに: そのボタンのテンプレートだけ(ボタン=フォルダ)・使用中が光る・1回タップ=画面に見本・もう一度タップ=決定して閉じる・長押しして離す=調整(名前の欄・保存して閉じる・✕は保存しない)・長押しして動かす=iPhone風に並べ替え・一番下に「テンプレートの追加と削除」・左上の名前をダブルタップ=ボタンの名前'],
@@ -10446,7 +10447,7 @@ function seBody(w,g){const k0=w.k0,SN=+w.dataset.slot||1,F=seF(SN);
       r.addEventListener('touchmove',e=>{if(lp&&e.cancelable)e.preventDefault()},{passive:false});
       r.addEventListener('pointermove',e=>{if(tm&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cl();if(!lp)return;e.preventDefault();const dy=e.clientY-y0;if(Math.abs(dy)>8)mv=true;if(mv){r.style.transform='translateY('+dy+'px)';shift(dy)}});
       r.addEventListener('pointerup',e=>{cl();if(!lp)return;lp=false;
-        if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';popSe(g,id,SN);return}
+        if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';lpEat();popSe(g,id,SN);return}
         const o=seTMut(k0,F),a=o[k0][F].ids,vis=a.filter(seById),b=vis.filter(z=>z!==id);b.splice(tg,0,id);o[k0][F].ids=[...b,...a.filter(z=>!seById(z))];seSave(o,k0,F);showFn('順番を変えました');draw()});
       r.addEventListener('pointercancel',()=>{cl();if(lp){lp=false;draw()}});
       r.addEventListener('click',e=>{if(r._lp){r._lp=0;return}if(e.target.closest('button'))return;tapC(id)});
@@ -10587,7 +10588,7 @@ function sfList(w,g){const f=w.dataset.fd;delete w.dataset.ed;w.redo=()=>sfList(
     r.addEventListener('touchmove',e=>{if(lp&&e.cancelable)e.preventDefault()},{passive:false});
     r.addEventListener('pointermove',e=>{if(tm&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cl();if(!lp)return;e.preventDefault();const dy=e.clientY-y0;if(Math.abs(dy)>8)mv=true;if(mv){r.style.transform='translateY('+dy+'px)';shift(dy)}});
     r.addEventListener('pointerup',()=>{cl();if(!lp)return;lp=false;
-      if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';sfEdit(w,g,k);return}
+      if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';lpEat();sfEdit(w,g,k);return}
       const q=stAll(),vis=q.ord.filter(z=>q[z]&&q[z].fd===f),b=vis.filter(z=>z!==k);b.splice(tg,0,k);let n=0;q.ord=q.ord.map(z=>q[z]&&q[z].fd===f?b[n++]:z);stSave(q);showFn('順番を変えました');sfList(w,g)});
     r.addEventListener('pointercancel',()=>{cl();if(lp){lp=false;sfList(w,g)}});
     r.addEventListener('click',e=>{if(r._lp){r._lp=0;return}if(e.target.closest('button'))return;tapC(k)});
@@ -10915,6 +10916,8 @@ function subEdit(w,g,k){w.edK=k;window.__gsm=null;window.__gpo=null;/* v870: グ
   stEdFoot(w,()=>subList(w,g),()=>{const q=P(),f0=(FONTS.find(f=>!f.u&&!f.file)||FONTS[0]).k;Object.keys(q).forEach(z=>{if(!['n','kd','bk','g','fd','pos','sty'].includes(z))delete q[z]});q.font=[f0]},()=>subEdit(w,g,k))}
 const stClr=w=>{w.body.innerHTML='';[...w.children].forEach(c=>{if(c!==w.firstChild&&c!==w.body)c.remove()})};
 /* v953: スタイル一覧をSE一覧と同じに。使用中が光る・1回タップ=画面の字幕をそのスタイルにして見本・光っている行をもう一度タップ=決定して閉じる・長押しして離す=調整・長押しして動かす=iPhone風に並べ替え。一番下「スタイルの追加と削除」。「なし」は無し・字幕テンプレートごとの一覧のまま */
+/* v956: 長押しして離した直後の「クリック」を1回だけ捨てる(窓の中身が変わって指の下が暗い幕になると、そのクリックで窓が閉じていた) */
+function lpEat(){const h=e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();off()},off=()=>{document.removeEventListener('click',h,true);clearTimeout(t)},t=setTimeout(off,350);document.addEventListener('click',h,true)}
 function lpRow(r,box,onTap,onEdit,onMove){let tm=0,x0=0,y0=0,lp=false,mv=false,pid=null,RS=[],di=0,tg=0,stp=0;const cl=()=>{clearTimeout(tm);tm=0};
   const shift=dy=>{const c=RS[di].r.top+RS[di].r.height/2+dy;let t=0;RS.forEach((q,j)=>{if(j!==di&&q.r.top+q.r.height/2<c)t++});tg=t;
     RS.forEach((q,j)=>{if(j===di)return;let m=0;if(di<tg&&j>di&&j<=tg)m=-stp;else if(di>tg&&j<di&&j>=tg)m=stp;q.e.style.transform=m?'translateY('+m+'px)':''})};
@@ -10924,7 +10927,7 @@ function lpRow(r,box,onTap,onEdit,onMove){let tm=0,x0=0,y0=0,lp=false,mv=false,p
       RS.forEach(q=>{if(q.e!==r)q.e.style.transition='transform .15s'});r.style.position='relative';r.style.zIndex='5';r.style.boxShadow='0 4px 14px rgba(0,0,0,.45)';r.style.opacity='.92'},450)});
   r.addEventListener('touchmove',e=>{if(lp&&e.cancelable)e.preventDefault()},{passive:false});
   r.addEventListener('pointermove',e=>{if(tm&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cl();if(!lp)return;e.preventDefault();const dy=e.clientY-y0;if(Math.abs(dy)>8)mv=true;if(mv){r.style.transform='translateY('+dy+'px)';shift(dy)}});
-  r.addEventListener('pointerup',()=>{cl();if(!lp)return;lp=false;if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';onEdit();return}onMove(tg)});
+  r.addEventListener('pointerup',()=>{cl();if(!lp)return;lp=false;if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';lpEat();onEdit();return}onMove(tg)});
   r.addEventListener('pointercancel',()=>{cl();if(lp){lp=false;onMove(null)}});
   r.addEventListener('click',e=>{if(r._lp){r._lp=0;return}if(e.target.closest('button'))return;onTap()})}
 function styList(w,g){const k0=w.k0;stArOff();stClr(w);{const hx=w.querySelector('#t_syX');if(hx)hx.remove()}delete w.dataset.ed;w.redo=()=>styList(w,g);sfGlCss();
