@@ -6860,8 +6860,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v937';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v937','SE一覧を新ルールに: 「なし」が一番上・使用中が光る・1回タップ=聞く・もう一度タップ=決定して閉じる・長押し=調整の窓。✏️/調整/削除/再生ボタンを無くし、「SEの追加と削除」で追加・削除。調整の窓は名前欄・保存して閉じる(SEに保存)・✕(保存しない)'],
+{const v=document.createElement('div');v.textContent='v938';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
+  ['v937','SE一覧を新ルールに: 「なし」が一番上・使用中が光る・1回タップ=聞く・もう一度タップ=決定して閉じる・長押し=調整の窓。✏️/調整/削除/再生ボタンを無くし、「SEの追加と削除」で追加・削除。調整の窓は名前欄・保存して閉じる(SEに保存)・✕(保存しない)'],
   ['v936','SE変更画面: 今使っているSEの行が光る(自動でその位置まで動く)'],
   ['v935','字幕モード: 長押ししてスワイプ=クリップ全体が動く(隣に当たると隣が赤くなって止まる)。✂️は元どおり(オンの時だけ長押しで削除)。文字別編集: 選んだ文字以外は一切動かさない(場所は基本の大きさ・字体で決める)'],
   ['v934','文字別編集: 1文字の大きさを変えても、選んでいない文字が上下に動かない(大きくした文字は上へ伸びる)'],
@@ -10376,12 +10377,23 @@ function seBody(w,g){const k0=w.k0,SN=+w.dataset.slot||1,F=seF(SN);
   const fi=document.createElement('input');fi.type='file';fi.accept='audio/*,.mp3,.wav,.m4a,.aac,.ogg';fi.multiple=true;fi.hidden=true;fi.id='t_stSI';w.appendChild(fi);
   let cand=g[F]&&seById(g[F])?g[F]:null;const apply=()=>{if(cand)g[F]=cand;else delete g[F];save();showOv(pos)};/* v937: 決定したものだけを字幕に入れる */
   const draw=()=>{box.innerHTML='';seMig(stAll()[k0]);const ids=seTOf(k0,F).ids.filter(seById);
-    box.appendChild(lsHint('1回タップ=聞く・光っている行をもう一度タップ=決定して閉じる・長押し=調整'));
+    box.appendChild(lsHint('1回タップ=聞く・光っている行をもう一度タップ=決定して閉じる・長押しして離す=調整・長押しして動かす=順番を変える'));
     const mkRow=(id,label)=>{const on=id===cand,r=stRow(on);if(on)r.classList.add('seGlow');/* v937: 光っているものがいまの候補 */
       const nm=document.createElement('span');nm.textContent=label;nm.style.cssText='flex:1;padding:8px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';r.appendChild(nm);r.style.cursor='pointer';
-      let tm=0,x0=0,y0=0;const cl=()=>{clearTimeout(tm);tm=0};
-      r.addEventListener('pointerdown',e=>{r._lp=0;if(!id||e.target.closest('button'))return;x0=e.clientX;y0=e.clientY;cl();tm=setTimeout(()=>{tm=0;r._lp=1;try{navigator.vibrate&&navigator.vibrate(25)}catch(_){}popSe(g,id,SN)},500)});
-      r.addEventListener('pointermove',e=>{if(tm&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cl()});['pointerup','pointercancel','pointerleave'].forEach(t=>r.addEventListener(t,cl));
+      /* v938: 長押ししてスライド=iPhoneのホーム画面のように、動かした所に他の行が入れ替わる。動かさずに離す=調整の窓 */
+      if(id)r.dataset.lid=id;let tm=0,x0=0,y0=0,lp=false,mv=false,pid=null,RS=[],di=0,tg=0,stp=0;const cl=()=>{clearTimeout(tm);tm=0};
+      const shift=dy=>{const c=RS[di].r.top+RS[di].r.height/2+dy;let t=0;RS.forEach((q,k)=>{if(k!==di&&q.r.top+q.r.height/2<c)t++});tg=t;
+        RS.forEach((q,k)=>{if(k===di)return;let m=0;if(di<tg&&k>di&&k<=tg)m=-stp;else if(di>tg&&k<di&&k>=tg)m=stp;q.e.style.transform=m?'translateY('+m+'px)':''})};
+      r.addEventListener('pointerdown',e=>{r._lp=0;lp=false;mv=false;if(!id||e.target.closest('button'))return;x0=e.clientX;y0=e.clientY;pid=e.pointerId;cl();
+        tm=setTimeout(()=>{tm=0;lp=true;r._lp=1;try{navigator.vibrate&&navigator.vibrate(25)}catch(_){}try{r.setPointerCapture(pid)}catch(_){}
+          RS=[...box.querySelectorAll('[data-lid]')].map(x=>({e:x,r:x.getBoundingClientRect()}));di=RS.findIndex(q=>q.e===r);tg=di;stp=RS.length>1?(RS[1].r.top-RS[0].r.top)||(r.offsetHeight+4):r.offsetHeight+4;
+          RS.forEach(q=>{if(q.e!==r)q.e.style.transition='transform .15s'});r.style.position='relative';r.style.zIndex='5';r.style.boxShadow='0 4px 14px rgba(0,0,0,.45)';r.style.opacity='.92'},450)});
+      r.addEventListener('touchmove',e=>{if(lp&&e.cancelable)e.preventDefault()},{passive:false});
+      r.addEventListener('pointermove',e=>{if(tm&&(Math.abs(e.clientX-x0)>10||Math.abs(e.clientY-y0)>10))cl();if(!lp)return;e.preventDefault();const dy=e.clientY-y0;if(Math.abs(dy)>8)mv=true;if(mv){r.style.transform='translateY('+dy+'px)';shift(dy)}});
+      r.addEventListener('pointerup',e=>{cl();if(!lp)return;lp=false;
+        if(!mv){r.style.boxShadow='';r.style.opacity='';r.style.zIndex='';r.style.position='';popSe(g,id,SN);return}
+        const o=seTMut(k0,F),a=o[k0][F].ids,vis=a.filter(seById),b=vis.filter(z=>z!==id);b.splice(tg,0,id);o[k0][F].ids=[...b,...a.filter(z=>!seById(z))];seSave(o,k0,F);showFn('順番を変えました');draw()});
+      r.addEventListener('pointercancel',()=>{cl();if(lp){lp=false;draw()}});
       r.addEventListener('click',e=>{if(r._lp){r._lp=0;return}if(e.target.closest('button'))return;tapC(id)});
       if(id&&!add.hidden){const x=stBtn('削除',()=>{const o=seTMut(k0,F);o[k0][F].ids=o[k0][F].ids.filter(z=>z!==id);if(o[k0].dse===id)delete o[k0].dse;seSave(o,k0,F);if(cand===id)cand=null;if(g[F]===id){delete g[F];save();showOv(pos)}draw();drawAdd()},'font-size:13px;min-width:56px');r.appendChild(x)}
       box.appendChild(r)};
