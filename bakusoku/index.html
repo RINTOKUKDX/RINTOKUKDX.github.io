@@ -6863,8 +6863,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v960';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v960','字幕ページ: タイムラインや音声波形を触っている間と、文字の位置を動かしている間は、画面上のボタンを0.2秒でふわっと消す(離すと戻る)'],['v959','一覧の見た目をSEにそろえる: スタイル・字幕・位置・字幕フォルダの一覧から（不穏）などのテンプレート名を消す。字幕フォルダの一覧の左上はボタンの名前の入力欄に'],
+{const v=document.createElement('div');v.textContent='v961';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v961','字幕ページ: 再生ボタンを押してから動き出すまでの待ちを短く(開いた時に裏で映像を読み込んでおく)'],['v960','字幕ページ: タイムラインや音声波形を触っている間と、文字の位置を動かしている間は、画面上のボタンを0.2秒でふわっと消す(離すと戻る)'],['v959','一覧の見た目をSEにそろえる: スタイル・字幕・位置・字幕フォルダの一覧から（不穏）などのテンプレート名を消す。字幕フォルダの一覧の左上はボタンの名前の入力欄に'],
 ['v958','SEの一覧の左上をボタンの名前の入力欄にする(そのまま書き換えられる)。（不穏）などのテンプレート名は出さない'],
 ['v957','画面のボタンの設定: 空いたマスの「＋」が押せなかったのを直す(再生ヘッドの線と同じ名前で、触れない設定になっていた)'],
 ['v956','直した: SE・字幕テンプレート・スタイルの一覧で行を長押しして離すと、調整の窓が開かずに閉じてしまう事がある(離した後のタップが外の暗い所に当たっていた)'],
@@ -9482,7 +9482,7 @@ function vplay0(v0,v1,onT,onE){stopV();const P=pieces(v0,v1).filter(p=>p.url);if
   setSrc(A,P[0].url);seekV(A,P[0].a);snd(A,true);front(A);
   if(P[1]){setSrc(B,P[1].url);snd(B,false);seekV(B,P[1].a-Math.min(LEAD,P[1].a))}
   let went=false;const go=()=>{if(went||pl!==c)return;went=true;A.play().catch(()=>{A.muted=true;A.play().catch(()=>{})});requestAnimationFrame(tk)};
-  if(A.readyState>=2&&!A.seeking)go();else{A.addEventListener('seeked',go,{once:true});A.addEventListener('canplay',go,{once:true});setTimeout(go,1500)}
+  if(A.readyState>=2&&!A.seeking)go();else{A.addEventListener('seeked',go,{once:true});A.addEventListener('canplay',go,{once:true});setTimeout(go,A.readyState>=1?250:1500)/* v961: スマホは押すまで映像を読み込まないので、場所が分かっていれば待たずに再生(再生は読み込めた所から始まる) */}
   function tk(){if(pl!==c)return;const A=vids[act],B=vids[1-act],p=c.P[c.i],n=c.P[c.i+1],t=A.currentTime;
     if(n&&!c.pre&&t>=p.b-EM-Math.min(LEAD,n.a)){if(c.pend)c.pend();c.pre=true;snd(B,false);B.play().catch(()=>{})}
     if(t>=p.b-EM||A.ended||c.wait){
@@ -9507,6 +9507,8 @@ function lplay(v0,v1,onT,onE){stopV();const c={P:[],i:0,lite:1,nodes:[]};pl=c;vi
   const go=a=>{if(pl!==c)return;try{if(ctx.state!=='running')ctx.resume()}catch(_){}t0=ctx.currentTime+0.1;tk(a)};
   if(mute)go(null);else{if(!audio)st('音を準備中…');getAudio().then(a=>{if(!audio||$('rSt').textContent==='音を準備中…')st('');go(a)},()=>go(null))}
   return true}
+/* v961: 字幕ページを開いた時に、裏で一瞬だけ音なしで再生して止める(スマホは再生を押すまで映像を読み込まないため、最初の再生が遅れていた) */
+function vWarm(){vids.forEach(V=>{if(!V.getAttribute('src')||V.readyState>=3||!V.paused||V._wm)return;V._wm=1;const t=V.currentTime,m=V.muted;V.muted=true;const end=()=>{V._wm=0;if(pl)return;try{V.pause();seekV(V,t);V.muted=m}catch(_){}};const p=V.play();if(p&&p.then)p.then(end,end);else end()})}
 function stopV(){if(!pl)return;const c=pl;pl=null;clearTimeout(c.pt);if(c.stopA)c.stopA();vids.forEach(v=>{snd(v,false);v.pause()})}
 function stopPlay(){narStop();stopV();$('bA').classList.remove('on');$('bA').textContent='▶▶';$('bP').classList.remove('on')}
 const playing=()=>!!pl;
@@ -11037,7 +11039,7 @@ tzDraw();
  addEventListener('pointerdown',e=>{const t=e.target;if(t&&t.closest&&t.closest('#t_wf,#t_nw,#t_tx')){const pl=$('pl');if(pl)pl.classList.add('tzFd')}},true);
  ['pointerup','pointercancel'].forEach(ev=>addEventListener(ev,fd,true));addEventListener('blur',fd)}
 /* v380: 再生中は消す。iボタンのタップで表示/非表示 */
-{const pl=$('pl'),vs=[$('pv'),$('pv2')].filter(Boolean),up=()=>pl.classList.toggle('tzP',vs.some(v=>!v.paused));
+{const pl=$('pl'),vs=[$('pv'),$('pv2')].filter(Boolean),up=()=>pl.classList.toggle('tzP',vs.some(v=>!v.paused&&!v._wm));/* v961: 裏で読み込むための一瞬の再生では消さない */
  vs.forEach(v=>['play','playing','pause','ended','emptied'].forEach(ev=>v.addEventListener(ev,up)));
  $('iB').addEventListener('click',e=>{e.stopPropagation();pl.classList.toggle('tzH')})}
 window.tzOpen=()=>{let sc=$('tzSc');if(sc)sc.remove();sc=document.createElement('div');sc.id='t_tzSc';sc.className='tpg';
@@ -12512,7 +12514,7 @@ window.subOpen=async(auto,render,fresh,mode)=>{MODE=mode==='nar'?'nar':'sub';mcS
   if(auto&&ok&&!Object.keys(R).some(k=>R[k].raw.length))$('go').click()};
 /* v538: 開いてから字幕の波形・画像ができるまで、再生画面の真ん中に「読み込み中」を出す */
 {const o=window.subOpen;window.subOpen=async(...a)=>{const pl=document.getElementById('t_pl');wfOff=false;audStop=false;let cz;const cp=new Promise(z=>{cz=z});const lid=ldO.show('読み込み中…',{stop:()=>{wfStop();cz()}});try{window.s4FoldOpen&&window.s4FoldOpen()}catch(e){}/* v547: ページを開くたびに欄は開いた状態 */
-  try{const r=await o(...a);/* v613: 波形は待たない(読み込みは裏で。波形の所に表示) */if(JOB.length&&!wfPk&&!wfOff)wfData().then(d=>{if(d)try{drawWf()}catch(e){}});return r}finally{ldO.hide(lid)}}}
+  try{const r=await o(...a);try{vWarm()}catch(e){}/* v613: 波形は待たない(読み込みは裏で。波形の所に表示) */if(JOB.length&&!wfPk&&!wfOff)wfData().then(d=>{if(d)try{drawWf()}catch(e){}});return r}finally{ldO.hide(lid)}}}
 /* v793: 字幕ページを離れる時、タイムラインの再生ヘッドを字幕ページの位置へ */
 {let was=false;const s4=document.getElementById('s4');if(s4)new MutationObserver(()=>{const vis=!s4.hidden;if(was&&!vis){try{const f=fromV(pos);if(f&&!f.r.blank&&window.tlSetSrc)window.tlSetSrc(f.r.key,f.t)}catch(e){}}was=vis}).observe(s4,{attributes:true,attributeFilter:['hidden']})}
 window.subClose=()=>{window.subRange=null;stopPlay();document.getElementById('s4').hidden=true;document.getElementById('s1').hidden=false;scrollTo(0,0)};
