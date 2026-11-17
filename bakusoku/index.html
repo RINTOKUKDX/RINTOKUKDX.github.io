@@ -6860,8 +6860,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v938';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
+{const v=document.createElement('div');v.textContent='v939';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v939','SEの試し聞き: いまのクリップの2秒前から画面も一緒に再生(字幕の出るタイミングとSEを合わせられる)。もう一度押すと止まる'],
+  ['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
   ['v937','SE一覧を新ルールに: 「なし」が一番上・使用中が光る・1回タップ=聞く・もう一度タップ=決定して閉じる・長押し=調整の窓。✏️/調整/削除/再生ボタンを無くし、「SEの追加と削除」で追加・削除。調整の窓は名前欄・保存して閉じる(SEに保存)・✕(保存しない)'],
   ['v936','SE変更画面: 今使っているSEの行が光る(自動でその位置まで動く)'],
   ['v935','字幕モード: 長押ししてスワイプ=クリップ全体が動く(隣に当たると隣が赤くなって止まる)。✂️は元どおり(オンの時だけ長押しで削除)。文字別編集: 選んだ文字以外は一切動かさない(場所は基本の大きさ・字体で決める)'],
@@ -10009,12 +10010,20 @@ async function popSe(g,id0,sn){sn=sn||1;const K=sn>1?String(sn):'',F=seF(sn),gv=
   {let dg=null;cv.addEventListener('pointerdown',e=>{if(!buf)return;const r=cv.getBoundingClientRect(),S=span(),x1=(g.a+P.o+Lof()-S.a)/S.d*r.width,px=e.clientX-r.left,x0=(g.a+P.o-S.a)/S.d*r.width;fix=S;dg={x:e.clientX,mode:Math.abs(px-x1)<18?'len':Math.abs(px-x0)<18?'in':'pos',o:P.o,l:Eof(),s:P.s||0,W:r.width};try{cv.setPointerCapture(e.pointerId)}catch(_){}});
    cv.addEventListener('pointermove',e=>{if(!dg)return;const dt=(e.clientX-dg.x)/dg.W*fix.d;if(dg.mode==='pos')P.o=Math.max(-2,Math.min(30,+(dg.o+dt).toFixed(3)));else if(dg.mode==='in'){/* v929: 入口を詰めても後ろの音は同じ所で鳴る */const d2=Math.max(-dg.s,-2-dg.o,Math.min(dg.l-dg.s-0.1,dt));P.s=+(dg.s+d2).toFixed(3);P.o=+(dg.o+d2).toFixed(3);if(!P.l)P.l=+dg.l.toFixed(3)}else P.l=Math.max((P.s||0)+0.1,Math.min(buf.duration,+(dg.l+dt).toFixed(3)));draw()});
    const end=()=>{if(!dg)return;dg=null;fix=null;draw()};cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end)}
-  pl.onclick=()=>{if(!buf)return;const c=seCtx();seNode(c,c.destination,buf,P,c.currentTime+0.05,0)};
+  /* v939: 試し聞き=いまのクリップの2秒前から、画面も一緒に再生(字幕が出るタイミングとSEを合わせられる)。調整中の値だけを一時的にこの字幕へ入れて、終わったら元に戻す */
+  let tmp=null;const tk=SEK.map(k=>k+K).concat([F]);
+  const undoTmp=()=>{if(!tmp)return;tk.forEach(k=>{if(tmp[k]===undefined)delete g[k];else g[k]=tmp[k]});tmp=null};
+  const endPrev=()=>{try{stopPlay()}catch(_){}undoTmp();pl.textContent='▶ 試し聞き'};
+  pl.onclick=()=>{if(!buf)return;if(tmp){endPrev();showAt(Math.max(0,g.a-2));return}
+    tmp={};tk.forEach(k=>{tmp[k]=g[k]});g[F]=id;g['sev'+K]=P.v;g['see'+K]=P.e;g['seo'+K]=P.o;g['sel'+K]=P.l;if(P.s)g['ses'+K]=P.s;else delete g['ses'+K];
+    const a0=Math.max(0,g.a-2),b0=Math.min(VD,Math.max(g.b,g.a+P.o+Lof())+0.8);pl.textContent='■ 止める';
+    try{stopPlay();vplay(a0,b0,t=>{showOv(t);drawWf(t)},()=>{endPrev();showAt(Math.max(0,g.a-2));showOv();drawWf()})}catch(e){endPrev()}};
+  {const mo=new MutationObserver(()=>{if(!w.isConnected){mo.disconnect();if(tmp){try{stopPlay()}catch(_){}undoTmp()}}});mo.observe(document.body,{childList:true,subtree:true})}
   const tpl=()=>SE.find(x=>x.id===id),clr=()=>{SEK.forEach(k=>delete g[k+K])};
   /* v937: 保存して閉じる=このSEの設定(音量・エコー・位置・トリム・名前)をSEに保存して一覧へ。✕=保存しないで一覧へ */
   {const sv=document.createElement('button');sv.type='button';sv.id='t_seBk';sv.className='tbig';sv.textContent='保存して閉じる';sv.style.cssText='width:100%;min-height:48px;margin-top:8px';
-   sv.onclick=async()=>{const t=tpl();if(t){t.v=P.v;t.e=P.e;t.o=P.o;t.l=P.l;if(P.s)t.s=P.s;else delete t.s;const n=sel.value.trim();if(n)t.n=n;await kv('se|list',SE);try{seDraw()}catch(_){}}if(g[F]===id)clr();save();showOv(pos);popSeT(g,sn)};w.appendChild(sv)}
-  {const hx=w.querySelector('.ih button');if(hx)hx.onclick=()=>popSeT(g,sn)}}
+   sv.onclick=async()=>{endPrev();const t=tpl();if(t){t.v=P.v;t.e=P.e;t.o=P.o;t.l=P.l;if(P.s)t.s=P.s;else delete t.s;const n=sel.value.trim();if(n)t.n=n;await kv('se|list',SE);try{seDraw()}catch(_){}}if(g[F]===id)clr();save();showOv(pos);popSeT(g,sn)};w.appendChild(sv)}
+  {const hx=w.querySelector('.ih button');if(hx)hx.onclick=()=>{endPrev();popSeT(g,sn)}}}
 /* v554: 字幕テンプレート①。字幕1〜3(=き/奥/太 の g.sp)ごとに、タップで回すフォントと位置の一覧を持つ。
    localStorage 'stpl' = {v:1,fn:{フォントk:名前},m:{n:'字幕1',font:[k…],pos:[位置]},f:{…},b:{…}}。
    v556: 位置 = {id,n,x,y,s(指で動かした位置と大きさ),vt:'v'|'h'(縦文字/横文字),ha:'l'|'c'|'r',va:'t'|'c'|'b'(揃え),lsp(文字の間隔 em),lhm(行の間隔 倍),ar:{l,t,r,b}(余白=文字が入る範囲。画面の割合)|null}。
