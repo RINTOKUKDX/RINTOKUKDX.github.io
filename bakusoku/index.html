@@ -2514,8 +2514,8 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
   if(CS){window.__chN=[];const cs=i=>CS[i]||{},E=CS.map((c,i)=>c&&c.s||D[i]),one=(f,ch,i,x,y)=>{const c=cs(i),k2=E[i];/* v932: 文字の元の場所(まとめて回転用) */if(window.__chN)window.__chN[i]={x,y,H};g.save();if(c.x||c.y)g.translate((c.x||0)*H,(c.y||0)*H);if(c.f)g.font=PFONT(fs,c.f);if(c.v)g.filter=g.filter&&g.filter!=='none'?'none':'invert(1) hue-rotate(180deg)';g.translate(x,y);if(c.r)g.rotate(c.r*Math.PI/180);if(k2!==1)g.scale(k2,k2);f(ch,0,0);g.restore()};
     const cy=H*(s.y??.5),cx=W*(s.x??.5),Lm=AR?(vert?(AR.b-AR.t)*H:(AR.r-AR.l)*W):vert?H*.86:W*.92,Lc=AR?(vert?(AR.r-AR.l)*W:(AR.b-AR.t)*H):(vert?W:H)*.9;
     let n0=0;const LS=LN.map(cc=>{const o={cc,i0:n0};n0+=cc.length;return o});
-    const unit=()=>{g.font=F(fs);LS.forEach(o=>{o.U=o.cc.map((ch,j)=>{if(vert)return fs*(1.1+LSP);return g.measureText(ch).width+fs*LSP})/* v935: 場所の割り当ては基本の字体・等倍で(選んだ文字以外は一切動かさない) */})};
-    const len=o=>o.U.reduce((a,u,j)=>a+u*D[o.i0+j],0);
+    const unit=()=>{g.font=F(fs);LS.forEach(o=>{o.U=o.cc.map((ch,j)=>{if(vert)return fs*(1.1+LSP);const f=cs(o.i0+j).f;if(f){g.save();g.font=PFONT(fs,f)}const v=g.measureText(ch).width+fs*LSP;if(f)g.restore();return v})})};
+    const len=o=>o.U.reduce((a,u,j)=>a+u*E[o.i0+j],0);
     unit();
     /* v560: 余白いっぱいに大きくする(行の数で入らなければ下で小さくなる) */if(s.fill){const l0=Math.max(...LS.map(len));if(l0>0){fs*=Lm/l0;unit()}}
     /* 先に、全部等倍の時に収まる大きさにしておく(ピンチの最初に急に大きくならないように) */
@@ -2524,7 +2524,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     /* v932: 選んだ文字を大きくしても、ほかの文字は小さくしない(はみ出す分は下で字幕ごと内側へずらす) */
     const lh=o=>fs*1.3*LHM*Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),tc=()=>LS.reduce((a,o)=>a+lh(o),0);
     if(tc()>Lc&&!s.nsh){fs*=Lc/tc();unit()}
-    g.font=F(fs);const tot=tc();LS.forEach(o=>{o.ws=o.U.map((u,j)=>u*D[o.i0+j]);o.w=o.ws.reduce((a,b)=>a+b,0);o.h=lh(o)});
+    g.font=F(fs);const tot=tc();LS.forEach(o=>{o.ws=o.U.map((u,j)=>u*E[o.i0+j]);o.w=o.ws.reduce((a,b)=>a+b,0);o.h=lh(o)});
     /* 大きくして画面の端からはみ出す分は、字幕ごと内側へずらす */
     const mx=Math.max(...LS.map(o=>o.w));
     /* v556: 位置テンプレートの揃え。置く点に対して、左揃え=左の辺・右揃え=右の辺・上揃え=上の辺をそろえる(行の中も同じ向きにそろえる) */
@@ -6860,8 +6860,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v940';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v940','SE一覧: 見本の字幕を出さず今の再生ヘッドの画面のまま(画面上のボタンも非表示)。行をアプリのボタンと同じ枠に'],
+{const v=document.createElement('div');v.textContent='v941';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v941','文字別編集: 大きくした文字の分だけ隣が横に押され(重ならない)、選んでいない文字の上下(y)は動かない'],
+  ['v940','SE一覧: 見本の字幕を出さず今の再生ヘッドの画面のまま(画面上のボタンも非表示)。行をアプリのボタンと同じ枠に'],
   ['v939','SEの試し聞き: いまのクリップの2秒前から画面も一緒に再生(字幕の出るタイミングとSEを合わせられる)。もう一度押すと止まる'],
   ['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
   ['v937','SE一覧を新ルールに: 「なし」が一番上・使用中が光る・1回タップ=聞く・もう一度タップ=決定して閉じる・長押し=調整の窓。✏️/調整/削除/再生ボタンを無くし、「SEの追加と削除」で追加・削除。調整の窓は名前欄・保存して閉じる(SEに保存)・✕(保存しない)'],
@@ -9634,7 +9635,7 @@ function showOv0(t,X){const okR=x=>X&&X.row1?true:x.ln!==1;/* v880: 下の列(�
         const mE=o=>Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),ext0=()=>LS.reduce((a,o)=>a+mE(o)*lh,0)+pv,cr=(b.v?W*.9:H*.9)/ext0();if(f2>cr)f2=cr;o.style.fontSize=f2.toFixed(1)+'px';
         {const ext=f2*ext0(),ml=Math.max(...LS.map(len)),hw=b.v?ext/2:f2*(ml+ph)/2,hh=b.v?f2*(ml+ph)/2:ext/2;o.style.left=(cl(cx-OX*W,hw+W*.02,W*.98-hw)+OX*W).toFixed(1)+'px';/* v732: 手で動かした分は端の制限に入れない */o.style.top=(cl(cy-OY*H,hh+H*.02,H*.98-hh)+OY*H).toFixed(1)+'px'}
         o.textContent='';o.style.whiteSpace='pre';o.style.lineHeight=lh;LS.forEach((L,li)=>{if(li)o.appendChild(document.createTextNode('\n'));L.cc.forEach((ch,j)=>{const i=L.i0+j,c=cs(i),sp=document.createElement('span');sp.textContent=ch;/* 大きさの違う文字は下の線にそろえる(き・奥と同じ) */let st='display:inline-block;vertical-align:baseline;line-height:1;';const big=E[i]!==1;/* v935: 大きさを変えた文字は、場所を取らない(ほかの文字は一切動かさない) */
-          if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(big){const vis=document.createElement('span');vis.textContent=ch;let vs='position:absolute;left:50%;bottom:'+(0.2*(1-E[i])).toFixed(3)+'em;font-size:'+E[i].toFixed(3)+'em;line-height:1;white-space:pre;transform:translateX(-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';';if(c.r)vis.dataset.r=c.r;if(c.f&&window.PFAM)vs+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){vs+='filter:'+INVF;vis.dataset.v=1}vis.style.cssText=vs;sp.textContent='';const gh=document.createElement('span');gh.textContent=ch;gh.style.visibility='hidden';sp.style.cssText=st+'position:relative;';sp.append(gh,vis);o.appendChild(sp);return}
+          if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(big){const vis=document.createElement('span');vis.textContent=ch;let vs='position:absolute;left:50%;bottom:'+(0.14*(1-E[i])).toFixed(3)+'em;font-size:'+E[i].toFixed(3)+'em;line-height:1;white-space:pre;transform:translateX(-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';';if(c.r)vis.dataset.r=c.r;if(c.f&&window.PFAM)vs+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){vs+='filter:'+INVF;vis.dataset.v=1}vis.style.cssText=vs;sp.textContent='';const gh=document.createElement('span');gh.textContent=ch;gh.style.cssText='visibility:hidden;line-height:1;font-size:'+E[i].toFixed(3)+'em';sp.style.cssText=st+'position:relative;vertical-align:top;height:1em;';/* v941: 幅は大きくした分だけ広がる(隣は押される)・高さは変えない(選んでいない文字の上下は動かない) */sp.append(gh,vis);o.appendChild(sp);return}
           if(c.r){st+='transform:rotate('+c.r+'deg);';sp.dataset.r=c.r}if(c.f&&window.PFAM)st+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){st+='filter:'+INVF;sp.dataset.v=1}
           sp.style.cssText=st;o.appendChild(sp)})})}}}
     /* v195: グループは最初から全部入った時の位置に置き、まだの行は隠す(縦書きは右の行から順に出る) */
