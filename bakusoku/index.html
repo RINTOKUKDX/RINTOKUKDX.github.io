@@ -5261,9 +5261,11 @@ function tlPvDraw(){const cv=$('cv');if(!cv)return;const r=twPv!=null?twPvR(twPv
   cv.querySelectorAll('.lane').forEach(ln=>{if(r.lane!=null&&+ln.dataset.ln!==r.lane)return;if(r.lane==null&&(actLane===0||actLane===7)&&+ln.dataset.ln!==0&&+ln.dataset.ln!==7)return;const d=document.createElement('div');d.className='tlpvr';d.style.left=(r.a*pps)+'px';d.style.width=Math.max(2,(r.b-r.a)*pps)+'px';ln.appendChild(d)})}
 /* v782: ✂ON・レーンを選んでいない時のタップ=タイムライン全体(全部のレーン)を再生ヘッドで縦に分割 */
 function splitIt(it,t){const n={...it,id:itemId++,start:t,sample:false,full:false};if(it.sb)n.sb={...it.sb};if(it.fxl)n.fxl=fxClone(it.fxl);if(it.lane===5||it.lane===6||it.lane===8)n.off=(it.off||0)+(t-it.start);it.end=t;it.full=false;items.push(n)}
+/* v945: カットページで分かれた所(タイムラインでは1つのクリップに見える所)の±0.2秒なら、そこをタイムラインのクリップの切れ目にする(sp=1)。番号を返す */
+function segJoinAt(t){let a=0;for(let k=0;k<segs.length;k++){if(k>0&&Math.abs(t-a)<=0.2){const q=segs[k],p=segs[k-1];if(!q.sp&&segKey(q)!=null&&segKey(q)===segKey(p))return k}a+=segD(segs[k])}return -1}
 function splitAllAt(t){let a=0,k0=-1,cut=0;for(let k=0;k<segs.length;k++){const q=segs[k],d=segD(q);if(t>a+0.2&&t<a+d-0.2){k0=k;cut=q.start+(t-a)*spdOf(q);break}a+=d}
-  const ok=items.filter(o=>!o.full&&t>o.start+MINLEN&&t<o.end-MINLEN);if(k0<0&&!ok.length){flashSel('ここでは分けられません');return}
-  segHist();segU[segU.length-1].items=cloneItems();
+  const ok=items.filter(o=>!o.full&&t>o.start+MINLEN&&t<o.end-MINLEN),kj=k0<0?segJoinAt(t):-1;if(k0<0&&kj<0&&!ok.length){flashSel('ここでは分けられません');return}
+  segHist();segU[segU.length-1].items=cloneItems();if(kj>=0)segs[kj].sp=1;
   if(k0>=0){const q=segs[k0];segs.splice(k0,1,{clip:q.clip,start:q.start,end:cut,cn:q.cn,sp:q.sp,spd:q.spd,fx:fxC(q.fx)},{clip:q.clip,start:cut,end:q.end,cn:q.cn,sp:1,spd:q.spd,fx:fxC(q.fx)})}
   ok.forEach(it=>splitIt(it,t));resetOut();renderLanes();renderSegs();renderPreview();seekGlobal(gt);flashSel('タイムライン全体を分割しました')}
 /* v594: 「クリップを削除しました［戻す］」(3秒) */
@@ -5277,6 +5279,7 @@ function splitSegAt(t){
       /* v425: 分けた所は sp=1(インスペクタ・ブロック表示で別のクリップとして扱う) */segs.splice(k,1,{clip:q.clip,start:q.start,end:cut,cn:q.cn,sp:q.sp,spd:q.spd,fx:fxC(q.fx)},{clip:q.clip,start:cut,end:q.end,cn:q.cn,sp:1,spd:q.spd,fx:fxC(q.fx)});
       resetOut();renderLanes();renderSegs();seekGlobal(gt);return}
     a+=d;}
+  {const kj=segJoinAt(t);if(kj>=0){segHist();segs[kj].sp=1;resetOut();renderLanes();renderSegs();seekGlobal(gt);return}}
   flashSel('ここでは分けられません');
 }
 /* v432: ✂=カットモードの切り替え。カットモード中は再生画面の下の波形を左右にスワイプして位置を合わせ、波形をタップでカット */
@@ -6863,8 +6866,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v944';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
+{const v=document.createElement('div');v.textContent='v945';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v945','タイムライン: カットページで分かれた所(タイムラインでは1つのクリップ)でも✂で分けられる'],['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v943','文字別編集: 選んだ文字を大きくしても、ほかの行(縦書きは別の列)は動かない(揃えの基準を等倍の長さに)'],
   ['v942','字幕クリップの枠: 文字別編集(個別編集)した所=オレンジ・1つのクリップの中で改行している所=青(両方ならオレンジが内側)'],
   ['v941','文字別編集: 大きくした文字の分だけ隣が横に押され(重ならない)、選んでいない文字の上下(y)は動かない'],
