@@ -6863,8 +6863,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v963';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v963','画面のボタンの配列を選べる: ボタンの設定窓の一番上「配列」で 4×3・2×2・3×4・3×5・4×5(横×縦)。変えるとボタンはなるべく同じ所に残し、入らない物は小さくして空いたマスへ、それでも入らない物は下の段(アイコン)へ。機能に スタイル・横↔縦・動き・順に も追加'],
+{const v=document.createElement('div');v.textContent='v964';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v964','画面のボタン: 字幕のボタンを8つまで追加できる(機能で「字幕」にすると、空のフォルダ「字幕4」などを自動で作る)。SEのボタンは8つまでにそろえた(前に作った9つ目は残る)'],
+['v963','画面のボタンの配列を選べる: ボタンの設定窓の一番上「配列」で 4×3・2×2・3×4・3×5・4×5(横×縦)。変えるとボタンはなるべく同じ所に残し、入らない物は小さくして空いたマスへ、それでも入らない物は下の段(アイコン)へ。機能に スタイル・横↔縦・動き・順に も追加'],
 ['v962','字幕モード: クリップの長押し移動を削除。長押し→横にスワイプで隣と1つにする機能が効くように戻す'],['v961','字幕ページ: 再生ボタンを押してから動き出すまでの待ちを短く(開いた時に裏で映像を読み込んでおく)'],['v960','字幕ページ: タイムラインや音声波形を触っている間と、文字の位置を動かしている間は、画面上のボタンを0.2秒でふわっと消す(離すと戻る)'],['v959','一覧の見た目をSEにそろえる: スタイル・字幕・位置・字幕フォルダの一覧から（不穏）などのテンプレート名を消す。字幕フォルダの一覧の左上はボタンの名前の入力欄に'],
 ['v958','SEの一覧の左上をボタンの名前の入力欄にする(そのまま書き換えられる)。（不穏）などのテンプレート名は出さない'],
 ['v957','画面のボタンの設定: 空いたマスの「＋」が押せなかったのを直す(再生ヘッドの線と同じ名前で、触れない設定になっていた)'],
@@ -9913,8 +9914,8 @@ function tzCu(){const cu=document.createElement('div');cu.id='t_tzCu';cu.style.c
   const chip=(id,t,on,f)=>{const b=document.createElement('button');b.type='button';b.id=id;b.textContent=t;b.className=on?'on':'';b.style.cssText='flex:1;min-height:40px;font-size:14px;padding:2px 4px;border-radius:10px;'+(on?'border:2px solid var(--accent);background:color-mix(in srgb,var(--accent) 22%,var(--btn));font-weight:700':'');b.onclick=f;return b};
   const row=(lab,id,items)=>{const r=document.createElement('div');r.style.cssText='display:flex;align-items:center;gap:6px';const l=document.createElement('span');l.textContent=lab;l.style.cssText='min-width:56px;font-size:13px';const w=document.createElement('div');w.id=id;w.style.cssText='display:flex;gap:6px;flex:1';items.forEach(x=>w.appendChild(x));r.append(l,w);return r};
   const free=L=>{for(let r=0;r<tzR();r++)for(let c=0;c<tzC();c++)if(tzFits(L,c,r,1,1))return{c,r};return null};
-  const nextSe=()=>{const U=used();for(let n=1;n<=9;n++){const k=n===1?'se':'s'+n;if(!U.includes(k))return k}return null};
-  window.tzAddAt=(c,r)=>{const L=tzLayGet(),q=nextSe();if(!q){showFn('SEのボタンは9つまでです');return}if(!tzFits(L,c,r,1,1))return;L.push({k:q,c,r,w:1,h:1});tzLayPut(L);window.tzSel=q;rd();showFn('「'+tzNm(q)+'」を追加しました（機能は下で変えられます）')};
+  const nextSe=()=>{const U=used();for(let n=1;n<=8;n++)/* v964: SEは8つまで(前に作った SE9 は残る) */{const k=n===1?'se':'s'+n;if(!U.includes(k))return k}return null};
+  window.tzAddAt=(c,r)=>{const L=tzLayGet(),q=nextSe();if(!q){showFn('SEのボタンは8つまでです');return}if(!tzFits(L,c,r,1,1))return;L.push({k:q,c,r,w:1,h:1});tzLayPut(L);window.tzSel=q;rd();showFn('「'+tzNm(q)+'」を追加しました（機能は下で変えられます）')};
   const dr=()=>{cu.innerHTML='';{const[gc,gr]=tzGr();cu.appendChild(row('配列','t_tzGr',TZG.map(([c,r])=>{const b=chip('',c+'×'+r,gc===c&&gr===r,()=>{const n=tzGrSet(c,r);window.tzSel=null;const E=document.getElementById('t_tzE');if(E&&E._draw)E._draw();dr();showFn('配列を 横'+c+'×縦'+r+' にしました'+(n?'（入らない'+n+'個は下の段へ）':''))});b.dataset.g=c+'x'+r;b.style.fontSize='13px';return b})))}/* v963: 配列(横×縦) */
     const k=window.tzSel,L=tzLayGet(),me=k&&L.find(b=>b.k===k);
     if(!me){window.tzSel=null;const n=document.createElement('p');n.style.cssText='font-size:12px;color:var(--muted);margin:0 2px';n.textContent='画面のボタンをタップすると光って選べます（大きさ・機能・削除）。長押しして動かすと入れ替わります。薄い「＋」を押すとボタンを追加できます';
@@ -9924,8 +9925,8 @@ function tzCu(){const cu=document.createElement('div');cu.id='t_tzCu';cu.style.c
       if(!P){showFn('マスが足りません（ほかのボタンを小さくするか削除してください）');return}tzLayPut(P);rd()});b.dataset.s=w+'x'+h;return b})));
     const kind=tzSn(k)?'se':k[0]==='f'?'f':['al','iv','sy','po','an','sp'].includes(k)?k:'';
     {const fr=row('機能','t_tzFn',[['se','SE'],['f','字幕'],['al','エフェクト'],['iv','フィルター'],['sy','スタイル'],['po','横↔縦'],['an','動き'],['sp','順に']].map(([q,s])=>{const b=chip('',s,kind===q,()=>{if(kind===q)return;const U=used();let nk=null;
-      if(q==='se'){nk=nextSe();if(!nk){showFn('SEのボタンは9つまでです');return}}
-      else if(q==='f'){nk=['f0','f1','f2'].find(z=>!U.includes(z));if(!nk){showFn('字幕のボタンは3つまでです（もう全部あります）');return}}
+      if(q==='se'){nk=nextSe();if(!nk){showFn('SEのボタンは8つまでです');return}}
+      else if(q==='f'){nk=TZFK.find(z=>!U.includes(z));if(!nk){showFn('字幕のボタンは8つまでです');return}tzFdNew(+nk[1])}/* v964: 字幕は8つまで。足りないフォルダは自動で作る */
       else{if(U.includes(q)){showFn('「'+TZK[q]+'」はもう'+(tzBotGet().includes(q)?'下の段':'画面')+'にあります（1つだけ置けます）');return}nk=q}
       const L=tzLayGet(),m=L.find(z=>z.k===k);m.k=nk;tzLayPut(L);window.tzSel=nk;rd()});b.dataset.f=q;return b}));/* v963: スタイル・横↔縦・動き・順に も選べる。4列で2段 */const fw=fr.querySelector('#t_tzFn');fw.style.cssText='display:grid;grid-template-columns:repeat(4,1fr);gap:6px;flex:1';cu.appendChild(fr)}
     {const n=document.createElement('p');n.style.cssText='font-size:12px;color:var(--muted);margin:0 2px';n.textContent='中身（どのSEにするか等）は、いつもの画面で設定します';cu.appendChild(n)}
@@ -9979,7 +9980,10 @@ function tzGrSet(c,r){const[c0,r0]=tzGr();if(c0===c&&r0===r)return;const old=tzL
     if(!at&&(q.w>1||q.h>1)){q.w=1;q.h=1;for(let rr=0;rr<r&&!at;rr++)for(let cc=0;cc<c&&!at;cc++)if(tzFits(L,cc,rr,1,1))at=[cc,rr]}if(!at){if(!bot.includes(q.k))bot.push(q.k);nb++;return}q.c=at[0];q.r=at[1]}L.push(q)});
   try{localStorage.setItem('tzLay',JSON.stringify(L))}catch(_){}tzBotPut(bot);try{tzDraw()}catch(_){}return nb}
 window.tzGrSet=tzGrSet;window.tzGr=tzGr;
-const TZK={f0:'フォルダ1',f1:'フォルダ2',f2:'フォルダ3',iv:'フィルター',sy:'スタイル',al:'エフェクト',po:'横↔縦',se:'SE1',s2:'SE2',s3:'SE3',s4:'SE4',s5:'SE5',s6:'SE6',s7:'SE7',s8:'SE8',s9:'SE9',an:'動き',sp:'テンプレートを順に'};
+const TZK={f0:'フォルダ1',f1:'フォルダ2',f2:'フォルダ3',f3:'フォルダ4',f4:'フォルダ5',f5:'フォルダ6',f6:'フォルダ7',f7:'フォルダ8',iv:'フィルター',sy:'スタイル',al:'エフェクト',po:'横↔縦',se:'SE1',s2:'SE2',s3:'SE3',s4:'SE4',s5:'SE5',s6:'SE6',s7:'SE7',s8:'SE8',s9:'SE9',an:'動き',sp:'テンプレートを順に'};
+/* v964: 字幕のボタン f0〜f7(=字幕テンプレートのフォルダ o.fdr.n の上から1〜8番目)。無いフォルダは「字幕N」を作る */
+const TZFK=['f0','f1','f2','f3','f4','f5','f6','f7'];
+function tzFdNew(i){const q=stAll();if(!q.fdr||typeof q.fdr!=='object')q.fdr={};const L=q.fdr.n=Array.isArray(q.fdr.n)?q.fdr.n:[];let made=false;while(L.length<=i){let n=L.length+1,nm='字幕'+n;while(L.includes(nm))nm='字幕'+(++n);L.push(nm);made=true}if(made)stSave(q);return L[i]}
 /* v916: 特殊字幕(フォルダ3)は1マスで左寄せ、その右に SE1・SE2・SE3 */const TZL0=[{k:'f0',c:0,r:0,w:2,h:1},{k:'f1',c:0,r:1,w:2,h:1},{k:'f2',c:0,r:2,w:1,h:1},{k:'iv',c:2,r:0,w:1,h:1},{k:'sy',c:3,r:0,w:1,h:1},{k:'al',c:2,r:1,w:1,h:1},{k:'po',c:3,r:1,w:1,h:1},{k:'se',c:1,r:2,w:1,h:1},{k:'s2',c:2,r:2,w:1,h:1},{k:'s3',c:3,r:2,w:1,h:1}];
 function tzLayGet(){let L=null;try{L=JSON.parse(localStorage.getItem('tzLay')||'null')}catch(_){}if(!Array.isArray(L))return TZL0.map(b=>({...b})).filter(b=>b.c+b.w<=tzC()&&b.r+b.h<=tzR());L=L.filter(b=>b&&TZK[b.k]&&b.c>=0&&b.r>=0&&b.c+b.w<=tzC()&&b.r+b.h<=tzR());
   /* v916: 自分で並べたボタンも1回だけ直す(特殊字幕を1マス・その右に SE1〜3。入らない物は下の段のアイコンへ) */let m=null;try{m=localStorage.getItem('tzSe3')}catch(_){}if(!m){const f=L.find(b=>b.k==='f2'),e=L.find(b=>b.k==='se'),bot=tzBotGet();if(f)f.w=1;if(e){e.w=1;e.h=1}const row=f?f.r:2;
@@ -9989,7 +9993,7 @@ function tzLayPut(L){try{localStorage.setItem('tzLay',JSON.stringify(L))}catch(_
 /* そのマスに置けるか(はみ出し・他のボタンと重なりなし。skip=動かしている自分) */
 function tzFits(L,c,r,w,h,skip){if(c<0||r<0||c+w>tzC()||r+h>tzR())return false;return !L.some(b=>b!==skip&&c<b.c+b.w&&b.c<c+w&&r<b.r+b.h&&b.r<r+h)}
 /* v824: 画面のボタンを下の段へ入れたもの(アイコンになる)。localStorage 'tzBot'=[キー] */
-const TZI={f0:'📁1',f1:'📁2',f2:'📁3',iv:'🪄',sy:'🎨',al:'🌀',po:'⇄',se:'♪1',s2:'♪2',s3:'♪3',s4:'♪4',s5:'♪5',s6:'♪6',s7:'♪7',s8:'♪8',s9:'♪9',an:'✨',sp:'🔁'};
+const TZI={f0:'📁1',f1:'📁2',f2:'📁3',f3:'📁4',f4:'📁5',f5:'📁6',f6:'📁7',f7:'📁8',iv:'🪄',sy:'🎨',al:'🌀',po:'⇄',se:'♪1',s2:'♪2',s3:'♪3',s4:'♪4',s5:'♪5',s6:'♪6',s7:'♪7',s8:'♪8',s9:'♪9',an:'✨',sp:'🔁'};
 function tzBotGet(){try{const a=JSON.parse(localStorage.getItem('tzBot')||'[]');return Array.isArray(a)?a.filter(k=>TZK[k]):[]}catch(_){return[]}}
 function tzBotPut(a){try{localStorage.setItem('tzBot',JSON.stringify(a))}catch(_){}try{window.subScDraw()}catch(_){}}
 function tzBack(k){stYN('「'+TZK[k]+'」を画面のボタンに戻しますか？',()=>{const L=tzLayGet();let at=null;for(let r=0;r<tzR()&&!at;r++)for(let c=0;c<tzC()&&!at;c++)if(tzFits(L,c,r,1,1))at={c,r};if(!at){showFn('画面に空いているマスがありません');return}L.push({k,c:at.c,r:at.r,w:1,h:1});tzLayPut(L);tzBotPut(tzBotGet().filter(z=>z!==k));showFn('「'+TZK[k]+'」を画面に戻しました')})}
