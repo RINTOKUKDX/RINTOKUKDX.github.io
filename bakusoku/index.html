@@ -6860,8 +6860,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v941';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v941','文字別編集: 大きくした文字の分だけ隣が横に押され(重ならない)、選んでいない文字の上下(y)は動かない'],
+{const v=document.createElement('div');v.textContent='v942';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v942','字幕クリップの枠: 文字別編集(個別編集)した所=オレンジ・1つのクリップの中で改行している所=青(両方ならオレンジが内側)'],
+  ['v941','文字別編集: 大きくした文字の分だけ隣が横に押され(重ならない)、選んでいない文字の上下(y)は動かない'],
   ['v940','SE一覧: 見本の字幕を出さず今の再生ヘッドの画面のまま(画面上のボタンも非表示)。行をアプリのボタンと同じ枠に'],
   ['v939','SEの試し聞き: いまのクリップの2秒前から画面も一緒に再生(字幕の出るタイミングとSEを合わせられる)。もう一度押すと止まる'],
   ['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
@@ -11030,6 +11031,10 @@ function drawTx(A,B){const c=$('tx');if(!c)return;const W=c.clientWidth,H=c.clie
   /* v819: グループは、まとまり全体を黄色の枠でぐるっと囲む(前は上に線だけで分かりにくかった) */
   {const G={};txMap.rects.forEach(([X0,X1,g,Y0,HH])=>{if(!g.grp)return;const q=G[g.grp]||(G[g.grp]=[X0,X1,Y0,Y0+HH]);q[0]=Math.min(q[0],X0);q[1]=Math.max(q[1],X1)});
    x.save();x.strokeStyle='#ffd23a';x.lineWidth=3;Object.values(G).forEach(([a,b,y0,y1])=>{x.beginPath();x.roundRect?x.roundRect(a-2,y0-2,b-a+4,y1-y0+4,8):x.rect(a-2,y0-2,b-a+4,y1-y0+4);x.stroke()});x.restore()}
+  /* v942: 1つのクリップの中で改行している=青い枠、文字別編集(個別編集)をした=オレンジの枠(両方ならオレンジが内側) */
+  {const nl=g=>{try{return String(brT(g)).includes('\n')}catch(_){return String(g.t).includes('\n')}},ce=g=>Array.isArray(g.cs)&&g.cs.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y));
+   x.save();x.lineWidth=2.5;txMap.rects.forEach(([X0,X1,g,Y0,HH])=>{const w=X1-X0,fr=(d,col)=>{x.strokeStyle=col;x.beginPath();x.roundRect?x.roundRect(X0-d,Y0-d,w+2*d,HH+2*d,7):x.rect(X0-d,Y0-d,w+2*d,HH+2*d);x.stroke()};
+     if(nl(g))fr(1.5,'#3a9bff');if(ce(g))fr(nl(g)?-1.5:1.5,'#ff8c1a')});x.restore()}
   if(cutPrev){x.fillStyle='rgba(255,40,40,.5)';const c0=sx(cutPrev.x),c1=sx(cutPrev.y);txMap.rects.forEach(([X0,X1,g,Y0,HH])=>{const a=Math.max(X0,c0),b=Math.min(X1,c1);if(b>a)x.fillRect(a,Y0,b-a,HH)})}
   /* v714: 🧲の目印。①の時は赤い線の代わりに│↔│ */
   if(!magMark(x,W,H,sx)){x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H)}}
