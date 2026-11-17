@@ -6866,8 +6866,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v947';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v947','字幕ページの＋: 3秒入る隙間が無ければ次の字幕の手前まで。既に字幕がある所で押すと警告して入れない'],['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
+{const v=document.createElement('div');v.textContent='v948';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v948','入れ替えで動かしたクリップの字幕が1つ出っぱなしになり、他の字幕が出なくなるのを直す'],['v947','字幕ページの＋: 3秒入る隙間が無ければ次の字幕の手前まで。既に字幕がある所で押すと警告して入れない'],['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
   ['v945','タイムライン: カットページで分かれた所(タイムラインでは1つのクリップ)でも✂で分けられる'],['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v943','文字別編集: 選んだ文字を大きくしても、ほかの行(縦書きは別の列)は動かない(揃えの基準を等倍の長さに)'],
@@ -11820,6 +11820,8 @@ async function tlLoad(segs){
     const out=[];
     Object.entries(TL.rows).forEach(([K,L])=>L.forEach(g=>{const IS=[...new Set(M.filter(q=>q.i&&(q.k===g.ka||q.k===g.kb)).map(q=>q.i))];(IS.length>1&&K!=='_nar'?IS:[null]).forEach(I=>{let s=at(g.ka,g.oa,false,I),e=at(g.kb,g.ob,true,I);
       if(!s&&!e)return;if(!e)e={v:s.m.g+(s.m.b-s.m.a)/s.m.r};if(!s)s={v:e.m.g};
+      /* v948: 始まりと終わりが別の部分にある字幕は、タイムラインで続いている(同じ動画で元の時間が進む)部分の中でだけ伸ばす。入れ替えで離れた部分まで伸びて1つの字幕が出っぱなしになっていた */
+      if(s.m&&e.m&&s.m!==e.m){let j=M.indexOf(s.m);const je=M.indexOf(e.m);while(j<je&&M[j+1]&&M[j+1].k===M[j].k&&M[j+1].a>=M[j].b-0.01)j++;if(j!==je){const q=M[j];e={v:q.g+(q.b-q.a)/q.r,m:q}}}
       if(e.v-s.v<0.05)return;const o=Object.assign({},g,{a:s.v,b:e.v});if(I&&o.grp)o.grp=o.grp+'@'+I;if(K==='_nar')o.nar=1;if(g.vka!=null){const q=at(g.vka,g.voa,false,I);o.va=q?q.v:s.v}o._src=g;o._K=K;out.push(o)})}));
     out.sort((x,y)=>x.a-y.a);
     {const n={};out.forEach(x=>{if(x.grp)n[x.grp]=(n[x.grp]||0)+1});out.forEach(x=>{if(x.grp&&n[x.grp]<2)delete x.grp})}
