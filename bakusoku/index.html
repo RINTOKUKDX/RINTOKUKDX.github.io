@@ -1175,9 +1175,6 @@ body.stPosOn #t_pv,body.stPosOn #t_pv2{filter:brightness(.3)}body.stPosOn #t_pl 
 </div>
 <div class="pop" id="pop" hidden></div>
 <script>
-/* v944: 1行の文字の場所。選んで大きさを変えた文字(E≠D)のまとまりだけが伸び、選んでいない文字は等倍の場所から動かない。行の頭のまとまり=後ろの端を固定して前へ伸びる・行の終わり=頭を固定・途中=真ん中を固定 */
-window.chLay=function chLay(U,D,E){const n=U.length,b=[],c=[];let p=0;for(let j=0;j<n;j++){b[j]=p+U[j]*D[j]/2;p+=U[j]*D[j]}const w0=p;for(let j=0;j<n;j++)c[j]=b[j];let j=0;const sel=k=>Math.abs(E[k]-D[k])>1e-6;
-  while(j<n){if(!sel(j)){j++;continue}let k=j;while(k<n&&sel(k)&&Math.abs(E[k]-E[j])<1e-6)k++;/* v945: 大きさが違えば別のまとまり(前に大きくした文字は、あとで隣を大きくしても動かない) */const s=b[j]-U[j]*D[j]/2,e=b[k-1]+U[k-1]*D[k-1]/2;let L=0;for(let m=j;m<k;m++)L+=U[m]*E[m];let st=j===0&&k<n?e-L:k===n&&j>0?s:(s+e)/2-L/2;for(let m=j;m<k;m++){c[m]=st+U[m]*E[m]/2;st+=U[m]*E[m]}j=k}return{w0,b,c}};
 /* v897: 窓ガード。アプリの基本理念「何かを開いたら、操作に関係ない所は暗くして触れなくする・後ろを動かさない・操作が詰まない」の共通の仕組み。
    A: 暗い幕の窓・全画面のページが出ている間は、後ろのページをスクロールさせない(html.gdL)。窓は AW の一覧で見つける(新しい幕の窓は class="cdlg" か "gdW" を付ける)。
    B: 幕の無い窓は gdHole(窓,{holes:()=>[要素…],close,self,noLock}) で「穴あきの幕」を出す。穴=操作に関係する所(再生画面など)だけ触れる。幕をタップ=close(無ければ何もしない)。
@@ -2513,12 +2510,12 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
   let bw,bh,draw;
   /* v235: 1文字ずつの大きさ・角度など(s.cs[i]={s,r,f,v,x,y})。v240: 改行した行は別々に収める(選んだ文字のない行は大きさが変わらない) */
   const LN=lines.map(l=>[...l].map(c=>vert&&c==='ー'?'｜':c)),NC=LN.reduce((a,l)=>a+l.length,0),FL=LN.flat(),D=FL.map(c=>s.hk?dsK(c):1),CS0=s.cs&&s.cs.length===NC?s.cs:null,
-    CS=(CS0&&CS0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y)))||D.some(v=>v!==1)||s.pp?(CS0||FL.map(()=>0)):null,PQ=s.pp||null,AR=PQ&&PQ.ar,LSP=PQ&&PQ.lsp||0,LHM=PQ&&PQ.lhm||1;
-  if(CS){window.__chN=[];const cs=i=>CS[i]||{},E=CS.map((c,i)=>c&&c.s||D[i]),one=(f,ch,i,x,y)=>{const c=cs(i),k2=E[i];/* v932: 文字の元の場所(まとめて回転用) */if(window.__chN)window.__chN[i]={x,y,H};g.save();if(c.x||c.y)g.translate((c.x||0)*H,(c.y||0)*H);if(c.f)g.font=PFONT(fs,c.f);if(c.v)g.filter=g.filter&&g.filter!=='none'?'none':'invert(1) hue-rotate(180deg)';g.translate(x,y);if(c.r)g.rotate(c.r*Math.PI/180);if(k2!==1)g.scale(k2,k2);f(ch,0,0);g.restore()};
+    CS=(CS0&&CS0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y||c.k)))||D.some(v=>v!==1)||s.pp?(CS0||FL.map(()=>0)):null,PQ=s.pp||null,AR=PQ&&PQ.ar,LSP=PQ&&PQ.lsp||0,LHM=PQ&&PQ.lhm||1;
+  if(CS){window.__chN=[];const cs=i=>CS[i]||{},E=CS.map((c,i)=>c&&c.s||D[i]),Wd=CS.map((c,i)=>c&&c.w||D[i])/* v947: Wd=場所を取る大きさ(ひらがな/漢字でまとめて変えた時だけ c.w)。E=見た目の大きさ。選んで変えた文字は場所を変えず、その場で大きくなる */,one=(f,ch,i,x,y)=>{const c=cs(i),k2=E[i];/* v932: 文字の元の場所(まとめて回転用) */if(window.__chN)window.__chN[i]={x,y,H};g.save();if(c.x||c.y)g.translate((c.x||0)*H,(c.y||0)*H);if(c.f)g.font=PFONT(fs,c.f);if(c.v)g.filter=g.filter&&g.filter!=='none'?'none':'invert(1) hue-rotate(180deg)';g.translate(x,y);if(c.r)g.rotate(c.r*Math.PI/180);if(k2!==1)g.scale(k2,k2);f(ch,0,0);g.restore()};
     const cy=H*(s.y??.5),cx=W*(s.x??.5),Lm=AR?(vert?(AR.b-AR.t)*H:(AR.r-AR.l)*W):vert?H*.86:W*.92,Lc=AR?(vert?(AR.r-AR.l)*W:(AR.b-AR.t)*H):(vert?W:H)*.9;
     let n0=0;const LS=LN.map(cc=>{const o={cc,i0:n0};n0+=cc.length;return o});
-    const unit=()=>{g.font=F(fs);LS.forEach(o=>{o.U=o.cc.map((ch,j)=>{if(vert)return fs*(1.1+LSP);const f=cs(o.i0+j).f;if(f){g.save();g.font=PFONT(fs,f)}const v=g.measureText(ch).width+fs*LSP;if(f)g.restore();return v})})};
-    const len=o=>o.U.reduce((a,u,j)=>a+u*E[o.i0+j],0);
+    const unit=()=>{g.font=F(fs);LS.forEach(o=>{o.U=o.cc.map((ch,j)=>{if(vert)return fs*(1.1+LSP);return g.measureText(ch).width+fs*LSP})})};
+    const len=o=>o.U.reduce((a,u,j)=>a+u*Wd[o.i0+j],0);
     unit();
     /* v560: 余白いっぱいに大きくする(行の数で入らなければ下で小さくなる) */if(s.fill){const l0=Math.max(...LS.map(len));if(l0>0){fs*=Lm/l0;unit()}}
     /* 先に、全部等倍の時に収まる大きさにしておく(ピンチの最初に急に大きくならないように) */
@@ -2527,15 +2524,15 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     /* v932: 選んだ文字を大きくしても、ほかの文字は小さくしない(はみ出す分は下で字幕ごと内側へずらす) */
     const lh=o=>fs*1.3*LHM*Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),tc=()=>LS.reduce((a,o)=>a+lh(o),0);
     if(tc()>Lc&&!s.nsh){fs*=Lc/tc();unit()}
-    g.font=F(fs);const tot=tc();LS.forEach(o=>{o.ws=o.U.map((u,j)=>u*E[o.i0+j]);o.R=chLay(o.U,o.cc.map((_,j)=>D[o.i0+j]),o.cc.map((_,j)=>E[o.i0+j]));o.w=o.R.w0;o.h=lh(o)});
+    g.font=F(fs);const tot=tc();LS.forEach(o=>{o.ws=o.U.map((u,j)=>u*Wd[o.i0+j]);o.w=o.ws.reduce((a,b)=>a+b,0);o.h=lh(o)});
     /* 大きくして画面の端からはみ出す分は、字幕ごと内側へずらす */
-    const mx=Math.max(...LS.map(o=>o.w)),mx0=Math.max(...LS.map(o=>o.U.reduce((a,u,j)=>a+u*D[o.i0+j],0)));/* v943: 揃えの基準は等倍の長さ(選んだ文字を大きくしても、ほかの行は動かさない) */
+    const mx=Math.max(...LS.map(o=>o.w)),mx0=mx;/* v943: 揃えの基準は等倍の長さ(選んだ文字を大きくしても、ほかの行は動かさない) */
     /* v556: 位置テンプレートの揃え。置く点に対して、左揃え=左の辺・右揃え=右の辺・上揃え=上の辺をそろえる(行の中も同じ向きにそろえる) */
     if(PQ){const bw0=vert?tot:mx0,bh0=vert?mx0:tot,ha=PQ.ha||'c',va=PQ.va||'c';g.translate(ha==='l'?bw0/2:ha==='r'?-bw0/2:0,va==='t'?bh0/2:va==='b'?-bh0/2:0)}
     else{const h2=tot/2,c0=vert?cx-(s.mox||0)*W:cy-(s.moy||0)*H/* v732: 手で動かした分(ox,oy)は画面の端の制限に入れない */,L0=vert?W:H,sh=c0+h2>L0*.98?L0*.98-h2-c0:c0-h2<L0*.02?L0*.02+h2-c0:0;if(sh)g.translate(vert?sh:0,vert?0:sh)}
     const al=(o,ax)=>{const v=PQ?(ax==='h'?PQ.ha:PQ.va)||'c':'c';return v==='l'||v==='t'?-mx0/2:v==='r'||v==='b'?mx0/2-o.w:-o.w/2};
-    if(!vert){bw=mx;bh=tot;draw=f=>{let y=-tot/2;LS.forEach(o=>{const yb=y+o.h/2+fs/2;/* v934: 下の線=等倍の文字の下(大きくした文字は上へ伸びる。選んでいない文字は上下に動かない) */const x0=al(o,'h');o.cc.forEach((ch,j)=>{/* 大きさの違う文字は下の線にそろえる */one(f,ch,o.i0+j,x0+o.R.c[j],yb-fs*E[o.i0+j]/2)});y+=o.h})}}
-    else{bw=tot;bh=mx;draw=f=>{let x=tot/2;LS.forEach(o=>{const xc=x-o.h/2;const y0=al(o,'v');o.cc.forEach((ch,j)=>{one(f,ch,o.i0+j,xc,y0+o.R.c[j])});x-=o.h})}}}
+    if(!vert){bw=mx;bh=tot;draw=f=>{let y=-tot/2;LS.forEach(o=>{const yb=y+o.h/2+fs/2;/* v934: 下の線=等倍の文字の下(大きくした文字は上へ伸びる。選んでいない文字は上下に動かない) */let x=al(o,'h');o.cc.forEach((ch,j)=>{/* 場所の大きさが違う文字は下の線にそろえる */one(f,ch,o.i0+j,x+o.ws[j]/2,yb-fs*Wd[o.i0+j]/2);x+=o.ws[j]});y+=o.h})}}
+    else{bw=tot;bh=mx;draw=f=>{let x=tot/2;LS.forEach(o=>{const xc=x-o.h/2;let y=al(o,'v');o.cc.forEach((ch,j)=>{one(f,ch,o.i0+j,xc,y+o.ws[j]/2);y+=o.ws[j]});x-=o.h})}}}
   else if(!vert){g.font=F(fs);let mw=Math.max(...lines.map(l=>g.measureText(l).width));
     if(mw>W*.92&&!s.nsh){fs*=W*.92/mw;g.font=F(fs);mw=W*.92}
     const lh=fs*1.3;bw=mw;bh=lh*lines.length;
@@ -6866,8 +6863,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v948';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v948','入れ替えで動かしたクリップの字幕が1つ出っぱなしになり、他の字幕が出なくなるのを直す'],['v947','字幕ページの＋: 3秒入る隙間が無ければ次の字幕の手前まで。既に字幕がある所で押すと警告して入れない'],['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
+{const v=document.createElement('div');v.textContent='v949';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v949','文字別編集を作り直し: 選んだ文字のまとまりを、その真ん中を軸に丸ごと拡大・縮小(文字の間も広がるので重ならない)。選んでいない文字・前に変えた文字は一切動かない。「ひらがな」「漢字のみ」で変えた時は今まで通り並びが詰め直される'],
+  ['v948','入れ替えで動かしたクリップの字幕が1つ出っぱなしになり、他の字幕が出なくなるのを直す'],['v947','字幕ページの＋: 3秒入る隙間が無ければ次の字幕の手前まで。既に字幕がある所で押すと警告して入れない'],['v946','文字別編集: 別の文字を大きくしても、前に大きくした文字は動かない。字幕の修正窓で文字を変えてから「文字別編集」を押しても、変えた文字で開く(保存で閉じなくてよい)'],
   ['v945','タイムライン: カットページで分かれた所(タイムラインでは1つのクリップ)でも✂で分けられる'],['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v944','文字別編集: 選んで大きさを変えた文字だけが伸び、選んでいない文字は同じ行の中でも1pxも動かない(行の頭は前へ・終わりは後ろへ・途中は両側へ伸びる)。漢字/ひらがなの自動の大きさは今まで通り'],
   ['v943','文字別編集: 選んだ文字を大きくしても、ほかの行(縦書きは別の列)は動かない(揃えの基準を等倍の長さに)'],
@@ -9644,15 +9642,15 @@ function showOv0(t,X){const okR=x=>X&&X.row1?true:x.ln!==1;/* v880: 下の列(�
      const ff=fk(g);o.style.cssText=(ff&&window.PFAM?'font-family:'+window.PFAM[ff].replace(/"/g,"'")+';':'')+'left:'+cx.toFixed(1)+'px;top:'+cy.toFixed(1)+'px;font-size:'+fz.toFixed(1)+'px;line-height:'+(lh*(PB&&PB.lhm||1))+';transform:translate(-50%,-50%) rotate('+((b.rot||0)+(!X||X.pv?(+g.ort||0):0))+'deg)'+(txt!=null||n>1?';white-space:pre':'')+(PB?';letter-spacing:'+(PB.lsp||0)+'em;text-align:'+({l:'left',r:'right',t:'left',b:'right'}[b.v?va:ha]||'center'):'')
      /* v236: 1文字ずつの大きさ・角度・フォント・反転。はみ出しそうなら、まず他の文字を小さく。v240: 改行した行は別々に収める */
      {const LN=lines.map(l=>[...l]),NC=LN.reduce((a,l)=>a+l.length,0),FL=LN.flat(),D=FL.map(c=>window.dsK?window.dsK(c):1),skip=txt!=null&&!(onR&&onR.length===1&&n===1),base=skip?null:txt==null?g.cs:onR[0].cs,
-        c0=base&&base.length===NC?base:null,ccs=skip?null:(c0&&c0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y)))||D.some(v=>v!==1)?(c0||FL.map(()=>0)):null;
-      if(ccs){const cs=i=>ccs[i]||{},E=ccs.map((c,i)=>c&&c.s||D[i]);
+        c0=base&&base.length===NC?base:null,ccs=skip?null:(c0&&c0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y||c.k)))||D.some(v=>v!==1)?(c0||FL.map(()=>0)):null;
+      if(ccs){const cs=i=>ccs[i]||{},E=ccs.map((c,i)=>c&&c.s||D[i]),Wd=ccs.map((c,i)=>c&&c.w||D[i]);/* v947 */
         let n0=0;const LS=LN.map(cc=>{const o={cc,i0:n0,U:cc.map(c=>/[ -~]/.test(c)?.55:1)};n0+=cc.length;return o});
-        let f2=fz;const A=(b.v?aH:aW)/f2-ph,len=o=>o.U.reduce((a,u,j)=>a+u*D[o.i0+j],0);
+        let f2=fz;const A=(b.v?aH:aW)/f2-ph,len=o=>o.U.reduce((a,u,j)=>a+u*Wd[o.i0+j],0);
         /* v932: ほかの文字は小さくしない */
         const mE=o=>Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),ext0=()=>LS.reduce((a,o)=>a+mE(o)*lh,0)+pv,cr=(b.v?W*.9:H*.9)/ext0();if(f2>cr)f2=cr;o.style.fontSize=f2.toFixed(1)+'px';
         {const ext=f2*ext0(),ml=Math.max(...LS.map(len)),hw=b.v?ext/2:f2*(ml+ph)/2,hh=b.v?f2*(ml+ph)/2:ext/2;o.style.left=(cl(cx-OX*W,hw+W*.02,W*.98-hw)+OX*W).toFixed(1)+'px';/* v732: 手で動かした分は端の制限に入れない */o.style.top=(cl(cy-OY*H,hh+H*.02,H*.98-hh)+OY*H).toFixed(1)+'px'}
-        o.textContent='';o.style.whiteSpace='pre';o.style.lineHeight=lh;LS.forEach((L,li)=>{if(li)o.appendChild(document.createTextNode('\n'));const RR=chLay(L.U,L.cc.map((_,j)=>D[L.i0+j]),L.cc.map((_,j)=>E[L.i0+j]));L.cc.forEach((ch,j)=>{const i=L.i0+j,c=cs(i),sp=document.createElement('span');sp.textContent=ch;/* 大きさの違う文字は下の線にそろえる(き・奥と同じ) */let st='display:inline-block;vertical-align:baseline;line-height:1;';const big=!!c.s&&Math.abs(E[i]-D[i])>1e-6,dl=big?((RR.c[j]-RR.b[j])/E[i]).toFixed(3):0;if(!big&&E[i]!==1)st+='font-size:'+E[i].toFixed(3)+'em;';/* v944: 選んで大きさを変えた文字は等倍の場所だけを取り、見た目だけ伸ばす(ほかの文字は動かさない) */
-          if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(big){const vis=document.createElement('span');vis.textContent=ch;let vs=b.v?'position:absolute;left:50%;top:calc(50% + '+dl+'em);font-size:'+E[i].toFixed(3)+'em;line-height:1;white-space:pre;transform:translate(-50%,-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';':'position:absolute;left:calc(50% + '+dl+'em);bottom:'+(0.14*(1-E[i])).toFixed(3)+'em;font-size:'+E[i].toFixed(3)+'em;line-height:1;white-space:pre;transform:translateX(-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';';if(c.r)vis.dataset.r=c.r;if(c.f&&window.PFAM)vs+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){vs+='filter:'+INVF;vis.dataset.v=1}vis.style.cssText=vs;sp.textContent='';const gh=document.createElement('span');gh.textContent=ch;gh.style.cssText='visibility:hidden;line-height:1;font-size:'+D[i].toFixed(3)+'em';sp.style.cssText=st+(b.v?'position:relative;vertical-align:top;width:1em;':'position:relative;vertical-align:top;height:1em;');/* v941: 幅は大きくした分だけ広がる(隣は押される)・高さは変えない(選んでいない文字の上下は動かない) */sp.append(gh,vis);o.appendChild(sp);return}
+        o.textContent='';o.style.whiteSpace='pre';o.style.lineHeight=lh;LS.forEach((L,li)=>{if(li)o.appendChild(document.createTextNode('\n'));L.cc.forEach((ch,j)=>{const i=L.i0+j,c=cs(i),sp=document.createElement('span');sp.textContent=ch;/* 場所の大きさが違う文字は下の線にそろえる(き・奥と同じ) */let st='display:inline-block;vertical-align:baseline;line-height:1;';const big=Math.abs(E[i]-Wd[i])>1e-6;if(Wd[i]!==1)st+='font-size:'+Wd[i].toFixed(3)+'em;';/* v947: 選んで大きさを変えた文字は場所を変えず、その場(真ん中)で大きくなる。ほかの文字は動かさない */
+          if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(big){const vis=document.createElement('span');vis.textContent=ch;let vs='position:absolute;left:50%;top:50%;font-size:'+(E[i]/Wd[i]).toFixed(3)+'em;line-height:1;white-space:pre;transform:translate(-50%,-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';';if(c.r)vis.dataset.r=c.r;if(c.f&&window.PFAM)vs+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){vs+='filter:'+INVF;vis.dataset.v=1}vis.style.cssText=vs;sp.textContent='';const gh=document.createElement('span');gh.textContent=ch;gh.style.cssText='visibility:hidden;line-height:1';sp.style.cssText=st+'position:relative;';sp.append(gh,vis);o.appendChild(sp);return}
           if(c.r){st+='transform:rotate('+c.r+'deg);';sp.dataset.r=c.r}if(c.f&&window.PFAM)st+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){st+='filter:'+INVF;sp.dataset.v=1}
           sp.style.cssText=st;o.appendChild(sp)})})}}}
     /* v195: グループは最初から全部入った時の位置に置き、まだの行は隠す(縦書きは右の行から順に出る) */
@@ -9796,7 +9794,7 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
  const pl0=$('pl');pl0.style.touchAction='none';let o0=o;/* v910: 字幕タイムライン2がアクティブで2つ目の字幕が出ている時は、画面の操作(動かす・大きさ・ボタン)をそちらに効かせる */const oPick=()=>{const o2=document.getElementById('t_ov2');return window.txAR===1&&o2&&o2._g&&o2._g.ln===1?o2:o};
  pl0.addEventListener('pointerdown',e=>{if(!P.size)o0=oPick();if(!o0._g&&cur&&!document.querySelector('#t_pop')&&!e.target.closest('button')){/* v827: 字幕が出ていない時の長押し=字幕テンプレートを開く */const x0=e.clientX,y0=e.clientY,tm=setTimeout(()=>{rm();try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}popSub(dmG())},550),rm=()=>{clearTimeout(tm);pl0.removeEventListener('pointermove',mv);pl0.removeEventListener('pointerup',rm);pl0.removeEventListener('pointercancel',rm)},mv=ev=>{if(Math.hypot(ev.clientX-x0,ev.clientY-y0)>8)rm()};pl0.addEventListener('pointermove',mv);pl0.addEventListener('pointerup',rm);pl0.addEventListener('pointercancel',rm);return}const g=o0._g;if(!g)return;if(window.txAR===1&&g.ln!==1&&!P.size&&!document.querySelector('#t_pop')){e.stopPropagation();e.preventDefault();showFn('字幕タイムライン2を選んでいます（1の字幕はここでは変わりません）');return}e.stopPropagation();e.preventDefault();try{pl0.setPointerCapture(e.pointerId)}catch(_){}P.set(e.pointerId,{x:e.clientX,y:e.clientY});
    if(P.size===1&&CE&&CE.g===g&&CE.tg().length){stopPlay();const rr=$('pl').getBoundingClientRect();st={g,ce:1,vis:tzVis(),zx:(e.clientX-rr.left)/(rr.width||1),zy:(e.clientY-rr.top)/(rr.height||1),x0:e.clientX,y0:e.clientY,mv:false,H:$('pl').getBoundingClientRect().height||200,b:CE.tg().map(i=>[i,CE.cs[i].s,CE.cs[i].x,CE.cs[i].y])};return}
-   if(P.size===2&&st&&st.ce){const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.b=CE.tg().map(i=>[i,CE.cs[i].s,CE.cs[i].x,CE.cs[i].y]);st.mv=true;st.z=1;return}
+   if(P.size===2&&st&&st.ce){const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.b=CE.tg().map(i=>[i,CE.cs[i].s,CE.cs[i].x,CE.cs[i].y]);st.mv=true;st.z=1;/* v947: 選んだ文字のまとまりを、その真ん中を軸に丸ごと拡大・縮小する(文字の間も一緒に広がるので重ならない・選んでいない文字は動かない) */st.cls=CE.cls();st.N=null;if(!st.cls){const N=CE.natP();if(N){const Q=st.b.map(([i,,x1,y1])=>({i,x:N[i].x+(x1||0)*N[i].H,y:N[i].y+(y1||0)*N[i].H}));st.N=N;st.Q=Q;st.cx=Q.reduce((a,q)=>a+q.x,0)/Q.length;st.cy=Q.reduce((a,q)=>a+q.y,0)/Q.length}}return}
    if(P.size===1){const vis=tzVis();stopPlay();let lm=grpLn(g);/* v911: グループの行を選んでいる時は、触った所に一番近い行を動かす・大きさを変える。v919: 行を替えるのは動かし始めた時だけ(ボタンのタップで選んでいる行が変わらない) */const lmN=null;/* v928: 触った所に近い行へは替えない(アクティブな行だけ動かす) */if(!lm)stSync(g);const r=$('pl').getBoundingClientRect();st={g,x0:e.clientX,y0:e.clientY,ox:g.ox||0,oy:g.oy||0,sc:g.osc||1,W:r.width,H:r.height,mv:false,zx:(e.clientX-r.left)/(r.width||1),zy:(e.clientY-r.top)/(r.height||1),vis,lmN};/* v728: グループはアクティブな行だけ動かす・大きさを変える */if(lm){st.lm=lm;st.ox=lm.lx||0;st.oy=lm.ly||0;st.sc=lm.ls||1}
      const hdEl=o0.classList.contains('ex')&&o0.querySelector('.hd'),hr=hdEl&&hdEl.getBoundingClientRect(),onHd=!!hr&&e.clientX>=hr.left&&e.clientX<=hr.right&&e.clientY>=hr.top-6&&e.clientY<=hr.bottom+6;
      st.tm=setTimeout(()=>{if(st&&!st.mv&&onHd){st.done=true;try{navigator.vibrate&&navigator.vibrate(30)}catch(_){}
@@ -9813,7 +9811,7 @@ function sePick(g){sheet((b,close)=>{const h=document.createElement('h2');h.text
        if(st&&!st.mv)st.done=true/* v554: ほかの場所の長押しは何もしない(位置を元に戻すは位置のポップアップへ) */},550)}
    else if(P.size===2&&st){clearTimeout(st.tm);const [a,b]=[...P.values()];st.d0=Math.hypot(a.x-b.x,a.y-b.y)||1;st.sc=st.lm?st.lm.ls||1:g.osc||1;st.mv=true;st.a0=Math.atan2(b.y-a.y,b.x-a.x);st.r0=+g.ort||0;st.rOn=false}});
  pl0.addEventListener('pointermove',e=>{if(!P.has(e.pointerId)||!st||st.done)return;P.set(e.pointerId,{x:e.clientX,y:e.clientY});
-   if(st.ce){if(!CE)return;if(P.size>=2&&st.z){const [a,b]=[...P.values()],k=Math.hypot(a.x-b.x,a.y-b.y)/st.d0;st.b.forEach(([i,s1])=>CE.cs[i].s=Math.max(.3,Math.min(8,s1*k)))}
+   if(st.ce){if(!CE)return;if(P.size>=2&&st.z){const [a,b]=[...P.values()],k=Math.hypot(a.x-b.x,a.y-b.y)/st.d0;const k1=Math.max(...st.b.map(([,s1])=>.3/s1)),k2=Math.min(...st.b.map(([,s1])=>8/s1)),kk=Math.max(k1,Math.min(k2,k));st.b.forEach(([i,s1])=>{CE.cs[i].s=s1*kk;if(st.cls)CE.cs[i].w=s1*kk});if(st.N)st.Q.forEach(q=>{const n=st.N[q.i];CE.cs[q.i].x=Math.max(-1,Math.min(1,(st.cx+(q.x-st.cx)*kk-n.x)/n.H));CE.cs[q.i].y=Math.max(-1,Math.min(1,(st.cy+(q.y-st.cy)*kk-n.y)/n.H))})}
      else if(P.size===1&&!st.z){const dx=e.clientX-st.x0,dy=e.clientY-st.y0;if(!st.mv&&Math.hypot(dx,dy)<8)return;st.mv=true;st.b.forEach(([i,,x1,y1])=>{CE.cs[i].x=Math.max(-1,Math.min(1,x1+dx/st.H));CE.cs[i].y=Math.max(-1,Math.min(1,y1+dy/st.H))})}else return;
      CE.paint();return}
    if(st.lm&&st.lmN&&st.lmN!==st.lm&&cur.list.includes(st.lmN)&&(P.size>=2||Math.hypot(e.clientX-st.x0,e.clientY-st.y0)>=6)){const q=st.lmN;st.lmN=null;st.lm=q;st.ox=q.lx||0;st.oy=q.ly||0;if(P.size>=2)st.sc=q.ls||1;pick(q)}
@@ -11541,20 +11539,23 @@ function editRow(r,list,g,late){eatTouchEnd();sheet((b,close)=>{$('sheet').class
    2本指=大きさ、左右になぞる=角度、タップ=フォント切替。確定で保存、キャンセルで元に戻す */
 let CE=null;
 function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice():null,cs0=g.cs?JSON.parse(JSON.stringify(g.cs)):null;
-  const mk=(c,ch)=>({s:c&&c.s||(window.dsK?window.dsK(ch):1),r:c&&c.r||0,f:c&&c.f||null,v:!!(c&&c.v),x:c&&c.x||0,y:c&&c.y||0});
+  const mk=(c,ch)=>({s:c&&c.s||(window.dsK?window.dsK(ch):1),w:c&&c.w||0,r:c&&c.r||0,f:c&&c.f||null,v:!!(c&&c.v),x:c&&c.x||0,y:c&&c.y||0});
   let C=[...g.t],cs=C.map((ch,i)=>mk(cs0&&cs0.length===C.length&&cs0[i],ch));const on=new Set();
   sheet((b,close)=>{const s=$('sheet');s.style.background='transparent';s.onclick=null;s.style.pointerEvents='none';b.style.pointerEvents='auto';
     const fin=()=>{CE=null;s.style.pointerEvents='';b.style.pointerEvents='';close()};
     const p=document.createElement('p');p.textContent='文字をタップで選ぶ → 再生画面で 2本指=大きさ、なぞる=移動。下のバーをなぞる=回転(🔄=1文字ずつ・🔁=選んだ文字をまとめて)。フォントはボタン(長押し=一覧)。文字を長押し=改行の入力';
     const w=document.createElement('div');w.className='chs';let bts=[],ta=null;
-    const dd=i=>window.dsK?window.dsK(C[i]):1;const apply=()=>{if(cs.some((c,i)=>Math.abs(c.s-dd(i))>.001||c.r||c.f||c.v||c.x||c.y))g.cs=cs.map((c,i)=>Math.abs(c.s-dd(i))<=.001&&!c.r&&!c.f&&!c.v&&!c.x&&!c.y?0:Object.assign({s:+c.s.toFixed(2),r:Math.round(c.r)},c.f?{f:c.f}:{},c.v?{v:1}:{},c.x||c.y?{x:+c.x.toFixed(4),y:+c.y.toFixed(4)}:{}));else delete g.cs;showOv()};
+    const dd=i=>window.dsK?window.dsK(C[i]):1;const some=c0=>c0.s||c0.r||c0.f||c0.v||c0.x||c0.y;
+    /* v947: 編集中は必ず1文字ずつの描き方にする(k=印。確定の時に外す)。文字の元の場所(natP)がいつでも取れるように */
+    const apply=fin=>{const A=cs.map((c,i)=>{const ds=Math.abs(c.s-dd(i))>.001,o={};if(ds)o.s=+c.s.toFixed(2);if(c.w&&Math.abs(c.w-dd(i))>.001)o.w=+c.w.toFixed(2);if(Math.round(c.r))o.r=Math.round(c.r);if(c.f)o.f=c.f;if(c.v)o.v=1;if(c.x||c.y){o.x=+c.x.toFixed(4);o.y=+c.y.toFixed(4)}return some(o)||o.w?o:0});
+      if(A.some(Boolean))g.cs=A;else if(fin)delete g.cs;else g.cs=A;if(!fin&&g.cs&&g.cs.length)g.cs[0]=Object.assign({k:1},g.cs[0]||{});showOv()};
     /* 全体ボタン: 0=全体(何も選んでいない時は字幕全体の大きさ) 1=ひらがなだけ 2=漢字だけ。文字を選んでいる時はそちらが優先 */
     let md=0;const MD=['全体','ひらがな','漢字のみ'],RX=[null,/[\u3041-\u309f]/,/[\u4e00-\u9fff々〆]/];
     const tg=()=>on.size?[...on]:md?C.map((c,i)=>RX[md].test(c)?i:-1).filter(i=>i>=0):[];
     const paint=()=>{const t=new Set(on.size?[]:tg());bts.forEach((bt,i)=>{bt.classList.toggle('on',on.has(i));bt.classList.toggle('tg',t.has(i))});apply()};
     const build=()=>{w.innerHTML='';bts=C.map((c,i)=>{if(i&&g.br&&g.br.includes(i)){const d=document.createElement('div');d.className='nl';w.appendChild(d)}
       const bt=document.createElement('button');bt.textContent=c.trim()?c:'␣';bt.onclick=()=>{if(on.has(i))on.delete(i);else on.add(i);paint()};w.appendChild(bt);return bt});
-      CE={g,on,cs,paint,tg}};
+      CE={g,on,cs,paint,tg,natP:()=>natP(),cls:()=>!on.size&&!!md}};
     /* 長押し=入力欄に切り替え(改行できる)。「文字選択に戻る」で反映 */
     const toText=()=>{if(ta)return;ta=document.createElement('textarea');ta.value=brT(g);const ok=document.createElement('button');ok.textContent='文字選択に戻る';
       const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:8px';box.append(ta,ok);w.replaceWith(box);setTimeout(()=>ta.focus(),50);
@@ -11581,7 +11582,7 @@ function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice(
     rw.append(rs,fb,mb,iv);
     const tw=document.createElement('div');tw.className='two';const n=document.createElement('button');n.className='no';n.textContent='キャンセル';
     n.onclick=()=>{g.t=t0;if(fk0===undefined)delete g.fk;else g.fk=fk0;if(fn0===undefined)delete g.fnt;else g.fnt=fn0;if(br0)g.br=br0;else delete g.br;if(cs0)g.cs=cs0;else delete g.cs;fin();showOv()};
-    const y=document.createElement('button');y.textContent='確定';y.onclick=()=>{fromText();apply();saveR(view.m,r);fin();drawResults()};tw.append(n,y);
+    const y=document.createElement('button');y.textContent='確定';y.onclick=()=>{fromText();apply(1);saveR(view.m,r);fin();drawResults()};tw.append(n,y);
     /* 回転バー: 左右になぞると選んだ文字が回る */
     const rb=document.createElement('div');rb.className='rotb';rb.innerHTML='<span>🔄</span><i></i>';let r0=null;
     rb.addEventListener('pointerdown',e=>{e.stopPropagation();try{rb.setPointerCapture(e.pointerId)}catch(_){}r0={x:e.clientX,b:tg().map(i=>[i,cs[i].r])}});
