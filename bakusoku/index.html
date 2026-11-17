@@ -6860,8 +6860,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v939';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v939','SEの試し聞き: いまのクリップの2秒前から画面も一緒に再生(字幕の出るタイミングとSEを合わせられる)。もう一度押すと止まる'],
+{const v=document.createElement('div');v.textContent='v940';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v940','SE一覧: 見本の字幕を出さず今の再生ヘッドの画面のまま(画面上のボタンも非表示)。行をアプリのボタンと同じ枠に'],
+  ['v939','SEの試し聞き: いまのクリップの2秒前から画面も一緒に再生(字幕の出るタイミングとSEを合わせられる)。もう一度押すと止まる'],
   ['v938','SE一覧: 長押ししてスライド=iPhoneのホーム画面のように他の行が入れ替わって並べ替え。動かさずに離す=調整の窓'],
   ['v937','SE一覧を新ルールに: 「なし」が一番上・使用中が光る・1回タップ=聞く・もう一度タップ=決定して閉じる・長押し=調整の窓。✏️/調整/削除/再生ボタンを無くし、「SEの追加と削除」で追加・削除。調整の窓は名前欄・保存して閉じる(SEに保存)・✕(保存しない)'],
   ['v936','SE変更画面: 今使っているSEの行が光る(自動でその位置まで動く)'],
@@ -9609,8 +9610,8 @@ function showOv0(t,X){const okR=x=>X&&X.row1?true:x.ln!==1;/* v880: 下の列(�
       if(tt>=m[0].a&&tt<m[m.length-1].b){const on=m[0].gall?m:m.filter(x=>x.a<=tt);/* v571: gall=まとめて一気に */onR=on;g=m[0];txt=on.map(x=>x.t).join('\n');all=m.map(x=>x.t);allR=m;nOn=on.length;break}}}}
   /* v868: グループのテンプレートの「大きさと位置」を編集中は、選んだ行数の見本を出す */{const gs=!X&&window.__gsm;if(gs&&glOn()){g=gs.g;allR=gs.rows;all=gs.rows.map(r=>r.t);txt=all.join('\n');onR=gs.rows;nOn=gs.rows.length}}
   if(!g){if(t!=null&&LS)g=LS.find(x=>okR(x)&&t>=x.a&&t<x.b)||LS.find(x=>t>=x.a&&t<x.b)||null;else if(!X&&sel&&!sel.gap)g=sel}
-  if(!g&&!X&&cur&&document.querySelector('#t_pop.stTpl')){g=dmG()}/* v827: 字幕が無い所でもテンプレートを開ける(ひな形の字幕) */
-  if(!X&&g&&!g.gap&&txt==null&&document.querySelector('#t_pop.stTpl'))g=smpG(g);/* v812 */
+  if(!g&&!X&&cur&&document.querySelector('#t_pop.stTpl:not([data-kind=se])')){g=dmG()}/* v827: 字幕が無い所でもテンプレートを開ける(ひな形の字幕) */
+  if(!X&&g&&!g.gap&&txt==null&&document.querySelector('#t_pop.stTpl:not([data-kind=se])'))g=smpG(g);/* v940: SEの一覧では見本の字幕を出さない(今の再生ヘッドの画面のまま) *//* v812 */
   o._g=null;if(!g){o.textContent='';return}const k=SPK(g);o.textContent=txt!=null?txt:brT(g);
   if(k==='b'){const PB=stFr(g)?null:(grpPB(g,all)||stPv1(g));/* v868: グループは行数ごとの配置 */let b=BIG[stBs(g)]||BIG.setsumei_yoko;/* v560: 位置テンプレートの縦文字/横文字で、太字の種類の縦/横を選ぶ */{const V=stFr(g)?null:stVt(g,PB);/* v753 */if(V!=null){const nm=Object.keys(BIG).find(q=>BIG[q]===b)||'setsumei_yoko',bn=nm.replace(/_(tate|yoko)$/,'')+(V?'_tate':'_yoko');if(BIG[bn])b=BIG[bn]}}/* v726: グループ字幕テンプレートは背景(パネル)・縁取りなし。見た目はスタイルで付ける */{const T0=stAll()[STK(g)];if(T0&&g.grp&&!stLp(g))b={...b,mode:'plain'}}const H=X?X.H:$('pl').clientHeight||200;o.className='big '+b.mode+(b.v?' v':'');
     /* v196: 行間=2行は広め、3行、4行と狭く。文字が少ないと大きく、はみ出しそうなら小さく。上の左右(固定テロップ)には入らない */
@@ -10387,7 +10388,7 @@ function seBody(w,g){const k0=w.k0,SN=+w.dataset.slot||1,F=seF(SN);
   let cand=g[F]&&seById(g[F])?g[F]:null;const apply=()=>{if(cand)g[F]=cand;else delete g[F];save();showOv(pos)};/* v937: 決定したものだけを字幕に入れる */
   const draw=()=>{box.innerHTML='';seMig(stAll()[k0]);const ids=seTOf(k0,F).ids.filter(seById);
     box.appendChild(lsHint('1回タップ=聞く・光っている行をもう一度タップ=決定して閉じる・長押しして離す=調整・長押しして動かす=順番を変える'));
-    const mkRow=(id,label)=>{const on=id===cand,r=stRow(on);if(on)r.classList.add('seGlow');/* v937: 光っているものがいまの候補 */
+    const mkRow=(id,label)=>{const on=id===cand,r=stRow(on);r.classList.add('seRow');if(on)r.classList.add('seGlow');/* v937: 光っているものがいまの候補 */
       const nm=document.createElement('span');nm.textContent=label;nm.style.cssText='flex:1;padding:8px 2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';r.appendChild(nm);r.style.cursor='pointer';
       /* v938: 長押ししてスライド=iPhoneのホーム画面のように、動かした所に他の行が入れ替わる。動かさずに離す=調整の窓 */
       if(id)r.dataset.lid=id;let tm=0,x0=0,y0=0,lp=false,mv=false,pid=null,RS=[],di=0,tg=0,stp=0;const cl=()=>{clearTimeout(tm);tm=0};
@@ -10420,7 +10421,7 @@ function seBody(w,g){const k0=w.k0,SN=+w.dataset.slot||1,F=seF(SN);
     for(const f of fs){const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);await kv('se|'+id,f);SE.push({id,n:f.name.replace(/\.[^.]+$/,''),g:'字幕テンプレート'});o[k0][F].ids.push(id)}
     await kv('se|list',SE);seSave(o,k0,F);try{seDraw()}catch(_){}draw();drawAdd();showFn(fs.length+'個のSEを追加しました')};
   const ab=stBtn('SEの追加と削除',()=>{add.hidden=!add.hidden;ab.textContent=add.hidden?'SEの追加と削除':'閉じる';ab.style.gridColumn=add.hidden?'':'1 / -1';const sv=w.querySelector('#t_seSv');if(sv)sv.style.display=add.hidden?'':'none';draw();drawAdd()},'');ab.id='t_stSA1';
-  if(!document.getElementById('t_glowCss')){const st=document.createElement('style');st.id='t_glowCss';st.textContent='@keyframes seGl{0%,100%{box-shadow:0 0 6px 1px var(--accent)}50%{box-shadow:0 0 18px 5px var(--accent)}}.stRow.seGlow{animation:seGl 1.2s ease-in-out infinite}';document.head.appendChild(st)}
+  if(!document.getElementById('t_glowCss')){const st=document.createElement('style');st.id='t_glowCss';st.textContent='@keyframes seGl{0%,100%{box-shadow:0 0 6px 1px var(--accent)}50%{box-shadow:0 0 18px 5px var(--accent)}}.stRow.seGlow{animation:seGl 1.2s ease-in-out infinite}.stRow.seRow{min-height:50px;margin:7px 0!important;padding:4px 12px!important;border:1px solid var(--btnl)!important;border-radius:10px!important;background:var(--btn)!important;color:var(--fg)}.stRow.seRow.on{border:2px solid var(--accent)!important;background:color-mix(in srgb,var(--accent) 16%,var(--btn))!important;color:var(--accent)}';document.head.appendChild(st)}
   draw();setTimeout(()=>{try{const e=box.querySelector('.seGlow');e&&e.scrollIntoView({block:'center'})}catch(_){}},60);w.foot(ab);{const sv=w.querySelector('#t_seSv');if(sv){const o0=sv.onclick;sv.onclick=()=>{apply();o0&&o0.call(sv)}}}}
 /* ---- v563: ③スタイルの後半「枠・テキストボックス」。字幕の後ろの枠は別のキャンバス(#t_sb。合成モード=mix-blend-mode)に描く。すりガラスは #t_fg(backdrop-filter)。
    書き出しは tlRender が e.bx(枠のキャンバス)・e.bm(合成モード)・e.fg(後ろをぼかす所)を作り、tlDrawE が 後ろをぼかす→枠→文字 の順に描く */
