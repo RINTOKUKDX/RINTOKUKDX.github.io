@@ -7010,8 +7010,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v994';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
+{const v=document.createElement('div');v.textContent='v995';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
 ['v992','スタイルの枠: □テンプレート(新しい40種。絵のボタンで選ぶ・メイン色/サブ色・不透明度・保存して閉じる)と□自分で設定(今までの枠。ポップは外した)に分けた'],
 ['v991','変えた: SE一覧の試し聞きでも、ループのSEは入口〜出口を5回繰り返して鳴らす'],['v990','足した: SEのループ。SEの調整の「ループ」にチェックを入れると、入口〜出口の範囲を字幕が終わるまで繰り返す（再生・書き出しとも）'],['v989','字幕テンプレートの詳細設定を「テンプレート専用の設定」に: スタイル・テクスチャ・フィルター・エフェクトは□使う＋中身はボタンの調整窓と同じ(今後項目を足すと両方に入る)。ボタンの一覧には出ない。前に一覧から選んだ物は自動で写す。縦横・SEは今まで通り'],
@@ -10871,9 +10871,10 @@ function mvApply(z){['t_pv','t_pv2'].forEach(id=>{const el=document.getElementBy
 function mvShow(t){t=t==null?pos:t;mvMark(t);if(window.mvFrOn||window.mvPlOn)return;let z=null,o=null;try{if(cur&&cur.list){z=mvAt(cur.list,t);o=mvOutAt(cur.list,t)}}catch(_){}mvApply(z);try{mvOutApply(o,t)}catch(_){}}
 /* v983: 再生ヘッドの字幕にズーム・パンが付いている時は、下の段のムーブの枠線を黄色に */function mvMark(t){const b=document.querySelector('#t_scR [data-id="tz:mv"]');if(!b)return;let on=false;try{const L=cur&&cur.list||[];on=L.some(x=>x.mv&&!x.se&&!x.gap&&t>=x.a-1e-3&&t<x.b&&mvGet(x.mv))}catch(_){}b.classList.toggle('mvOn',on)}
 /* v982: 古い字幕の参照(作り直された後)でも、今の一覧の同じ字幕に付ける */function mvCur(g){const L=cur&&cur.list;if(!g||!L||L.includes(g))return g;const r=g.__real||g;if(L.includes(r))return r;return L.find(x=>!x.gap&&Math.abs(x.a-r.a)<1e-3&&Math.abs(x.b-r.b)<1e-3&&x.t===r.t)||L.find(x=>!x.gap&&!x.se&&pos>=x.a-1e-3&&pos<x.b)||g}
+/* v995: 選んでいる字幕クリップ(字幕2の列も)が再生ヘッドにある時は、そのクリップに付ける */function mvTg(g){try{if(sel&&!sel.gap&&cur&&cur.list&&cur.list.includes(sel)&&pos>=sel.a-1e-3&&pos<sel.b)return sel}catch(_){}return mvCur(g)}
 function mvSet(g,id){rowsOf(mvCur(g)).forEach(x=>{if(id)x.mv=id;else delete x.mv})}
 /* タップ=次のムーブへ(無し→1つ目→…→無し)。パンになった時は大きな矢印で向きを選ぶ */
-function tapMv(g){g=mvCur(g);if(!g||g.gap){showFn('字幕クリップの上でタップしてください');return}const L=mvL();if(!L.length){showFn('ムーブが登録されていません（長タップで追加）');return}
+function tapMv(g){g=mvTg(g);if(!g||g.gap){showFn('字幕クリップの上でタップしてください');return}const L=mvL();if(!L.length){showFn('ムーブが登録されていません（長タップで追加）');return}
   const i=L.findIndex(p=>p.id===g.mv),n=L[i+1];mvSet(g,n&&n.id);if(n&&n.ty==='zoom')mvFace(g);tapDone(n?'ムーブ：'+n.n:'ムーブなし');
   if(n&&n.ty==='pan')mvArrows(d=>{if(!d)return;rowsOf(g).forEach(x=>x.mvd=d);save();showOv(pos);showFn('パン：'+MVDN[d])})}
 const MVDN={u:'上へ',d:'下へ',l:'左へ',r:'右へ'};
@@ -10903,7 +10904,7 @@ async function mvFace(g,force,after){const P=mvGet(g&&g.mv);if(!P||P.ty!=='zoom'
 /* ▶ この字幕で動きを見る(動画は止めたまま、拡大・移動だけを字幕の長さで動かす) */
 function mvPlay(g){const L=cur&&cur.list;g=mvCur(g);if(!L||!g)return;let a=g.a,b=g.b;if(g.grp){const M=L.filter(x=>x.grp===g.grp);a=Math.min(...M.map(x=>x.a));b=Math.max(...M.map(x=>x.b))}
   window.mvPlOn=true;const t0=performance.now(),f=()=>{const t=a+(performance.now()-t0)/1000;if(t>=b||!window.mvPlOn){window.mvPlOn=false;mvShow(pos);return}mvApply(mvAt(L,t));try{mvOutApply(mvOutAt(L,t),t)}catch(_){}requestAnimationFrame(f)};requestAnimationFrame(f)}
-function popMv(g){g=mvCur(g);if(!g||g.gap){showFn('字幕クリップの上で長押ししてください');return}const w=stPop(g,'ムーブ');w.dataset.kind='mv';w.redo=()=>mvList(w,g);mvList(w,g)}
+function popMv(g){g=mvTg(g);if(!g||g.gap){showFn('字幕クリップの上で長押ししてください');return}const w=stPop(g,'ムーブ');w.dataset.kind='mv';w.redo=()=>mvList(w,g);mvList(w,g)}
 function mvList(w,g){stArOff();stClr(w);{const hx=w.querySelector('#t_mvX');if(hx)hx.remove()}delete w.dataset.ed;w.redo=()=>mvList(w,g);sfGlCss();
   if(!w.mv0){w.mv0=rowsOf(g).map(x=>[x,x.mv]);w.cand=g.mv||null;
     /* 決定しないで閉じた時(外をタップなど)は、見本で変えたムーブを元に戻す */const mo=new MutationObserver(()=>{if(!w.isConnected){mo.disconnect();window.mvPlOn=false;if(!w.mvOk){w.mv0.forEach(([x,a])=>{if(a===undefined)delete x.mv;else x.mv=a});try{save();showOv(pos)}catch(_){}}}});mo.observe(document.body,{childList:true})}
