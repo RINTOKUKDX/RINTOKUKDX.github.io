@@ -3595,7 +3595,7 @@ function tlJointMoveV(J,raw){const p=J.p,n=J.n,P=J.P,N=J.N,sp=spdOf(p),sn=spdOf(
   if(n&&(J.k==='both'||J.k==='R'))n.start=N.s+D*sn;
   J.t=J.k==='R'?J.b:J.b+D;layoutVideo();
   if(hit&&!J.hit){try{navigator.vibrate&&navigator.vibrate(12)}catch(_){}}J.hit=!!hit;tlMagDraw()}
-function tlJointMove(J,raw){if(J.v){tlJointMoveV(J,raw);return}const p=J.p,n=J.n,P=J.P,N=J.N;let t=raw,hit=0;
+function tlJointMove(J,raw){if(J.v){tlJointMoveV(J,raw);return}const p=J.p,n=J.n,P=J.P,N=J.N;let t=snapEdge(raw,[p,n].filter(Boolean),true)/* v998: 目印(←↔→)で長さを変える時も🧲で引っ付く */,hit=0;
   if(J.k==='both'){t=Math.max(p.start+MINLEN,N?tlSrcLo(n,N.s,N.off):-1e9,Math.min(n.end-MINLEN,P?tlSrcHi(p,P.s,P.e,P.off):1e9,t))}
   else if(J.k==='R'){const lo=Math.max(J.lo,tlSrcLo(n,N.s,N.off));if(t<lo-1e-6){t=lo;hit=1}t=Math.min(n.end-MINLEN,t)}
   else{const hi=Math.min(J.hi,tlSrcHi(p,P.s,P.e,P.off));if(t>hi+1e-6){t=hi;hit=1}t=Math.max(p.start+MINLEN,t)}
@@ -3810,7 +3810,7 @@ function lblAdj(e,i){
   /* v783: ✂ON・レーンをアクティブにしている時、暗くなっている(触れない)レーンをタップしても再生ヘッドの位置で分割 */
   const dimTap=e=>{if(!cutMode||selMode||multiMode||actLane==null||panX==null||panMoved>6||panGuard||pinchUsed||ptr.size!==1||!ptr.has(e.pointerId))return false;
     return [...document.querySelectorAll('#cv .lane.ldim')].some(l=>{const r=l.getBoundingClientRect();return e.clientX>=r.left&&e.clientX<r.right&&e.clientY>=r.top&&e.clientY<r.bottom})};
-  const up=e=>{if(tlJG&&ptr.has(e.pointerId)){const J=tlJG;tlJG=null;clearTimeout(J.tm);if(J.lp){if(!J.v)nbHit(J.p||J.n,0,false);setTimeout(()=>{window.tlJB=false},0);
+  const up=e=>{if(tlJG&&ptr.has(e.pointerId)){const J=tlJG;tlJG=null;clearTimeout(J.tm);if(J.lp){snapHitK=null;if(!J.v)nbHit(J.p||J.n,0,false);setTimeout(()=>{window.tlJB=false},0);
       if(J.ch&&e.type!=='pointerup'){[[J.p,J.P],[J.n,J.N]].forEach(([o,O])=>{if(o&&O){o.start=O.s;o.end=O.e;if(O.off||o.off)o.off=O.off}})}
       {const sc=$('scr'),x=sc.scrollLeft;if(J.v&&J.ch)resetOut();renderLanes();if(J.v&&J.ch)renderSegs();if(J.ch){renderPreview();sc.scrollLeft=x;seekGlobal(gt)}else sc.scrollLeft=x}
       if(J.ch&&e.type==='pointerup')flashSel('長さを変えました');}}
@@ -5163,10 +5163,10 @@ function tlUndo(){
   updHist();
 }
 $('ir').onclick=()=>{if(!iredo.length)return;ihist.push(cloneItems());items=iredo.pop();afterHist()};
-function snapTargets(except){
-  const t=[0,total(),gt];let a=0;
+function snapTargets(except,noGt){const ex=Array.isArray(except)?except:[except];
+  const t=noGt?[0,total()]:[0,total(),gt];let a=0;
   segs.forEach(s=>{t.push(a);a+=segD(s);t.push(a)});
-  items.forEach(o=>{if(o!==except)t.push(o.start,o.end)});
+  items.forEach(o=>{if(!ex.includes(o))t.push(o.start,o.end)});
   /* v985: 字幕ページの字幕・ナレーションの頭とお尻にも引っ付く(タイムラインでは箱にまとめて見えるが、1つずつの端に合わせられる) */
   try{(window.subTLSubTx?subTLSubTx():[]).concat(window.subTLNarTx?subTLNarTx():[]).forEach(g=>t.push(g.a,g.b))}catch(e){}
   return t;
@@ -5175,8 +5175,8 @@ function snapPt(x,it){const th=10/pps;let best=x,bd=th;
   snapTargets(it).forEach(t=>{const d=Math.abs(t-x);if(d<bd){bd=d;best=t}});return best}
 let snapHitK=null;/* v985: 動かしている間に引っ付いた所(変わった時だけコリっと振動) */
 /* v986: 長さを変える(←→)時も、ほかのクリップ・切れ目・字幕の端・再生ヘッドに引っ付く(隣のクリップには食い込まないのは v801 のまま) */
-function snapEdge(x,it){const th=14/pps;let best=x,bd=th,hk=null;
-  snapTargets(it).forEach(t=>{const d=Math.abs(t-x);if(d<bd){bd=d;best=t;hk='x'+t.toFixed(3)}});
+function snapEdge(x,it,noGt){const th=14/pps;let best=x,bd=th,hk=null;
+  snapTargets(it,noGt).forEach(t=>{const d=Math.abs(t-x);if(d<bd){bd=d;best=t;hk='x'+t.toFixed(3)}});
   if(hk!==snapHitK){snapHitK=hk;if(hk)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}}return best}
 function snapMove(s,len,it){const th=14/pps;let best=s,bd=th,hk=null;
   snapTargets(it).forEach(t=>{const d1=Math.abs(t-s),d2=Math.abs(t-(s+len));
@@ -7017,8 +7017,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v997';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v998';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
@@ -8651,9 +8651,11 @@ window.trJob=trJob;
 window.tlSrcAt=()=>{const L=locate(gt),q=L&&segs[L.i];if(!q||!q.clip)return null;return{key:bkey(q.clip.key),raw:q.clip.key,t:q.start+(gt-L.off)*spdOf(q)}};
 window.tlSetSrc=(key,t)=>{let best=null,bd=1e9,x=0;for(const q of segs){const d=segD(q);if(q.clip&&(bkey(q.clip.key)===key||q.clip.key===key)&&t>=q.start-1e-3&&t<=q.end+1e-3){const g=x+Math.max(0,Math.min(d,(t-q.start)/spdOf(q))),dd=Math.abs(g-gt);if(dd<bd){bd=dd;best=g}}x+=d}if(best!=null){try{seekGlobal(Math.min(best,Math.max(0,total()-0.001)))}catch(e){}}};
 /* v835: 字幕ページの⬅️➡️=タイムラインの前・次の動画クリップ(1つに見えるまとまり)を、字幕ページで開き直す */
-window.tlNavSub=dir=>{const B=[];let x=0,i=0;while(i<segs.length){const q=segs[i];if(!q.clip){x+=segD(q);i++;continue}const R=segRun(q);let d=0;for(let k=Math.max(i,R[0]);k<=R[1];k++)d+=segD(segs[k]);const a0=x;B.push({a:a0,b:a0+d,c:q.clip});x+=d;i=R[1]+1}
+/* v998: 元動画のkeyと秒→今のタイムラインの時間(near に一番近い所) */window.tlSrcG=(key,t,near)=>{let best=null,bd=1e9,x=0;for(const q of segs){const d=segD(q);if(q.clip&&(bkey(q.clip.key)===key||q.clip.key===key)&&t>=q.start-1e-3&&t<=q.end+1e-3){const g=x+Math.max(0,Math.min(d,(t-q.start)/spdOf(q))),dd=Math.abs(g-near);if(dd<bd){bd=dd;best=g}}x+=d}return best};
+window.tlNavSub=(dir,g)=>{const B=[];let x=0,i=0;while(i<segs.length){const q=segs[i];if(!q.clip){x+=segD(q);i++;continue}const R=segRun(q);let d=0;for(let k=Math.max(i,R[0]);k<=R[1];k++)d+=segD(segs[k]);const a0=x;B.push({a:a0,b:a0+d,c:q.clip});x+=d;i=R[1]+1}
   if(!B.length)return false;const SR=window.subRange;let ci=-1;
-  if(SR){ci=B.findIndex(o=>SR.a<o.b-0.02&&SR.b>o.a+0.02)}else{ci=B.findIndex(o=>o.c===cur)}
+  /* v998: 字幕ページの再生ヘッドが今のタイムラインのどのクリップにあるかで決める(開いた時の範囲や最初の並びに頼らない) */if(g!=null)ci=B.findIndex(o=>g>=o.a-1e-3&&g<o.b-1e-3);
+  if(ci>=0){}else if(SR){ci=B.findIndex(o=>SR.a<o.b-0.02&&SR.b>o.a+0.02)}else{ci=B.findIndex(o=>o.c===cur)}
   if(ci<0)ci=dir>0?-1:B.length;const ni=ci+(dir>0?1:-1);
   if(ni<0||ni>=B.length)return dir>0?'これが最後のクリップです':'これが最初のクリップです'
   const nb=B[ni],sa=selA,sb=selB;selA=selB=null;try{if(!$('s4').hidden&&window.subClose)window.subClose();window.subRange=null;window.goPage&&window.goPage('字幕',null,{a:nb.a,b:nb.b})}finally{selA=sa;selB=sb}return true};
@@ -12803,7 +12805,7 @@ window.subScDraw=()=>{setTimeout(()=>{try{mvMark(pos)}catch(_){}},0);const sr=do
   /* v927: 設定保存(位置・大きさを変えると光る) */if(!document.getElementById('t_posSv')){const x=document.createElement('button');x.type='button';x.id='t_posSv';x.textContent='設定保存';x.setAttribute('aria-label','位置・大きさを字幕テンプレートに保存');x.onclick=()=>{if(!x.classList.contains('lit')){showFn('字幕の位置や大きさを変えると押せます');return}posSave()};sr.appendChild(x)}
   if(!document.getElementById('t_bPv')){[['t_bPv','⬅️','前のクリップへ',-1],['t_bNx','➡️','次のクリップへ',1]].forEach(([id,tx,al,d])=>{const x=document.createElement('button');x.type='button';x.id=id;x.textContent=tx;x.setAttribute('aria-label',al);x.onclick=()=>window.subNavClip(d);sr.appendChild(x)})}
   if(window.btnLayApply)window.btnLayApply();else if(window.scFade)window.scFade()};
-window.subNavClip=dir=>{/* v835: まずタイムラインの前・次のクリップへ(字幕ページで開き直す) */try{const r=window.tlNavSub&&window.tlNavSub(dir);if(typeof r==='string'){st(r);return}if(r)return}catch(e){}/* v834: タイムラインの「クリップ」(1つに見えるまとまり)の頭へ。切れ目=動画が変わる・分割(sp)・空白 */const B=[];JOB.forEach((r,i)=>{if(r.blank)return;const p=JOB[i-1];if(!p||p.blank||p.key!==r.key||r.sp)B.push(r.v0)});
+window.subNavClip=dir=>{/* v835: まずタイムラインの前・次のクリップへ(字幕ページで開き直す) */try{let g=null;try{const f=fromV(pos),SR=window.subRange;if(f&&f.r&&!f.r.blank&&window.tlSrcG)g=window.tlSrcG(f.r.key,f.t,SR?(SR.a+SR.b)/2:0)}catch(_){}const r=window.tlNavSub&&window.tlNavSub(dir,g);if(typeof r==='string'){st(r);return}if(r)return}catch(e){}/* v834: タイムラインの「クリップ」(1つに見えるまとまり)の頭へ。切れ目=動画が変わる・分割(sp)・空白 */const B=[];JOB.forEach((r,i)=>{if(r.blank)return;const p=JOB[i-1];if(!p||p.blank||p.key!==r.key||r.sp)B.push(r.v0)});
   if(!B.length){st('移動するクリップがありません');return}const p=pos;let t=null;
   if(dir>0){t=B.find(v=>v>p+0.02);if(t==null){st('これが最後のクリップです');return}}
   else{t=[...B].reverse().find(v=>v<p-0.02);if(t==null){st('これが最初のクリップです');return}}
