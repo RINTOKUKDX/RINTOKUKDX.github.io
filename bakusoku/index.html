@@ -7017,8 +7017,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v996';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
+{const v=document.createElement('div');v.textContent='v997';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
 ['v992','スタイルの枠: □テンプレート(新しい40種。絵のボタンで選ぶ・メイン色/サブ色・不透明度・保存して閉じる)と□自分で設定(今までの枠。ポップは外した)に分けた'],
@@ -9682,7 +9683,7 @@ function playRange(a,b){stopPlay();const back=sel?sel.a:a;$('bP').classList.add(
 function playSel(){if(!sel)return;if(playing()){stopPlay();showAt(sel.a+0.01);return}playRange(sel.a,sel.b)}
 /* 通し再生 */
 /* v712: 止めた所から再生(行を選び直していなければ)。前は選んでいる字幕の頭に戻っていた */let paT=null,paSel=null,plT=null;
-function playAll(){if(playing()){stopPlay();if(plT!=null){paT=plT;paSel=sel;showOv(plT);drawWf(plT)}return}/* v718: 選んだ字幕の頭ではなく再生ヘッドから */const start=posSet?pos:paT!=null&&sel===paSel?paT:pos;posSet=false;paT=null;plT=null;stopPlay();$('bA').classList.add('on');$('bA').textContent='■';
+function playAll(){{const R=ceRng();if(R){if(playing()){stopPlay();return}let s0=pos;if(s0<R.a||s0>=R.b-.05)s0=R.a;stopPlay();$('bA').classList.add('on');$('bA').textContent='■';vplay(s0,R.b,t=>{showOv(t);drawWf(t)},()=>{stopPlay();showAt(s0);showOv(s0);drawWf(s0)});return}}/* v997: 文字別編集の間は表示した所だけ再生 */if(playing()){stopPlay();if(plT!=null){paT=plT;paSel=sel;showOv(plT);drawWf(plT)}return}/* v718: 選んだ字幕の頭ではなく再生ヘッドから */const start=posSet?pos:paT!=null&&sel===paSel?paT:pos;posSet=false;paT=null;plT=null;stopPlay();$('bA').classList.add('on');$('bA').textContent='■';
   vplay(start,VD,t=>{plT=t;
     if(cur&&(!sel||t<sel.a||t>=sel.b)){const g=rowAt(t);if(g){sel=g;[...$('rows').children].forEach(d=>{const on=d._g.a===g.a&&d._g.b===g.b;d.classList.toggle('sel',on);if(on)toRow(d)})}}
     showOv(t);drawWf(t)},()=>{stopPlay()})}
@@ -10221,7 +10222,7 @@ window.ceActT=(z,g)=>ceAct(z,g);function ceAct(z,g){if(!CE)return;const a=CE.tg(
   if(mk&&mk.t==='sy'){const L=syA(T,mk.n);if(!L.length){showFn('スタイルが登録されていません');return}const id=nx(L.map(x=>x.id),c0.sy),q=id&&L.find(x=>x.id===id);a.forEach(i=>CE.cs[i].sy=id);CE.paint();showFn('選んだ文字: '+(q?q.n:'スタイルなし'));return}
   if(z==='tx'){if(txNeed(T)){txMig(T);stSave(stAll())}const L=T.txr||[];const id=nx(L.map(x=>x.id),c0.tx),q=id&&L.find(x=>x.id===id);a.forEach(i=>CE.cs[i].tx=id);CE.paint();showFn('選んだ文字: '+(q?'テクスチャ：'+q.n:'テクスチャなし'));return}
   if(mk&&mk.t==='iv'){const ks=[...new Set(efPairs('ef',mk.n).map(p=>p[0]))].map(k=>k+':'+mk.n);if(!ks.length){showFn('フィルター'+(mk.n>1?mk.n:'')+'が選ばれていません');return}const v=nx(ks,c0.ef);a.forEach(i=>{CE.cs[i].ef=v;CE.cs[i].v=false});CE.paint();showFn('選んだ文字: '+(v?EFD[v.split(':')[0]][0]:'フィルターなし'));return}
-  const sn=tzSn(z);if(sn){const F=seF(sn),C=seTOf(STK(g),F).ids.map(seById).filter(Boolean);if(!C.length){showFn(seNmOf(sn)+'が登録されていません');return}const i=C.findIndex(x=>x.id===g[F]),n=C[i+1],K=sn>1?sn:'';
+  const sn=tzSn(z);if(sn){/* v997: SEは1つの字幕に1つまで(SE1の所に入れる。押したボタンの一覧から選ぶ) */const C=seTOf(STK(g),seF(sn)).ids.map(seById).filter(Boolean),F='se';if(!C.length){showFn(seNmOf(sn)+'が登録されていません');return}const i=C.findIndex(x=>x.id===g[F]),n=C[i+1],K='';
     if(n){g[F]=n.id;const o=+Math.max(-2,Math.min(g.b-g.a,(pos||0)-g.a)).toFixed(2);/* 再生ヘッドの所から鳴らす */g['seo'+K]=o;sePlay(n.id);try{save()}catch(_){}showFn(seNmOf(sn)+' ♪ '+n.n+'（'+o.toFixed(1)+'秒目から）')}else{delete g[F];delete g['seo'+K];try{save()}catch(_){}showFn(seNmOf(sn)+'なし')}try{drawWf()}catch(_){}return}}
 function tzAct(z,g){const mk=tzMk(z);if(mk){if(mk.t==='sy')tapSty(g,mk.n);else tapEfK(g,mk.t==='iv'?'ef':'mo',mk.n);return}if(z[0]==='f')tapFd(g,+z[1]);else if(z==='po')tapVt(g);else if(z==='an')tapAn(g);else if(z==='sp')tapSp(g);else if(z==='tx')tapTx(g);else if(z==='mv')tapMv(g);else if(tzSn(z))tapSe(g,tzSn(z))}
 function tzBtns(){return tzLayGet().map(b=>({k:b.k,x:b.c*tzCW(),y:b.r*tzRH(),w:b.w*tzCW(),h:b.h*tzRH()}))}
@@ -11701,6 +11702,8 @@ async function wfData(){if(wfPk||!JOB.length||wfBusy||wfOff)return wfPk;wfBusy=t
   let mx=0;for(const v of a)if(v>mx)mx=v;if(mx>0)for(let i=0;i<n;i++)a[i]/=mx;wfPk=a}catch(e){}wfBusy=false;audStop=false;wfMsg='';return wfPk}
 /* v169: 波形はカットページと同じ: 再生位置(赤い線)は常に真ん中、スワイプ=波形を動かす、2本指=拡大縮小、タップ=そこから再生 */
 let wfMap=null,zw=6,wEdge=null,vmode=null;const ptrs=new Map(),ptY=new Map();let wdrag=null,pinch=null;
+/* v997: 文字別編集の間は、波形をその字幕±1秒だけにする(再生もその中だけ) */
+function ceRng(){try{return CE&&CE.g?{a:Math.max(0,CE.g.a-1),b:Math.min(VD,CE.g.b+1)}:null}catch(_){return null}}
 function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return;if(wfPk||wfOff||!JOB.length)wfLdHide();const dp=devicePixelRatio||1;
   if(c.width!==W*dp){c.width=W*dp;c.height=H*dp}const x=c.getContext('2d');x.setTransform(dp,0,0,dp,0,0);x.clearRect(0,0,W,H);
   if(!JOB.length)return;if(!wfPk&&wfOff){x.fillStyle=getComputedStyle(document.documentElement).getPropertyValue('--muted').trim()||'#999';x.font='13px sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText('波形の読み込みを止めました（ページを開き直すと読み込みます）',W/2,H/2);return}
@@ -11736,6 +11739,7 @@ function drawWf(t){const c=$('wf'),W=c.clientWidth,H=c.clientHeight;if(!W)return
     /* v281: 動画モード(長押し)は、タイムラインのブロックのように枠で囲む */
     if(vmode===sel){const X0=sx(sel.a),X1=sx(sel.b);x.save();x.strokeStyle=acc;x.lineWidth=4;x.strokeRect(X0+2,2,Math.max(4,X1-X0-4),H-4);x.fillRect(X0-4,H/2-14,8,28);x.fillRect(X1-4,H/2-14,8,28);x.restore()}}
   if(cutPrev&&!cutPrev.sub){x.fillStyle='rgba(255,40,40,.38)';x.fillRect(sx(cutPrev.x),0,Math.max(2,sx(cutPrev.y)-sx(cutPrev.x)),H)}
+  {const R=ceRng();if(R){x.fillStyle=getComputedStyle(document.body).backgroundColor||'#111';if(sx(R.a)>0)x.fillRect(0,0,sx(R.a),H);if(sx(R.b)<W)x.fillRect(sx(R.b),0,W-sx(R.b),H)}}
   x.fillStyle=warn;x.fillRect(W/2-1,0,2.5,H);drawTx(A,B)}
 /* v373: 文字のタイムライン。波形と同じ A〜B を描く。ブロックはタイムラインの字幕ブロック(.blk.l3)と同じ色・角丸・白文字 */
 /* v881: 字幕タイムラインの一番左に「1」「2」(タイムラインページのレーン名と同じ見た目)。押すとその列がアクティブ(＋で入れる列)。1=自動・2=自分で追加 */
@@ -12008,7 +12012,7 @@ addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
    /* v281: オレンジの波形を長押し=動画モード */
    else if(inSel){const d=wdrag;d.tm=setTimeout(()=>{if(wdrag===d&&!d.moved){d.vmOn=true;vmode=sel;wEdge=null;try{navigator.vibrate&&navigator.vibrate(25)}catch(_){}stopPlay();drawWf(d.t0)}},400)}});
  wf.addEventListener('pointermove',e=>{if(!ptrs.has(e.pointerId))return;ptrs.set(e.pointerId,e.clientX);ptY.set(e.pointerId,e.clientY);
-   if(pinch){if(ptrs.size<2)return;const [x1,x2]=[...ptrs.values()],[y1,y2]=[...ptY.values()],d=Math.max(20,Math.abs(x2-x1)),v=Math.max(20,Math.abs(y2-y1));zw=Math.max(0.5,Math.min(Math.max(2,VD+2),pinch.w0*pinch.d0/d));
+   if(pinch){if(ptrs.size<2||ceRng())return;const [x1,x2]=[...ptrs.values()],[y1,y2]=[...ptY.values()],d=Math.max(20,Math.abs(x2-x1)),v=Math.max(20,Math.abs(y2-y1));zw=Math.max(0.5,Math.min(Math.max(2,VD+2),pinch.w0*pinch.d0/d));
      drawWf();return}
    const d=wdrag;if(!d)return;const dx=e.clientX-d.x0;
    if(d.mkOn){if(!d.moved){if(Math.abs(dx)<3)return;d.moved=true}const t=mkMove(d.mk,d.mk0+dx*zw/d.r.width);showAt(Math.max(0,t));drawWf(d.t0);nInfo();return}
@@ -12027,7 +12031,7 @@ addEventListener('resize',()=>{if(!$('pl').closest('main').hidden)drawWf()});
      else{t=Math.min(nx?nx.b-0.2:VD,Math.max(sel.a+0.2,t));sel.b=t;if(nx&&(d.link||nx.a<t))nx.a=t}
      showAt(Math.max(0,t-(k==='b'?0.04:0)));drawWf(d.t0);return}
    if(!d.moved){if(Math.abs(dx)<8)return;clearTimeout(d.tm);clearTimeout(d.mkTm);if(Math.abs(e.clientY-d.y0)>Math.abs(dx)){wdrag=null;return}d.moved=true;stopPlay()}
-   const t=Math.max(0,Math.min(VD,d.t0-dx*zw/d.r.width));showAt(t);showOv(t);drawWf(t)});
+   let t=Math.max(0,Math.min(VD,d.t0-dx*zw/d.r.width));{const R=ceRng();if(R)t=Math.max(R.a,Math.min(R.b,t))}showAt(t);showOv(t);drawWf(t)});
  const up=e=>{ptrs.delete(e.pointerId);ptY.delete(e.pointerId);if(pinch){if(!ptrs.size)pinch=null;return}const d=wdrag;wdrag=null;if(!d)return;
    clearTimeout(d.tm);clearTimeout(d.mkTm);
    if(d.mkOn){nSave();nInfo();drawWf(d.t0);return}
@@ -12267,7 +12271,7 @@ function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice(
   const mk=(c,ch)=>({s:c&&c.s||(window.dsK?window.dsK(ch):1),w:c&&c.w||0,r:c&&c.r||0,f:c&&c.f||null,v:!!(c&&c.v),x:c&&c.x||0,y:c&&c.y||0,sy:c&&c.sy||null,tx:c&&c.tx||null,ef:c&&c.ef||null});
   let C=[...g.t],cs=C.map((ch,i)=>mk(cs0&&cs0.length===C.length&&cs0[i],ch));const on=new Set();
   sheet((b,close)=>{const s=$('sheet');s.style.background='transparent';s.onclick=null;s.style.pointerEvents='none';b.style.pointerEvents='auto';
-    document.body.classList.add('ceOn');/* v996: 文字別編集の間は、選んだ文字に効かないボタンを消す */const fin=()=>{CE=null;document.body.classList.remove('ceOn');s.style.pointerEvents='';b.style.pointerEvents='';close()};
+    {const zw0=zw;setTimeout(()=>{try{zw=Math.max(.5,(Math.min(VD,g.b+1)-Math.max(0,g.a-1)));const R=ceRng();if(R&&(pos<R.a||pos>R.b))showAt(g.a);drawWf()}catch(_){}},0);b._zw0=zw0}document.body.classList.add('ceOn');/* v996: 文字別編集の間は、選んだ文字に効かないボタンを消す */const fin=()=>{CE=null;document.body.classList.remove('ceOn');try{stopPlay();if(b._zw0)zw=b._zw0;drawWf()}catch(_){}s.style.pointerEvents='';b.style.pointerEvents='';close()};
     const p=document.createElement('p');p.textContent='文字をタップで選ぶ → 再生画面で 2本指=大きさ、なぞる=移動。下のバーをなぞる=回転(🔄=1文字ずつ・🔁=選んだ文字をまとめて)。フォントはボタン(長押し=一覧)。文字を長押し=改行の入力';
     p.style.cssText='font-size:11px;line-height:1.4';/* v988: 説明は小さく */
     const w=document.createElement('div');w.className='chs';let bts=[],ta=null;
