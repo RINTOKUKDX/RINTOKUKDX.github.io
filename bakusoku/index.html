@@ -964,9 +964,12 @@ body.blay{padding-bottom:340px!important}body.blay #t_fold button,body.blay #t_s
 #t_sheet p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
 #t_sheet button{font-size:16px;min-height:52px;width:100%;border-radius:10px;border:0;background:var(--accent);color:var(--accent-fg);font-weight:700}
 #t_sheet button.no{background:transparent;color:var(--fg);border:1px solid var(--line)}
-#t_sheet .chs{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:16px 4px}
-#t_sheet .chs button{width:auto;min-width:46px;min-height:52px;padding:0 8px;font-size:22px;background:var(--bg);color:var(--fg);border:1px solid var(--line)}
-#t_sheet .rotb{display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;border:1px solid var(--line);border-radius:10px;touch-action:none;user-select:none}
+#t_sheet .chs{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;padding:6px 2px}
+#t_sheet .chs button{width:auto;min-width:36px;min-height:40px;padding:0 4px;font-size:18px;background:var(--bg);color:var(--fg);border:1px solid var(--line)}
+/* v988: 文字が多い時はもっと小さく(画面が隠れないように) */
+#t_sheet .chs.many{gap:4px}
+#t_sheet .chs.many button{min-width:30px;min-height:34px;font-size:15px;padding:0 2px}
+#t_sheet .rotb{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:10px;touch-action:none;user-select:none}
 #t_sheet .rotb span{font-size:22px}
 #t_sheet .rotb i{flex:1;height:4px;border-radius:2px;background:repeating-linear-gradient(90deg,var(--fg) 0 10px,transparent 10px 16px);opacity:.6}
 #t_sheet .chs .nl{flex-basis:100%;height:0}
@@ -6935,8 +6938,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v987';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v987','ムーブに「ズームアウト」: 画面ごと(動画と字幕)小さくなる。速度・拡大率(始まりの大きさ)・枠(遺影/木枠/木枠白/鉄フレーム)・エフェクト(モノクロ/セピア/フィルムノイズ/ノイズ、強さ付き)・SEを1つ(字幕のSEが優先)。この字幕の間は見出し・CHロゴ・タイムラインのエフェクトを出さない'],['v986','タイムラインでクリップの長さを変える(←→)時も、ほかのクリップ・動画の切れ目・字幕の端・再生ヘッドに🧲で引っ付き、コリっと振動する(隣のクリップには食い込まない)'],['v985','タイムラインでクリップ(CHなど)を動かすと、ほかのクリップ・動画の切れ目・字幕ページの字幕の端に🧲で引っ付き、引っ付いた時にコリっと振動する(引っ付く範囲も少し広く)'],['v984','再生ヘッドの字幕にズームかパンが付いている時は、下の段のムーブのボタンの枠線を黄色に'],['v983','字幕テンプレートの編集に「詳細設定」: スタイル・テクスチャ・フィルター・エフェクト・縦横・SEを1つずつ選んでおくと、そのテンプレートを付けた時に最初から入る。画面のボタンを押すとその項目だけ「選んだ物→なし→一覧の上から(同じ物は飛ばす)」の順に切り替わる'],
+{const v=document.createElement('div');v.textContent='v988';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v988','直した: 文字別編集で文字が多いと窓が広がって再生画面が隠れる。文字ボタン・説明・回転バーを小さく詰め、13文字以上はさらに小さく'],['v987','ムーブに「ズームアウト」: 画面ごと(動画と字幕)小さくなる。速度・拡大率(始まりの大きさ)・枠(遺影/木枠/木枠白/鉄フレーム)・エフェクト(モノクロ/セピア/フィルムノイズ/ノイズ、強さ付き)・SEを1つ(字幕のSEが優先)。この字幕の間は見出し・CHロゴ・タイムラインのエフェクトを出さない'],['v986','タイムラインでクリップの長さを変える(←→)時も、ほかのクリップ・動画の切れ目・字幕の端・再生ヘッドに🧲で引っ付き、コリっと振動する(隣のクリップには食い込まない)'],['v985','タイムラインでクリップ(CHなど)を動かすと、ほかのクリップ・動画の切れ目・字幕ページの字幕の端に🧲で引っ付き、引っ付いた時にコリっと振動する(引っ付く範囲も少し広く)'],['v984','再生ヘッドの字幕にズームかパンが付いている時は、下の段のムーブのボタンの枠線を黄色に'],['v983','字幕テンプレートの編集に「詳細設定」: スタイル・テクスチャ・フィルター・エフェクト・縦横・SEを1つずつ選んでおくと、そのテンプレートを付けた時に最初から入る。画面のボタンを押すとその項目だけ「選んだ物→なし→一覧の上から(同じ物は飛ばす)」の順に切り替わる'],
 ['v982','ムーブ: パンの4つの矢印を同じ形・同じ太さに。字幕が作り直された後でもムーブが今の字幕に付くように'],['v981','字幕ページの「ムーブ」を最初から下の段に入れておく(外した後は入れ直さない)'],['v980','字幕が1度できたら「字幕生成・その他設定」は閉じておく(押すと開く)。エフェクトの範囲「背景のみ」を削除(動画を動かすのはムーブへ)。字幕ページに「ムーブ」ボタン(元の動画だけを動かす。字幕には触らない)。ムーブは下の段にだけ置ける。ズーム=顔を中心に拡大して戻る(拡大にかける時間・元に戻る時間・割合・中心)、枠を指で決めることもできる。パン=矢印で向きを選んで、決まった速さでじわっと動く'],['v979','ボタンの消え方(復帰までの時間): 名前を「タイムライン操作」「画面のボタン」に短くして、バーを長く。バーは0.1秒刻み・数字を左右にスライドするとバーの4分の1の動きで微調整'],['v978','ボタンの消え方: バーの右の数字を左右にスライドすると0.1秒刻みで微調整できる'],['v977','ボタンの設定に「ボタンの消え方」を追加: タイムライン・波形を触ってから戻るまで(0〜5秒・最初0秒)、画面のボタンを押してから戻るまで(0〜5秒・最初3秒)'],['v976','画面のボタンを押した直後は、0.1秒かけて不透明度0(見えなくなる・機能はそのまま)に。3秒後に元に戻る'],['v975','テクスチャの窓: 「サンプルテキスト」ではなく、再生ヘッドの位置の字幕の文字で見本を出す'],['v974','画面のボタンを押した直後は、0.1秒かけて不透明度20%まで落とす(押す機能はそのまま)。3秒後に元に戻る'],['v973','変えた: 👁の窓。右上の✕を無くし、下は「保存して閉じる」。長押しで開いた設定はその設定だけ出し、下の「保存して戻る」で最初の窓へ戻る'],['v972','テクスチャの調整: 意味の分かりにくかった「🎲模様を変える」を、効く錆だけに出して「🔄錆の出方を変える」に'],['v971','直した: 長押しで文字が青く選択される。アプリ全体で、文字入力の欄以外は選択されない'],['v970','直した: 下の段のボタン(アイコン)を外せなかった。長押しして離すと「画面のボタンに戻す／下の段から外す」を選べる（中身のテンプレート・SEは消えない）'],['v969','テクスチャ: 透かし入りの写真(しわ紙・傷だらけの金属)を削除'],['v968','テクスチャを写真に作り直し(グランジ・稲妻・しわ紙・砂岩・石・ヘアライン金属・パンチングメタル・傷だらけの金属・ひび割れ＋錆・布)。重ね方(そのまま/明暗だけ/暗く/明るく)・大きさ・向き。自分の画像からテクスチャを作れる(一覧の「追加と削除」→「画像からテクスチャを追加」)'],['v967','直した: 画面のボタンが全部下の段に移って出なくなった時、自動で最初の並びに戻す。ボタンの設定に「↺ 最初の並びに戻す」を追加'],
 ['v966','画面のボタン: 配列を小さくしてから大きくすると、動かした・下の段へ入れたボタンを元の場所と大きさに戻す。スタイル・フィルター・エフェクトのボタンも8つまで追加できる(2つ目からはボタンごとに別の一覧・長押しで設定)。横↔縦・動き・順に・テクスチャは1つだけ'],
 ['v965','テクスチャのボタンを追加: 画面のボタンの機能で「テクスチャ」を選べる。タップ=順に付ける・長押し=一覧(SEと同じ操作)。調整で種類(10種類)・強さ・不透明度・範囲(文字だけ/ストロークだけ/両方)・種類ごとの項目・色・模様を変える'],['v964','画面のボタン: 字幕のボタンを8つまで追加できる(機能で「字幕」にすると、空のフォルダ「字幕4」などを自動で作る)。SEのボタンは8つまでにそろえた(前に作った9つ目は残る)'],
@@ -12111,6 +12114,7 @@ function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice(
   sheet((b,close)=>{const s=$('sheet');s.style.background='transparent';s.onclick=null;s.style.pointerEvents='none';b.style.pointerEvents='auto';
     const fin=()=>{CE=null;s.style.pointerEvents='';b.style.pointerEvents='';close()};
     const p=document.createElement('p');p.textContent='文字をタップで選ぶ → 再生画面で 2本指=大きさ、なぞる=移動。下のバーをなぞる=回転(🔄=1文字ずつ・🔁=選んだ文字をまとめて)。フォントはボタン(長押し=一覧)。文字を長押し=改行の入力';
+    p.style.cssText='font-size:11px;line-height:1.4';/* v988: 説明は小さく */
     const w=document.createElement('div');w.className='chs';let bts=[],ta=null;
     const dd=i=>window.dsK?window.dsK(C[i]):1;const some=c0=>c0.s||c0.r||c0.f||c0.v||c0.x||c0.y;
     /* v947: 編集中は必ず1文字ずつの描き方にする(k=印。確定の時に外す)。文字の元の場所(natP)がいつでも取れるように */
@@ -12120,7 +12124,7 @@ function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice(
     let md=0;const MD=['全体','ひらがな','漢字のみ'],RX=[null,/[\u3041-\u309f]/,/[\u4e00-\u9fff々〆]/];
     const tg=()=>on.size?[...on]:md?C.map((c,i)=>RX[md].test(c)?i:-1).filter(i=>i>=0):[];
     const paint=()=>{const t=new Set(on.size?[]:tg());bts.forEach((bt,i)=>{bt.classList.toggle('on',on.has(i));bt.classList.toggle('tg',t.has(i))});apply()};
-    const build=()=>{w.innerHTML='';bts=C.map((c,i)=>{if(i&&g.br&&g.br.includes(i)){const d=document.createElement('div');d.className='nl';w.appendChild(d)}
+    const build=()=>{w.innerHTML='';w.classList.toggle('many',C.length>12);bts=C.map((c,i)=>{if(i&&g.br&&g.br.includes(i)){const d=document.createElement('div');d.className='nl';w.appendChild(d)}
       const bt=document.createElement('button');bt.textContent=c.trim()?c:'␣';bt.onclick=()=>{if(on.has(i))on.delete(i);else on.add(i);paint()};w.appendChild(bt);return bt});
       CE={g,on,cs,paint,tg,natP:()=>natP(),cls:()=>!on.size&&!!md}};
     /* 長押し=入力欄に切り替え(改行できる)。「文字選択に戻る」で反映 */
