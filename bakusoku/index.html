@@ -6936,13 +6936,13 @@ async function bgmNext(it){
 function bgmManage(){bgmAddDlg(null)}
 function bgmLaneLP(ln){
   ln.addEventListener('pointerdown',e=>{
-    if(e.target!==ln||multiMode||roLane(6))return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
+    if(e.target!==ln||multiMode||roLane(6))return;/* v1001: 🧲の目印(←↔→)が出ている時の長押しは長さを変えるスライド。曲の窓は出さない */if(tlJG||window.tlJB)return;const id=e.pointerId,sx=e.clientX,sy=e.clientY;let fired=false;
     const t=Math.max(0,(e.clientX-$('cv').getBoundingClientRect().left)/pps);
     const tm=setTimeout(()=>{fired=true;buzz();ln.style.background='rgba(61,125,46,.2)'},450);
-    const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8)fin()};
+    const mv=ev=>{if(ev.pointerId===id&&Math.hypot(ev.clientX-sx,ev.clientY-sy)>8){fired=false;fin()}};/* v1001: 長押しの後に指を動かしたら窓は出さない */
     const up=ev=>{if(ev.pointerId===id)fin()};
     function fin(){clearTimeout(tm);ln.style.background='';removeEventListener('pointermove',mv,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);
-      if(!fired||pinchUsed)return;
+      if(!fired||pinchUsed||window.tlJB)return;
       {const kill=ev=>{ev.stopPropagation();ev.preventDefault()};addEventListener('click',kill,true);setTimeout(()=>removeEventListener('click',kill,true),500)}
       setTimeout(()=>bgmAddDlg(t),60)}
     addEventListener('pointermove',mv,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true);
@@ -7022,8 +7022,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1000';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v1001';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
