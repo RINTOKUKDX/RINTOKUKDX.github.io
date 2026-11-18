@@ -4194,19 +4194,19 @@ function btnLayApply(){const L=blGet(),rows=BLR.map(id=>document.getElementById(
   if(window.scFade)window.scFade()}
 window.btnLayApply=btnLayApply;
 /* v772: 字幕ページのボタンを長押し(0.45秒)でドラッグ移動。移動先=2段(t_fold/t_scR)の中だけ。＋登録は動かせず、常に最後 */
-(()=>{let tm=0,btn=null,sx=0,sy=0,drag=false,eat=false;
+(()=>{let tm=0,btn=null,sx=0,sy=0,drag=false,eat=false,mvd=false;
   const rowsEl=()=>BLR.map(id=>document.getElementById(id)).filter(Boolean);
   const save=()=>{const L=blGet();BLR.forEach(id=>{const r=document.getElementById(id);if(r)L.o[id]=[...r.children].filter(b=>b.tagName==='BUTTON'&&b.id!=='t_scAdd').map(blKey)});blPut(L)};
-  const end=()=>{clearTimeout(tm);if(drag){drag=false;eat=true;setTimeout(()=>{eat=false},400);if(btn)btn.classList.remove('blDrag');document.body.classList.remove('bldrag');save();btnLayApply()}btn=null};
+  const end=()=>{clearTimeout(tm);if(drag){drag=false;eat=true;setTimeout(()=>{eat=false},400);if(btn)btn.classList.remove('blDrag');document.body.classList.remove('bldrag');save();btnLayApply();/* v970: 下の段のアイコンを長押しして動かさずに離す=戻す・外すの窓 */if(btn&&!mvd&&btn.classList.contains('tzI')&&window.tzBotMenu){const q=btn.dataset.id.slice(3);setTimeout(()=>window.tzBotMenu(q),0)}}btn=null};
   const move=(x,y)=>{const rs=rowsEl();if(!rs.length)return;/* v824: 入れるのは決まった段だけ */let best=document.getElementById(blRow(btn));if(!best)return;
     const q=best.getBoundingClientRect();if(best.scrollWidth>best.clientWidth){if(x<q.left+28)best.scrollLeft-=8;else if(x>q.right-28)best.scrollLeft+=8}
     const sib=[...best.children].filter(b=>b.tagName==='BUTTON'&&b!==btn&&b.id!=='t_scAdd');let ref=null;for(const b of sib){const c=b.getBoundingClientRect();if(x<c.left+c.width/2&&(Math.abs(y-(c.top+c.height/2))<c.height||best.id==='t_scR'||true)){ref=b;break}}
     if(!ref)ref=best.querySelector('#t_scAdd');
     if(btn.parentElement!==best||btn.nextElementSibling!==ref)best.insertBefore(btn,ref||null)};
   document.addEventListener('pointerdown',e=>{if(document.body.classList.contains('blay'))return;const b=e.target.closest&&e.target.closest('#t_fold button,#t_scR button');if(!b||b.id==='t_scAdd'||b.disabled)return;
-    btn=b;sx=e.clientX;sy=e.clientY;drag=false;clearTimeout(tm);if(b.classList.contains('scB'))e.stopImmediatePropagation();
+    btn=b;sx=e.clientX;sy=e.clientY;drag=false;mvd=false;clearTimeout(tm);if(b.classList.contains('scB'))e.stopImmediatePropagation();
     tm=setTimeout(()=>{drag=true;b.classList.add('blDrag');document.body.classList.add('bldrag');try{navigator.vibrate&&navigator.vibrate(20)}catch(_){}},450)},true);
-  document.addEventListener('pointermove',e=>{if(!btn)return;if(drag){e.preventDefault();move(e.clientX,e.clientY)}else if(Math.hypot(e.clientX-sx,e.clientY-sy)>10){clearTimeout(tm);btn=null}},true);
+  document.addEventListener('pointermove',e=>{if(!btn)return;if(drag){e.preventDefault();if(Math.hypot(e.clientX-sx,e.clientY-sy)>10)mvd=true;move(e.clientX,e.clientY)}else if(Math.hypot(e.clientX-sx,e.clientY-sy)>10){clearTimeout(tm);btn=null}},true);
   document.addEventListener('touchmove',e=>{if(drag)e.preventDefault()},{passive:false,capture:true});
   ['pointerup','pointercancel'].forEach(t=>document.addEventListener(t,end,true));
   document.addEventListener('contextmenu',e=>{if(btn||drag)e.preventDefault()},true);
@@ -4226,7 +4226,7 @@ function btnLayOpen(){if(document.getElementById('t_blay'))return;document.body.
     t.textContent=cur?'選択中：'+(cur.getAttribute('aria-label')||cur.textContent.trim()||'ボタン').replace(/。.*$/,'').replace(/(オン|オフ)$/,'').slice(0,16):'動かしたいボタンをタップ';const ok=B('完了',close);ok.id='t_blOk';ok.style.flex='none';ok.style.padding='0 18px';ok.classList.add('on');h.append(t,ok);p.appendChild(h);
     if(cur){const k=blKey(cur),L=blGet(),fixed=cur.id==='t_scAdd';
       if(!fixed)p.appendChild(R('並び',B('◀ 左へ',()=>mv(-1)),B('右へ ▶',()=>mv(1))));
-      if(cur.classList.contains('tzI'))p.appendChild(R('',B('画面のボタンに戻す',()=>{const q=cur.dataset.id.slice(3);close();window.tzBack&&window.tzBack(q)})));
+      if(cur.classList.contains('tzI'))p.appendChild(R('',B('画面のボタンに戻す',()=>{const q=cur.dataset.id.slice(3);close();window.tzBack&&window.tzBack(q)}),B('下の段から外す',()=>{const q=cur.dataset.id.slice(3);close();window.tzBotDel&&window.tzBotDel(q)})));
       p.appendChild(R('大きさ',...[['s','小'],['m','中'],['l','大']].map(([v,n])=>B(n,()=>{const q=blGet();if(v==='m')delete q.sz[k];else q.sz[k]=v;blPut(q);btnLayApply();draw()},(L.sz[k]||'m')===v))));
       const op=document.createElement('input');op.type='range';op.min=30;op.max=100;op.step=5;op.value=L.op[k]??100;op.style.flex='1';op.id='t_blOp';const ov=document.createElement('span');ov.style.cssText='width:44px;text-align:right;font-size:13px';ov.textContent=op.value+'%';
       op.oninput=()=>{const q=blGet();if(+op.value>=100)delete q.op[k];else q.op[k]=+op.value;blPut(q);ov.textContent=op.value+'%';btnLayApply()};p.appendChild(R('不透明度',op,ov))}
@@ -6919,8 +6919,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v969';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v969','テクスチャ: 透かし入りの写真(しわ紙・傷だらけの金属)を削除'],['v968','テクスチャを写真に作り直し(グランジ・稲妻・しわ紙・砂岩・石・ヘアライン金属・パンチングメタル・傷だらけの金属・ひび割れ＋錆・布)。重ね方(そのまま/明暗だけ/暗く/明るく)・大きさ・向き。自分の画像からテクスチャを作れる(一覧の「追加と削除」→「画像からテクスチャを追加」)'],['v967','直した: 画面のボタンが全部下の段に移って出なくなった時、自動で最初の並びに戻す。ボタンの設定に「↺ 最初の並びに戻す」を追加'],
+{const v=document.createElement('div');v.textContent='v970';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v970','直した: 下の段のボタン(アイコン)を外せなかった。長押しして離すと「画面のボタンに戻す／下の段から外す」を選べる（中身のテンプレート・SEは消えない）'],['v969','テクスチャ: 透かし入りの写真(しわ紙・傷だらけの金属)を削除'],['v968','テクスチャを写真に作り直し(グランジ・稲妻・しわ紙・砂岩・石・ヘアライン金属・パンチングメタル・傷だらけの金属・ひび割れ＋錆・布)。重ね方(そのまま/明暗だけ/暗く/明るく)・大きさ・向き。自分の画像からテクスチャを作れる(一覧の「追加と削除」→「画像からテクスチャを追加」)'],['v967','直した: 画面のボタンが全部下の段に移って出なくなった時、自動で最初の並びに戻す。ボタンの設定に「↺ 最初の並びに戻す」を追加'],
 ['v966','画面のボタン: 配列を小さくしてから大きくすると、動かした・下の段へ入れたボタンを元の場所と大きさに戻す。スタイル・フィルター・エフェクトのボタンも8つまで追加できる(2つ目からはボタンごとに別の一覧・長押しで設定)。横↔縦・動き・順に・テクスチャは1つだけ'],
 ['v965','テクスチャのボタンを追加: 画面のボタンの機能で「テクスチャ」を選べる。タップ=順に付ける・長押し=一覧(SEと同じ操作)。調整で種類(10種類)・強さ・不透明度・範囲(文字だけ/ストロークだけ/両方)・種類ごとの項目・色・模様を変える'],['v964','画面のボタン: 字幕のボタンを8つまで追加できる(機能で「字幕」にすると、空のフォルダ「字幕4」などを自動で作る)。SEのボタンは8つまでにそろえた(前に作った9つ目は残る)'],
 ['v963','画面のボタンの配列を選べる: ボタンの設定窓の一番上「配列」で 4×3・2×2・3×4・3×5・4×5(横×縦)。変えるとボタンはなるべく同じ所に残し、入らない物は小さくして空いたマスへ、それでも入らない物は下の段(アイコン)へ。機能に スタイル・横↔縦・動き・順に も追加'],
@@ -10080,6 +10080,13 @@ function tzBotGet(){try{const a=JSON.parse(localStorage.getItem('tzBot')||'[]');
 function tzBotPut(a){try{localStorage.setItem('tzBot',JSON.stringify(a))}catch(_){}try{window.subScDraw()}catch(_){}}
 function tzBack(k){stYN('「'+TZK[k]+'」を画面のボタンに戻しますか？',()=>{const L=tzLayGet();let at=null;for(let r=0;r<tzR()&&!at;r++)for(let c=0;c<tzC()&&!at;c++)if(tzFits(L,c,r,1,1))at={c,r};if(!at){showFn('画面に空いているマスがありません');return}L.push({k,c:at.c,r:at.r,w:1,h:1});tzLayPut(L);tzBotPut(tzBotGet().filter(z=>z!==k));showFn('「'+TZK[k]+'」を画面に戻しました')})}
 window.tzBack=tzBack;
+/* v970: 下の段のアイコンを外す(中身のテンプレート・SEは消さない。ボタンの設定の＋でまた置ける) */
+function tzBotDel(k){stYN('「'+TZK[k]+'」を下の段から外しますか？\n（中身のテンプレートやSEは消えません。ボタンの設定の＋でまた置けます）',()=>{tzBotPut(tzBotGet().filter(z=>z!==k));showFn('「'+TZK[k]+'」を下の段から外しました')})}
+function tzBotMenu(k){sheet((b,close)=>{const h=document.createElement('h2');h.textContent=(TZI[k]||'')+' '+TZK[k];b.appendChild(h);
+  const a=stBtn('画面のボタンに戻す',()=>{close();setTimeout(()=>tzBack(k),60)},'width:100%;margin-top:6px');a.id='t_tzBk';
+  const d=stBtn('下の段から外す',()=>{close();setTimeout(()=>tzBotDel(k),60)},'width:100%;margin-top:6px');d.id='t_tzBd';
+  const c=stBtn('やめる',close,'width:100%;margin-top:6px');c.className='no';b.append(a,d,c)})}
+window.tzBotDel=tzBotDel;window.tzBotMenu=tzBotMenu;
 function tzAct(z,g){const mk=tzMk(z);if(mk){if(mk.t==='sy')tapSty(g,mk.n);else tapEfK(g,mk.t==='iv'?'ef':'mo',mk.n);return}if(z[0]==='f')tapFd(g,+z[1]);else if(z==='po')tapVt(g);else if(z==='an')tapAn(g);else if(z==='sp')tapSp(g);else if(z==='tx')tapTx(g);else if(tzSn(z))tapSe(g,tzSn(z))}
 function tzBtns(){return tzLayGet().map(b=>({k:b.k,x:b.c*tzCW(),y:b.r*tzRH(),w:b.w*tzCW(),h:b.h*tzRH()}))}
 function tapZone(x,y){if(x==null)return 'tl';const X=x*100,Y=y*100,L=tzBtns();for(let i=L.length-1;i>=0;i--){const b=L[i];if(X>=b.x&&X<=b.x+b.w&&Y>=b.y&&Y<=b.y+b.h)return b.k}return 'tl'}
@@ -12342,8 +12349,8 @@ const scHold=(el,tap,hold)=>{let tm=0,held=false;el.addEventListener('pointerdow
 window.subScDraw=()=>{const sr=document.getElementById('t_scR');if(!sr)return;[...sr.querySelectorAll('.scB,#t_scAdd')].forEach(e=>e.remove());/* v824: ＋登録は無くなった(ショートカットは👁の窓・並びの窓から) */
   scAll().forEach(c=>{const x=document.createElement('button');x.type='button';x.className='scB';x.dataset.id=c.id;x.textContent=c.n;x.setAttribute('aria-label',c.n+'（長押しで編集）');scHold(x,()=>scApply(c),()=>scEdit(c));sr.appendChild(x)});
   /* v824: 画面から下の段へ入れたボタン=アイコン。タップ=今の字幕に効く・長押し=画面へ戻す */
-  tzBotGet().forEach(k=>{const x=document.createElement('button');x.type='button';x.className='scB tzI';x.dataset.id='tz:'+k;x.textContent=TZI[k]||'●';x.setAttribute('aria-label',TZK[k]+'（長押しで画面へ戻す）');
-    scHold(x,()=>{const g=scTarget();if(!g){showFn('字幕がありません（再生ヘッドを字幕に合わせてください）');return}tzAct(k,g)},()=>window.tzBack(k));sr.appendChild(x)});
+  tzBotGet().forEach(k=>{const x=document.createElement('button');x.type='button';x.className='scB tzI';x.dataset.id='tz:'+k;x.textContent=TZI[k]||'●';x.setAttribute('aria-label',TZK[k]+'（長押しで戻す・外す）');
+    scHold(x,()=>{const g=scTarget();if(!g){showFn('字幕がありません（再生ヘッドを字幕に合わせてください）');return}tzAct(k,g)},()=>window.tzBotMenu(k));sr.appendChild(x)});
   /* v826: ⬅️➡️=字幕タイムラインの前・次のクリップへ再生ヘッドを移す(↺↻の下) */
   /* v927: 設定保存(位置・大きさを変えると光る) */if(!document.getElementById('t_posSv')){const x=document.createElement('button');x.type='button';x.id='t_posSv';x.textContent='設定保存';x.setAttribute('aria-label','位置・大きさを字幕テンプレートに保存');x.onclick=()=>{if(!x.classList.contains('lit')){showFn('字幕の位置や大きさを変えると押せます');return}posSave()};sr.appendChild(x)}
   if(!document.getElementById('t_bPv')){[['t_bPv','⬅️','前のクリップへ',-1],['t_bNx','➡️','次のクリップへ',1]].forEach(([id,tx,al,d])=>{const x=document.createElement('button');x.type='button';x.id=id;x.textContent=tx;x.setAttribute('aria-label',al);x.onclick=()=>window.subNavClip(d);sr.appendChild(x)})}
