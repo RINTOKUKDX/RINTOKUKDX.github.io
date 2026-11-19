@@ -2638,6 +2638,57 @@ function bxDraw(c,T,x,y,w,h,u,F,W){if(T.bxk==='t'){bxtDraw(c,T,x,y,w,h);return}/
   if(S==='double'){const L=lw>0?lw:3*u,g2=L*2.4;c.strokeStyle=T.bxlc||'#ffffff';if(!(lw>0)){c.lineWidth=L;c.stroke()}c.beginPath();c.rect(x+g2,y+g2,w-g2*2,h-g2*2);c.lineWidth=Math.max(u,L*.6);c.stroke()}
   c.restore()}
 window.bxDraw=bxDraw;
+/* v1004: スタイルのテンプレート(20種)。f=文字の色(上→下のグラデ) g=光沢 s=フチ[[幅,色],...内→外] gl=外の光[色,ぼかし] x=立体[厚み,色] sh=影[色,ぼかし,X,Y]。幅などは文字の大きさ74の時の値
+   字幕のスタイル: ty.syk='t'(テンプレート)|'c'(自分で設定)・ty.syt='sp1'〜'sp20'・ty.sytA/sytB=メイン色/サブ色・ty.syto=不透明度 */
+const STT=[
+['黄金の豪華',{f:['#fffbd0','#ffd84a','#c88a10','#ffe98a','#a8680a'],g:1,s:[[5,'#5a3200'],[11,'#fff1b0'],[17,'#1a0d00']],gl:['#ffcc33',18]}],
+['白銀メタル',{f:['#ffffff','#d8dde4','#7d8691','#eef1f5','#5f6670'],g:1,s:[[5,'#2a2f36'],[10,'#ffffff'],[15,'#000000']],gl:['#9fb8d8',10]}],
+['燃える炎',{f:['#fff8a0','#ffcf2a','#ff7a10','#d81a00'],s:[[6,'#5a0a00'],[12,'#ffe070']],gl:['#ff6a00',26]}],
+['ホラー',{f:['#ff5a5a','#b00000','#3a0000'],s:[[6,'#000000']],gl:['#ff0000',22],sh:['#000000',6,0,8]}],
+['テレビ番組風',{f:['#fff200'],s:[[7,'#e00000'],[15,'#ffffff'],[19,'#202020']],sh:['#000000',4,4,6]}],
+['ネオンブルー',{f:['#ffffff'],s:[[4,'#22d8ff']],gl:['#00c8ff',30]}],
+['ネオンピンク',{f:['#fff0fa'],s:[[4,'#ff3cbe']],gl:['#ff2aa8',30]}],
+['桃色の世界',{f:['#ffd0ec','#ff6cc4','#e01890'],g:1,s:[[6,'#ffffff'],[12,'#a0006a']],gl:['#ff7ad0',16]}],
+['ポップグリーン',{f:['#ffffff'],s:[[7,'#20c040'],[13,'#0a4a14']],x:[8,'#0a3a10']}],
+['都市伝説',{f:['#b8a8ff','#5a3cff','#2a1080'],s:[[4,'#ffffff'],[10,'#0a0420']],gl:['#6a4cff',14]}],
+['動画編集',{f:['#fff36a','#ffb000','#ff7000'],s:[[7,'#000000']],x:[7,'#7a2a00']}],
+['ニュース',{f:['#ffffff'],s:[[7,'#0a2a6a']],sh:['#000000',6,3,4]}],
+['アニメ',{f:['#ffffff'],s:[[6,'#000000'],[13,'#ff8a00']],x:[6,'#a04000']}],
+['氷',{f:['#ffffff','#bff4ff','#5ac8f0','#e8fbff'],g:1,s:[[5,'#0a3a6a'],[10,'#d8f6ff']],gl:['#7ad8ff',16]}],
+['毒',{f:['#e6ff6a','#8ae000','#2a8a00'],s:[[6,'#5a0a8a'],[12,'#000000']],gl:['#a0ff30',14]}],
+['宇宙',{f:['#ffe0ff','#c070ff','#5020c0'],s:[[4,'#ffffff'],[10,'#1a0840']],gl:['#b060ff',24]}],
+['レトロ',{f:['#fff3d6'],s:[[6,'#6a3a10']],x:[10,'#e07a20']}],
+['和風',{f:['#ffffff'],s:[[6,'#111111'],[12,'#c8261a']],sh:['#000000',6,3,3]}],
+['チョコ',{f:['#c08050','#7a4220','#4a2410'],g:1,s:[[5,'#fff0d8'],[10,'#2a1206']],x:[6,'#1a0a02']}],
+['シンプル',{f:['#ffffff'],s:[[9,'#000000']],sh:['#000000',10,0,4]}]];
+const STTK=STT.map((_,i)=>'sp'+(i+1)),STTM={};STT.forEach((z,i)=>{STTM[STTK[i]]=z});
+const sttH=c=>{c=String(c||'').toLowerCase();if(/^#[0-9a-f]{6}$/.test(c))return c;const m=/^#([0-9a-f])([0-9a-f])([0-9a-f])$/.exec(c);return m?'#'+m[1]+m[1]+m[2]+m[2]+m[3]+m[3]:'#ffffff'};
+const hsl=c=>{const n=parseInt(sttH(c).slice(1),16),r=(n>>16&255)/255,g=(n>>8&255)/255,b=(n&255)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,d=mx-mn;let h=0,s=0;
+  if(d>1e-6){s=d/(1-Math.abs(2*l-1));h=mx===r?((g-b)/d)%6:mx===g?(b-r)/d+2:(r-g)/d+4;h*=60;if(h<0)h+=360}return[h,s,l]};
+const hslX=(h,s,l)=>{s=Math.max(0,Math.min(1,s));l=Math.max(0,Math.min(1,l));h=((h%360)+360)%360;const c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2;let[r,g,b]=h<60?[c,x,0]:h<120?[x,c,0]:h<180?[0,c,x]:h<240?[0,x,c]:h<300?[x,0,c]:[c,0,x];
+  const t=v=>Math.round((v+m)*255).toString(16).padStart(2,'0');return'#'+t(r)+t(g)+t(b)};
+/* 色の組: A=文字の色(と近い光)、B=色の付いたフチ・立体(無ければ1本目のフチ) */
+function sttGrp(o){const sat=c=>hsl(c)[1]>.25&&hsl(c)[2]>.08&&hsl(c)[2]<.95,S=o.s||[];let bi=S.map((z,i)=>sat(z[1])?i:-1).filter(i=>i>=0);if(!bi.length&&S.length&&!o.x)bi=[0];
+  const A=o.f[Math.floor(o.f.length/2)],B=o.x?o.x[1]:bi.length?S[bi[0]][1]:A,hd=(p,q)=>{const d=Math.abs(hsl(p)[0]-hsl(q)[0]);return Math.min(d,360-d)+(sat(q)?0:200)};
+  const glB=o.gl&&(sat(A)?hd(o.gl[0],B)<hd(o.gl[0],A):true);return{A,B,bi,glB}}
+function sttDef(k){const z=STTM[k];if(!z)return['#ffffff','#000000'];const G=sttGrp(z[1]);return[G.A,G.B]}
+const sttMv=(c,d0,d1)=>{if(!d1||sttH(d1)===sttH(d0))return c;const[h,s,l]=hsl(c),a=hsl(d0),b=hsl(d1);if(a[1]<.15)return hslX(b[0],b[1]*(s<.15?1:s/Math.max(.15,a[1])),l+(b[2]-a[2]));return hslX(h+b[0]-a[0],s*(b[1]/Math.max(.05,a[1])),l+(b[2]-a[2]))};
+function sttSpec(k,A,B){const z=STTM[k];if(!z)return null;const o=z[1],G=sttGrp(o),mA=c=>sttMv(c,G.A,A),mB=c=>sttMv(c,G.B,B);
+  return{...o,f:o.f.map(mA),s:(o.s||[]).map((q,i)=>[q[0],G.bi.includes(i)?mB(q[1]):q[1]]),gl:o.gl?[G.glB?mB(o.gl[0]):mA(o.gl[0]),o.gl[1]]:null,x:o.x?[o.x[0],mB(o.x[1])]:null}}
+/* 描く: draw(f) は文字の場所ごとに f(文字,x,y) を呼ぶ */
+function sttPaint(g,draw,o,fs,op){const r=fs/74,M=g.getTransform(),sc=Math.hypot(M.a,M.b)||1,S=o.s||[],W=(S.length?S[S.length-1][0]:0)*r;g.globalAlpha*=clamp01((op??100)/100);
+  const gr=(y,L)=>{if(L.length===1)return L[0];const q=g.createLinearGradient(0,y-fs*.5,0,y+fs*.5);L.forEach((c,i)=>q.addColorStop(i/(L.length-1),c));return q};
+  if(o.gl){g.save();g.shadowColor=o.gl[0];g.shadowBlur=o.gl[1]*r*sc;g.lineWidth=W*2+2*r;g.strokeStyle=o.gl[0];draw((t,x,y)=>{g.strokeText(t,x,y);g.strokeText(t,x,y)});g.restore()}
+  if(o.sh){g.save();g.shadowColor=o.sh[0];g.shadowBlur=o.sh[1]*r*sc;g.shadowOffsetX=o.sh[2]*r*sc;g.shadowOffsetY=o.sh[3]*r*sc;g.lineWidth=Math.max(W,r)*2;g.strokeStyle=g.fillStyle='#000000';draw((t,x,y)=>{g.strokeText(t,x,y);g.fillText(t,x,y)});g.restore()}
+  if(o.x){g.save();g.lineWidth=Math.max(W,r)*2;g.strokeStyle=g.fillStyle=o.x[1];for(let i=o.x[0];i>0;i--)draw((t,x,y)=>{g.strokeText(t,x+i*r*.7,y+i*r);g.fillText(t,x+i*r*.7,y+i*r)});g.restore()}
+  for(let i=S.length-1;i>=0;i--){g.lineWidth=S[i][0]*r*2;g.strokeStyle=S[i][1];draw((t,x,y)=>g.strokeText(t,x,y))}
+  draw((t,x,y)=>{g.fillStyle=gr(y,o.f);g.fillText(t,x,y)});
+  if(o.g)draw((t,x,y)=>{g.fillStyle=gr(y,['rgba(255,255,255,.75)','rgba(255,255,255,.35)','rgba(255,255,255,.08)','rgba(255,255,255,0)','rgba(255,255,255,0)','rgba(255,255,255,0)']);g.fillText(t,x,y)})}
+/* 選ぶ時の絵(画像のURL) */
+const STTI=new Map();function sttUrl(k,A,B,tx){const id=[k,A,B,tx].join('|');if(STTI.has(id))return STTI.get(id);const z=STTM[k];if(!z)return'';const c=document.createElement('canvas');c.width=360;c.height=96;const g=c.getContext('2d');
+  const bg=g.createLinearGradient(0,0,360,96);bg.addColorStop(0,'#2a2f3a');bg.addColorStop(1,'#0c0e12');g.fillStyle=bg;g.fillRect(0,0,360,96);const t=tx||z[0];let fs=56;g.font=PFONT(fs,'');const w=g.measureText(t).width;if(w>300){fs*=300/w;g.font=PFONT(fs,'')}
+  g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';sttPaint(g,f=>f(t,180,50),sttSpec(k,A,B),fs,100);const u=c.toDataURL('image/png');STTI.set(id,u);return u}
+window.STT=STT;window.STTK=STTK;window.sttSpec=sttSpec;window.sttDef=sttDef;window.sttUrl=sttUrl;
 function styledText(g,W,H,u,raw,s,vert,since,until){
   raw=(raw||'').replace(/\r/g,'');if(!raw.trim()||!s)return;
   since=since==null?99:since;until=until==null?99:until;
@@ -2698,6 +2749,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
   const shOff=()=>{g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0};
   /* v562: スタイルテンプレート(s.ty): 文字の太さ(wt=文字の色の線)・二重の線(外側)・シャドウ(色・不透明度・距離・角度・X/Y・ぼかし・拡散) */
   const ty=s.ty||null,th=ty?(+ty.wt||0)*k*skw:0,dw=ty&&ty.st&&ty.d?(+ty.dw||0)*k*skw:0;
+  if(ty&&ty.syk==='t'&&STTM[ty.syt]){sttPaint(g,draw,sttSpec(ty.syt,ty.sytA,ty.sytB),fs,ty.syto);g.restore();return}/* v1003: スタイルのテンプレート */
   if(ty&&ty.sh){const a=(+ty.sha||0)*Math.PI/180,D=+ty.shd||0,dx=(D*Math.cos(a)+(+ty.shx||0))*k*skw,dy=(D*Math.sin(a)+(+ty.shy||0))*k*skw,R=th+sw+dw+(+ty.shs||0)*k*skw,M=g.getTransform(),sc=Math.hypot(M.a,M.b)||1;
     g.save();if(ty.shb>0){const f0=g.filter&&g.filter!=='none'?g.filter+' ':'';g.filter=f0+'blur('+(ty.shb*k*skw*sc).toFixed(2)+'px)'}g.fillStyle=g.strokeStyle=hexA(ty.shc||'#000000',clamp01((ty.sho??60)/100));g.lineWidth=R*2;
     draw((t,x,y)=>{g.fillText(t,x+dx,y+dy);if(R>0)g.strokeText(t,x+dx,y+dy)});g.restore()}
@@ -7022,8 +7074,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1003';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v1004';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
@@ -10421,7 +10473,7 @@ const stBtn=(t,f,css)=>{const b=document.createElement('button');b.type='button'
 const smpTxt=n=>{n=Math.max(1,+n||21);const b=[...'サンプルテキスト'];let o='';for(let i=1;i<=n;i++)o+=i<=b.length?b[i-1]:String(i%10);return o};window.smpTxt=smpTxt;
 /* v812: 字幕テンプレートの編集中は、画面の字幕を「サンプルテキスト9012…」(1行の文字数ぶん)に差し替えて見せる(元の字幕は書き換えない) */
 let dmGo=null;const dmG=()=>{if(!dmGo)dmGo={a:0,b:1,t:'',sp:(()=>{try{return DSP()}catch(_){return undefined}})(),_dm:1};return dmGo};
-const smpG=g=>{try{{const tb=document.getElementById('t_syBxTpB');if(tb&&!tb.hidden&&tb.offsetParent)return g}/* v993: スタイルの枠のテンプレートを開いている間は実際の字幕で見せる */const pop=document.querySelector('#t_pop.stTpl'),kk=pop&&pop.edK||STK(g),T=stAll()[kk];if(!T||T.bk||T.g||g.bl||g.grp)return g;const ov={t:smpTxt(genGet().mc),br:undefined,cs:undefined,w:undefined,words:undefined,en:undefined,sp:kk};
+const smpG=g=>{try{for(const id of ['t_syBxTpB','t_syTpB']){const tb=document.getElementById(id);if(tb&&!tb.hidden&&tb.offsetParent)return g}/* v1003: スタイルのテンプレートも *//* v993: スタイルの枠のテンプレートを開いている間は実際の字幕で見せる */const pop=document.querySelector('#t_pop.stTpl'),kk=pop&&pop.edK||STK(g),T=stAll()[kk];if(!T||T.bk||T.g||g.bl||g.grp)return g;const ov={t:smpTxt(genGet().mc),br:undefined,cs:undefined,w:undefined,words:undefined,en:undefined,sp:kk};
     /* v815: 編集中のテンプレートの位置・大きさで見せる(字幕ごとに動かした分は使わない)。位置を決める間だけは動かしている分を見せる */
     if(!document.body.classList.contains('stPosOn')){const p=Array.isArray(T.pos)&&T.dpz&&T.pos.find(z=>z.id===T.dpz);ov.pz=p?p.id:undefined;ov.ox=ov.oy=ov.osc=ov.al=ov.vt=undefined}return new Proxy(g,{get:(o,k)=>k==='__real'?o:k in ov?ov[k]:o[k]})}catch(_){return g}};
 function stPop(g,what){const k0=STK(g),wf=$('wf'),w=s4Pop(wf?wf.getBoundingClientRect().top:200,'');w.classList.add('stTpl');setTimeout(()=>{try{showOv(pos)}catch(_){}},0);{document.documentElement.classList.add('s4lock');/* v871: テンプレートを登録している間は後ろのページが動かないように */const mo=new MutationObserver(()=>{if(!w.isConnected){mo.disconnect();document.documentElement.classList.remove('s4lock');try{showOv(pos)}catch(_){}}});mo.observe(document.body,{childList:true})}const hd=w.querySelector('b');hd.textContent=what;/* v959: （不穏）などのテンプレート名は出さない */
@@ -11575,6 +11627,7 @@ function styEdit(w,g,id){const k0=w.k0,P=()=>id===''?stAll()[k0].os:syA(stAll()[
     const bd=document.createElement('div');bd.id=id2+'B';bd.className='sb';bd.hidden=true;const pa=()=>{h.classList.toggle('op',!bd.hidden);ar.textContent=bd.hidden?'▸':'▾'};pa();
     h.onclick=e=>{if(e.target===c)return;bd.hidden=!bd.hidden;pa()};c.onclick=e=>e.stopPropagation();
     c.onchange=()=>{P()[key]=c.checked?1:0;if(c.checked&&bd.hidden){bd.hidden=false;pa()}up()};h.append(c,t,ar);w.body.append(h,bd);return bd};
+  const syN0=w.body.children.length;/* v1003: ここから下(文字の太さ〜シャドウ)は「自分で設定」の中へ */
   rg(w.body,'文字の太さ','wt',0,20,'','t_syWt');
   col(w.body,'文字の色','c','t_syC');
   const sb=sec('ストローク','st','t_sySt');rg(sb,'幅','sw',0,40,'','t_syStW');col(sb,'色','sc','t_syStC');
@@ -11586,6 +11639,29 @@ function styEdit(w,g,id){const k0=w.k0,P=()=>id===''?stAll()[k0].os:syA(stAll()[
   {const s2=document.createElement('select');s2.id='t_syShA';s2.style.cssText='min-height:40px;font-size:15px;flex:1';SYA.forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;s2.appendChild(o)});
    s2.value=String(SYA.some(a=>a[0]===+P().sha)?+P().sha:45);s2.onchange=()=>{P().sha=+s2.value;up()};hb.appendChild(w.row('角度',s2))}
   rg(hb,'X位置','shx',-60,60,'','t_syShX');rg(hb,'Y位置','shy',-60,60,'','t_syShY');rg(hb,'ぼかし','shb',0,40,'','t_syShB');rg(hb,'拡散','shs',0,30,'','t_syShS');
+  /* v1003: スタイルの中を □テンプレート(20種の絵から選ぶ・色2つ・不透明度) と □自分で設定(今までの文字の太さ〜シャドウ) に分ける。どちらか一方 */
+  {const own=[...w.body.children].slice(syN0),isT=()=>P().syk==='t'&&!!STTK.includes(P().syt),S=[];
+   const sub2=(lb,id2,on,pick)=>{const h=document.createElement('div');h.className='sh';h.id=id2+'T';h.setAttribute('role','button');const c=document.createElement('input');c.type='checkbox';c.id=id2;c.setAttribute('aria-label',lb+'を使う');
+     const t=document.createElement('span');t.textContent=lb;const ar=document.createElement('i');ar.className='ar';const bd=document.createElement('div');bd.id=id2+'B';bd.className='sb';bd.hidden=true;
+     const pa=()=>{h.classList.toggle('op',!bd.hidden);ar.textContent=bd.hidden?'▸':'▾'};pa();h.onclick=e=>{if(e.target===c)return;bd.hidden=!bd.hidden;pa();if(!bd.hidden&&bd._open)bd._open()};c.onclick=e=>e.stopPropagation();
+     c.onchange=()=>{if(!c.checked){c.checked=true;return}pick();S.forEach(z=>z.c.checked=z.on());if(bd.hidden){bd.hidden=false;pa();if(bd._open)bd._open()}up()};
+     h.append(c,t,ar);const o={h,bd,c,on,pa};S.push(o);return o};
+   const tS=sub2('テンプレート','t_syTp',isT,()=>{const z=P();if(!STTK.includes(z.syt)){z.syt=STTK[0];const d=sttDef(z.syt);z.sytA=d[0];z.sytB=d[1];z.syto=100}z.syk='t'}),cS=sub2('自分で設定','t_syOw',()=>!isT(),()=>{P().syk='c'});S.forEach(z=>z.c.checked=z.on());
+   const ref=w.body.children[syN0]||null;[tS.h,tS.bd,cS.h,cS.bd].forEach(e=>w.body.insertBefore(e,ref));own.forEach(e=>cS.bd.appendChild(e));
+   const tb=tS.bd,img=(key,A,B,tx)=>{const m=document.createElement('img');m.alt='';m.draggable=false;m.style.cssText='display:block;width:100%;height:auto;pointer-events:none;border-radius:6px';m.src=sttUrl(key,A,B,tx);return m};
+   const drawT=opn=>{tb.innerHTML='';sfGlCss();const q=P(),i=STTK.indexOf(q.syt);
+     const pb=document.createElement('button');pb.type='button';pb.id='t_syTpP';pb.style.cssText='width:100%;height:auto;min-height:56px;padding:4px;margin:6px 0;display:flex;align-items:center;justify-content:center;background:#16181d';
+     if(i>=0){const d=sttDef(q.syt);pb.appendChild(img(q.syt,q.sytA||d[0],q.sytB||d[1],'タップで切り替え'))}else{pb.textContent='スタイルを選ぶ ▼';pb.style.color='#fff';pb.style.fontWeight='700'}tb.appendChild(pb);
+     const gr=document.createElement('div');gr.id='t_syTpG';gr.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px';gr.hidden=!opn&&i>=0;
+     STTK.forEach((key,j)=>{const d=sttDef(key),b=document.createElement('button');b.type='button';b.dataset.v=key;b.setAttribute('aria-label',STT[j][0]);b.style.cssText='padding:3px;min-height:44px;background:#16181d;border:3px solid '+(key===q.syt&&isT()?'var(--accent)':'transparent');b.appendChild(img(key,d[0],d[1]));
+       if(key===tb._cand)b.style.animation='seGl 1.2s ease-in-out infinite';
+       /* 1回目=光って画面に見本(実際の字幕)・光った物をもう一度=決定。決定しないで閉じると元に戻す */b.onclick=()=>{const z=P();if(tb._cand===key){tb._cand=null;tb._orig=null;up();drawT();showFn('「'+STT[j][0]+'」に決定しました');return}
+         if(!tb._orig)tb._orig={syt:z.syt,sytA:z.sytA,sytB:z.sytB,syto:z.syto,syk:z.syk};z.syt=key;z.sytA=d[0];z.sytB=d[1];if(z.syto==null)z.syto=100;z.syk='t';S.forEach(o=>o.c.checked=o.on());tb._cand=key;try{showOv(pos)}catch(_){}drawT(true)};gr.appendChild(b)});
+     pb.onclick=()=>{if(!gr.hidden&&tb._orig){const z=P();Object.entries(tb._orig).forEach(([k2,v])=>{if(v===undefined)delete z[k2];else z[k2]=v});tb._orig=null;tb._cand=null;S.forEach(o=>o.c.checked=o.on());try{showOv(pos)}catch(_){}drawT();return}gr.hidden=!gr.hidden};tb.appendChild(gr);
+     if(i>=0){const d=sttDef(q.syt);if(!q.sytA)q.sytA=d[0];if(!q.sytB)q.sytB=d[1];col(tb,'メイン色','sytA','t_syTpA');col(tb,'サブ色','sytB','t_syTpB');if(q.syto==null)q.syto=100;rg(tb,'不透明度','syto',0,100,'%','t_syTpO');
+       {const cl=()=>drawT();[tb.querySelector('#t_syTpA'),tb.querySelector('#t_syTpB')].forEach(e=>{if(e)e.addEventListener('change',cl)});[...tb.querySelectorAll('button[data-c]')].forEach(e=>e.addEventListener('click',cl))}}
+     const ok=stBtn('保存して閉じる',()=>{sv();try{showOv(pos)}catch(_){}tb.hidden=true;tS.pa();showFn('保存しました')},'width:100%;min-height:48px;margin-top:8px');ok.id='t_syTpOk';ok.className='tbig';tb.appendChild(ok)};
+   tb._open=drawT;drawT()}
   /* v563: 枠・テキストボックス(形は シンプル/ポップ/シック の階層で選ぶ) */
   const xb=sec('枠・テキストボックス','bx','t_syBx');
   {const cat=document.createElement('div');cat.id='t_syBxK';cat.className='tabs';/* v564: ジャンルは切り替えの帯 */
