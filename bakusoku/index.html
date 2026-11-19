@@ -7022,8 +7022,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1002';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v1003';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
@@ -12862,10 +12862,12 @@ window.subTLFonts=async segs=>{await (TL.busy||Promise.resolve());
   await Promise.race([Promise.all(Object.keys(TL.imgs).map(u=>{const m=TL.imgs[u];return m.complete?0:new Promise(r=>{m.addEventListener('load',r,{once:true});m.addEventListener('error',r,{once:true})})})),new Promise(r=>setTimeout(r,3000))]);
   return TL.list.length};
 /* 頭(a)が前回〜今の間に来た行のSEを鳴らす(飛んだ時は鳴らさない) */
-window.subTLSeReset=t=>{TL.seT=t-0.05};
-window.subTLSe=(ac,dest,t)=>{if(TL.seT==null||t<TL.seT||t-TL.seT>0.6){TL.seT=t;return}
-  for(const g of seL()){const at=g.a+seP(g).o;if(at>TL.seT&&at<=t){const buf=seBuf[g.se];if(!buf){seLoad(g.se);continue}
-    tlSeGo(ac,dest,g,buf,0)}}
+/* v1003: 再生を始める時に、まだ読んでいないSEを先に読む(字幕ページで足したばかりのSEが最初の再生で鳴らなかった) */
+window.subTLSeReset=t=>{TL.seT=t-0.05;try{[...new Set(seL().map(g=>g.se))].forEach(id=>{if(!seBuf[id])seLoad(id).catch(()=>{})})}catch(e){}};
+/* v1003: 動画の切り替わりなどで1回の間が0.6秒より空いた時も鳴らす(前は丸ごと飛ばしていたので、クリップの頭のSEが鳴ったり鳴らなかったりした)。遅れた分はSEの途中から */
+window.subTLSe=(ac,dest,t)=>{if(TL.seT==null||t<TL.seT||t-TL.seT>5){TL.seT=t;return}
+  for(const g of seL()){const P=seP(g),at=g.a+P.o;if(at>TL.seT&&at<=t){const buf=seBuf[g.se];if(!buf){seLoad(g.se);continue}
+    const off=Math.max(0,t-at);if(off<0.05||off<seLen(P,buf)-0.02)tlSeGo(ac,dest,g,buf,off<0.05?0:off)}}
   TL.seT=t};
 /* v233: 鳴っているSEを覚えておき、範囲のつなぎ目(頭出しで止まる所)では止めて、続きの位置から鳴らし直す(音が飛ばないように)
    v234: 止める音と鳴らし直す音を0.015秒かけて入れ替える(いきなり切り替えるとプツッと鳴るため) */
