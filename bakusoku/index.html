@@ -1034,7 +1034,7 @@ body.blay{padding-bottom:340px!important}body.blay #t_fold button,body.blay #t_s
 .tpg .ft{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:6px;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);flex:none}
 .tpg .ft button{min-height:44px;font-size:13px;background:var(--btn);border:1px solid var(--line);color:var(--fg);border-radius:6px}.tpg .ft .sv{font-weight:700}.tpg .ft .sv.dirty{background:var(--accent);color:#fff;border-color:var(--accent)}
 .tpg .tzpv{position:relative;aspect-ratio:16/9;margin:8px 10px 0;background:linear-gradient(135deg,#3a3f47,#1d2025);border-radius:6px;overflow:hidden;flex:none}
-body.stPosOn #t_pv,body.stPosOn #t_pv2{filter:brightness(.3)}body:has(#t_pop.stTpl) #t_pl .tzo{display:none!important}/* v960: 触っている間は0.2秒でふわっと消す(位置を決める間・文字の位置を動かす間・タイムライン/波形を触っている間) */#t_pl .tzo{transition:opacity .2s ease}body.ceOn #t_pl .tzB:not([data-k=sy]):not([data-k=y2]):not([data-k=y3]):not([data-k=y4]):not([data-k=y5]):not([data-k=y6]):not([data-k=y7]):not([data-k=y8]):not([data-k=iv]):not([data-k=i2]):not([data-k=i3]):not([data-k=i4]):not([data-k=i5]):not([data-k=i6]):not([data-k=i7]):not([data-k=i8]):not([data-k=tx]):not([data-k=se]):not([data-k=s2]):not([data-k=s3]):not([data-k=s4]):not([data-k=s5]):not([data-k=s6]):not([data-k=s7]):not([data-k=s8]):not([data-k=s9]){visibility:hidden!important}/* v996: 文字別編集の間は、選んだ文字に効くボタンだけ */#t_pl.tzDm .tzo{opacity:0!important;transition:opacity .1s ease}/* v974: ボタンを押した直後(v976: 不透明度0) */body.stPosOn #t_pl .tzo,#t_pl.stDrg .tzo,#t_pl.tzFd .tzo{opacity:0!important}/* v812: 字幕テンプレートの編集中は再生画面のボタンも出さない *//* v753: 位置を決める間は文字以外を暗く */
+body.stPosOn #t_pv,body.stPosOn #t_pv2{filter:brightness(.3)}body:has(#t_pop.stTpl) #t_pl .tzo{display:none!important}/* v960: 触っている間は0.2秒でふわっと消す(位置を決める間・文字の位置を動かす間・タイムライン/波形を触っている間) */#t_pl .tzo{transition:opacity .2s ease}body.ceOn #t_pl .tzB:not([data-k=sp]):not([data-k=sy]):not([data-k=y2]):not([data-k=y3]):not([data-k=y4]):not([data-k=y5]):not([data-k=y6]):not([data-k=y7]):not([data-k=y8]):not([data-k=iv]):not([data-k=i2]):not([data-k=i3]):not([data-k=i4]):not([data-k=i5]):not([data-k=i6]):not([data-k=i7]):not([data-k=i8]):not([data-k=tx]):not([data-k=se]):not([data-k=s2]):not([data-k=s3]):not([data-k=s4]):not([data-k=s5]):not([data-k=s6]):not([data-k=s7]):not([data-k=s8]):not([data-k=s9]){visibility:hidden!important}/* v996: 文字別編集の間は、選んだ文字に効くボタンだけ */#t_pl.tzDm .tzo{opacity:0!important;transition:opacity .1s ease}/* v974: ボタンを押した直後(v976: 不透明度0) */body.stPosOn #t_pl .tzo,#t_pl.stDrg .tzo,#t_pl.tzFd .tzo{opacity:0!important}/* v812: 字幕テンプレートの編集中は再生画面のボタンも出さない *//* v753: 位置を決める間は文字以外を暗く */
 #t_pl .tzo,.tpg .tzo{position:absolute;inset:0;pointer-events:none;z-index:3;color:#fff}
 .tzo svg{position:absolute;inset:0;width:100%;height:100%}
 .tzo b{position:absolute;transform:translate(-50%,-50%);font-weight:700;white-space:nowrap;text-shadow:0 0 3px #000}
@@ -2494,11 +2494,12 @@ window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.
       q.drawImage(BIKE,0,0,c.width,c.height);q.globalCompositeOperation='source-in';q.fillStyle=fc;q.fillRect(0,0,c.width,c.height);g.drawImage(c,x+fs*.2,y-bh+fs*.06,bw,bh)}
     g.restore()}
   /* v996: 文字別編集で文字ごとに付けたスタイル(c.sy)・テクスチャ(c.tx)・フィルター(c.ef='キー:ボタン番号')。その文字は元の描き方から外して、同じ場所に重ねて描く */
-  {const CS=s.cs,R=o.chR,OV=CS&&R?CS.map((c,i)=>c&&(c.sy||c.tx||c.ef)?i:-1).filter(i=>i>=0):[];
-   if(OV.length){const ST=(G,S)=>styledText(G,W,H,u,txt,S,S.vert==='1',99,99);txDraw(g,o.txr,{...s,skip:new Set(OV)},k,W,H,ST);const GR={};OV.forEach(i=>{const c=CS[i],key=(c.sy||'')+'|'+(c.tx||'')+'|'+(c.ef||'');(GR[key]=GR[key]||[]).push(i)});
+  {const CS=s.cs,R=o.chR,OV=CS&&R?CS.map((c,i)=>c&&(c.sy||c.tx||c.ef||c.tp)?i:-1).filter(i=>i>=0):[];
+   if(OV.length){const ST=(G,S)=>styledText(G,W,H,u,txt,S,S.vert==='1',99,99);txDraw(g,o.txr,{...s,skip:new Set(OV)},k,W,H,ST);const GR={};OV.forEach(i=>{const c=CS[i],key=(c.sy||'')+'|'+(c.tx||'')+'|'+(c.ef||'')+'|'+(c.tp||'');(GR[key]=GR[key]||[]).push(i)});
     Object.values(GR).forEach(ids=>{const c=CS[ids[0]],s2={...s,skip:null,only:new Set(ids),frame:'none',bxc:null,bxF:null};if(s2.ty)s2.ty=Object.assign({},s2.ty,{bx:0});
-      if(c.sy){const T=R.sy(c.sy);if(T){s2.color=T.c||'#ffffff';s2.stW=T.st?(+T.sw||0):0;s2.stColor=T.sc||'#000000';s2.st2W=0;s2.shOp=0;s2.ty=Object.assign({},T,{bx:0})}}
-      const P=c.tx?R.tx(c.tx):o.txr,f=c.ef?R.ef(c.ef):'';g.save();if(f)g.filter=(g.filter&&g.filter!=='none'?g.filter+' ':'')+f;txDraw(g,P,s2,k,W,H,ST);g.restore()});
+      const TP=c.tp?R.tp(c.tp):null;if(TP&&TP.font)s2.cs=CS.map((z,i)=>ids.includes(i)&&z&&!z.f?{...z,f:TP.font}:z);
+      if(c.sy||TP&&TP.sy){const T=c.sy?R.sy(c.sy):TP.sy;if(T){s2.color=T.c||'#ffffff';s2.stW=T.st?(+T.sw||0):0;s2.stColor=T.sc||'#000000';s2.st2W=0;s2.shOp=0;s2.ty=Object.assign({},T,{bx:0})}}
+      const P=c.tx?R.tx(c.tx):TP&&TP.tx?TP.tx:o.txr,f=c.ef?R.ef(c.ef):TP?TP.f:'';g.save();if(f)g.filter=(g.filter&&g.filter!=='none'?g.filter+' ':'')+f;txDraw(g,P,s2,k,W,H,ST);g.restore()});
     return {x:W*(s.x??.5),y:H*(s.y??.5)+(s.size||60)*k*(o.fr?1.05:.75),cx:W*(s.x??.5),cy:H*(s.y??.5)}}}
   txDraw(g,o.txr,s,k,W,H,(G,S)=>styledText(G,W,H,u,txt,S,S.vert==='1',99,99));/* v965: テクスチャ */return {x:W*(s.x??.5),y:H*(s.y??.5)+(s.size||60)*k*(o.fr?1.05:.75),cx:W*(s.x??.5),cy:H*(s.y??.5)/* v799: 置く点(グリッドの吸い付き用) */}};
 /* 大字幕 */
@@ -2705,7 +2706,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
   let bw,bh,draw;
   /* v235: 1文字ずつの大きさ・角度など(s.cs[i]={s,r,f,v,x,y})。v240: 改行した行は別々に収める(選んだ文字のない行は大きさが変わらない) */
   const LN=lines.map(l=>[...l].map(c=>vert&&c==='ー'?'｜':c)),NC=LN.reduce((a,l)=>a+l.length,0),FL=LN.flat(),D=FL.map(c=>s.hk?dsK(c):1),CS0=s.cs&&s.cs.length===NC?s.cs:null,
-    CS=(CS0&&CS0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y||c.k||c.sy||c.tx||c.ef)))||D.some(v=>v!==1)||s.pp?(CS0||FL.map(()=>0)):null,PQ=s.pp||null,AR=PQ&&PQ.ar,LSP=PQ&&PQ.lsp||0,LHM=PQ&&PQ.lhm||1;
+    CS=(CS0&&CS0.some(c=>c&&(c.s||c.r||c.f||c.v||c.x||c.y||c.k||c.sy||c.tx||c.ef||c.tp)))||D.some(v=>v!==1)||s.pp?(CS0||FL.map(()=>0)):null,PQ=s.pp||null,AR=PQ&&PQ.ar,LSP=PQ&&PQ.lsp||0,LHM=PQ&&PQ.lhm||1;
   if(CS){window.__chN=[];const cs=i=>CS[i]||{},E=CS.map((c,i)=>c&&c.s||D[i]),Wd=CS.map((c,i)=>c&&c.w||D[i])/* v947: Wd=場所を取る大きさ(ひらがな/漢字でまとめて変えた時だけ c.w)。E=見た目の大きさ。選んで変えた文字は場所を変えず、その場で大きくなる */,one=(f,ch,i,x,y)=>{const c=cs(i),k2=E[i];/* v932: 文字の元の場所(まとめて回転用) */if(window.__chN)window.__chN[i]={x,y,H};if(s.only?!s.only.has(i):s.skip&&s.skip.has(i))return;/* v996: 選んだ文字だけのスタイル等は別に重ねて描く */g.save();if(c.x||c.y)g.translate((c.x||0)*H,(c.y||0)*H);if(c.f)g.font=PFONT(fs,c.f);if(c.v)g.filter=g.filter&&g.filter!=='none'?'none':'invert(1) hue-rotate(180deg)';g.translate(x,y);if(c.r)g.rotate(c.r*Math.PI/180);if(k2!==1)g.scale(k2,k2);f(ch,0,0);g.restore()};
     const cy=H*(s.y??.5),cx=W*(s.x??.5),Lm=AR?(vert?(AR.b-AR.t)*H:(AR.r-AR.l)*W):vert?H*.86:W*.92,Lc=AR?(vert?(AR.r-AR.l)*W:(AR.b-AR.t)*H):(vert?W:H)*.9;
     let n0=0;const LS=LN.map(cc=>{const o={cc,i0:n0};n0+=cc.length;return o});
@@ -7074,8 +7075,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1005';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v1006';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
@@ -10278,6 +10279,7 @@ function tzBotMenu(k){sheet((b,close)=>{const h=document.createElement('h2');h.t
 window.tzBotDel=tzBotDel;window.tzBotMenu=tzBotMenu;
 /* v996: 文字別編集で文字を選んでいる時のボタン: スタイル・テクスチャ・フィルターは選んだ文字だけ(一覧の上から順に・最後はなし)。SEは再生ヘッドの所から鳴らす */
 window.ceActT=(z,g)=>ceAct(z,g);function ceAct(z,g){if(!CE)return;const a=CE.tg();if(!a.length)return;const T=stAll()[STK(g)],c0=CE.cs[a[0]],mk=tzMk(z),nx=(L,cur)=>L[L.indexOf(cur||'')+1]||null;
+  if(z==='sp'){/* v1006: 選んだ文字に字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。位置・動き・SE・枠は字幕全体のまま */const o=stAll(),L=stOrd().filter(k=>{const P=o[k];return P&&!P.bk&&!P.g&&!(P.lp&&P.lp.on)&&k!==STK(g)}),v=nx(L,c0.tp);a.forEach(i=>{CE.cs[i].tp=v});CE.paint();showFn('選んだ文字: '+(v?stJ(v):'字幕テンプレートなし'));return}
   if(mk&&mk.t==='sy'){const L=syA(T,mk.n);if(!L.length){showFn('スタイルが登録されていません');return}const id=nx(L.map(x=>x.id),c0.sy),q=id&&L.find(x=>x.id===id);a.forEach(i=>CE.cs[i].sy=id);CE.paint();showFn('選んだ文字: '+(q?q.n:'スタイルなし'));return}
   if(z==='tx'){if(txNeed(T)){txMig(T);stSave(stAll())}const L=T.txr||[];const id=nx(L.map(x=>x.id),c0.tx),q=id&&L.find(x=>x.id===id);a.forEach(i=>CE.cs[i].tx=id);CE.paint();showFn('選んだ文字: '+(q?'テクスチャ：'+q.n:'テクスチャなし'));return}
   if(mk&&mk.t==='iv'){const ks=[...new Set(efPairs('ef',mk.n).map(p=>p[0]))].map(k=>k+':'+mk.n);if(!ks.length){showFn('フィルター'+(mk.n>1?mk.n:'')+'が選ばれていません');return}const v=nx(ks,c0.ef);a.forEach(i=>{CE.cs[i].ef=v;CE.cs[i].v=false});CE.paint();showFn('選んだ文字: '+(v?EFD[v.split(':')[0]][0]:'フィルターなし'));return}
@@ -10300,9 +10302,9 @@ const rowsOf=g=>{const l=cur&&cur.list||[];return g.grp?grpOf(l,g):[g]};
 function tapDone(msg){const p0=pos;save();drawResults();/* v919: 再生ヘッドはその場のまま(drawResults で字幕の頭へ戻っていた) */showAt(p0);posSet=true;showOv(p0);try{drawWf()}catch(_){}showFn(msg)}
 function tapSp(g){/* v735: 空白=空白文字テンプレートを順に */if(g.bl){const L=stOrd('k'),n=L[(L.indexOf(STK(g))+1)%L.length];g.sp=n;g.spm=true;dtRows([g]);tapDone(stJ(n));return}
   /* v725: グループ=グループ字幕テンプレートを順に(太↔「太」は廃止) */if(g.grp){const L=stOrd(true),n=L[(L.indexOf(STK(g))+1)%L.length];rowsOf(g).forEach(x=>{x.sp=n;x.spm=true;delete x.fr});dtRows(rowsOf(g));tapDone(stJ(n));return}
-  stSpNext(g);if(!g.fr)dtRows([g]);tapDone((g.fr?'「':'')+stJ(STK(g))+(g.fr?'」':''))}
+  stSpNext(g);dtRows([g]);tapDone(stJ(STK(g)))}
 /* v565: 真ん中のタップ=字幕テンプレートを一覧の順に(太の描き方は次へ行く前に「太」(枠付き)を挟む) */
-function stSpNext(g){const k0=SPK(g);if(k0==='b'&&!g.fr&&!stLp(g)&&!g.grp){g.fr=true}else{delete g.fr;const L=stOrd(g.bl?'k':g.grp);g.sp=L[(L.indexOf(STK(g))+1)%L.length]}g.spm=true}
+function stSpNext(g){delete g.fr;const L=stOrd(g.bl?'k':g.grp);g.sp=L[(L.indexOf(STK(g))+1)%L.length];g.spm=true}
 const ALN=['t','c','b'],ALT={t:'上揃え',c:'中央揃え',b:'下揃え'};
 /* v792: 位置テンプレートの上下の揃え(v795: 余白があれば余白の中、無ければ画面の端が基準)。押すたびに 上→中央→下。その字幕(グループならまとめて)だけ */
 function alOf(g){const p=g&&g.pz?stP(g):null;return g&&g.al||(p&&p.va)||'c'}
@@ -10442,7 +10444,7 @@ function cpStyle(o,inn,C){const em=v=>(v/100).toFixed(3)+'em',sh=a=>a>0?'0 .15em
     const b=d.querySelector('b');if(b){b.textContent=C.mk==='n'?(i+1)+'.':C.mk;b.style.color=C.mkc;b.style.fontSize='.7em';b.style.display=C.mk?'':'none'}})}
 let STFOP;/* v767: 開いているフォルダ(KK|名前)は1つだけ(アコーディオンのルール)。最初は今の字幕のテンプレートが入っているフォルダ */
 const stLp=g=>{if(!g||g.bl)return null;const T=stAll()[STK(g)];return T&&T.lp&&T.lp.on?T.lp:null};
-const stFr=g=>!!(g&&(g.fr||stLp(g)));
+const stFr=g=>!!(g&&stLp(g));
 function stSave(o){STC=o;try{localStorage.setItem('stpl',JSON.stringify(o))}catch(e){}}
 window.addEventListener('storage',e=>{if(e.key==='stpl')STC=null});
 /* この字幕が使っている位置テンプレート(無ければ null) */
@@ -10870,10 +10872,14 @@ async function txLoadU(uid){if(!uid||TXIMG['u:'+uid])return;const b=await kv('tx
 window.txLoaded=()=>{try{showOv(pos)}catch(_){}};
 /* 開いた時に、自分の画像を読み込んでおく(書き出しで使えるように)。内蔵の写真も少し後で読み込む */setTimeout(()=>{try{const o=JSON.parse(localStorage.getItem('stpl')||'{}')||{};/* stAll()は呼ばない(早く覚えると古いまま) */Object.values(o).forEach(T=>{if(T&&Array.isArray(T.txr))T.txr.forEach(p=>{if(p.ty==='img'&&p.uid)txLoadU(p.uid);else{try{txImg(p)}catch(_){}}})})}catch(_){}},1500);
 /* v996: 文字別編集で付けたスタイル・テクスチャ・フィルターの中身を探す(その字幕の字幕テンプレートの一覧から) */
-function chRes(g){if(!g||!Array.isArray(g.cs)||!g.cs.some(c=>c&&(c.sy||c.tx||c.ef)))return null;const T=stAll()[STK(g)];
+function chRes(g){if(!g||!Array.isArray(g.cs)||!g.cs.some(c=>c&&(c.sy||c.tx||c.ef||c.tp)))return null;const T=stAll()[STK(g)];
   return{sy:id=>{if(!T)return null;if(id===DTO)return dtSy(T);for(let n=1;n<=8;n++){const L=T[syF(n)];const q=Array.isArray(L)&&L.find(p=>p.id===id);if(q)return q}return null},
     tx:id=>{if(!T)return null;if(id===DTO)return dtTx(T);return Array.isArray(T.txr)&&T.txr.find(p=>p.id===id)||null},
-    ef:v=>{const [k,n]=String(v).split(':');const e=window.efGet&&window.efGet(k,'t','ef',+n||1);return e&&e.f||''}}}
+    ef:v=>{const [k,n]=String(v).split(':');const e=window.efGet&&window.efGet(k,'t','ef',+n||1);return e&&e.f||''},
+    /* v1006: 文字別編集で付けた字幕テンプレート(c.tp)の見た目=スタイル・テクスチャ・フィルター・フォント */
+    tp:k=>{const P=stAll()[k];if(!P)return null;let sy=null,f='',font=null;try{sy=dtSy(P)||null;if(!sy){styMig(P);sy=syA(P,1)[0]||null}}catch(_){}
+      try{const e=dtEf(P,k,'ef');if(e){const x=window.efGet&&window.efGet(e[0],e[1],'ef','T'+k);f=x&&x.f||''}}catch(_){}
+      font=P.dfk||(Array.isArray(P.font)&&P.font.length===1?P.font[0]:null);if(font&&!FONTS.some(x=>x.k===font))font=null;return{sy,tx:dtTx(P)||null,f,font}}}}
 function txOf(g){{const V=window.__dtPv;if(V&&V.tx&&g&&V.k===STK(g)){const T=stAll()[V.k];return T&&T.dtx||null}}/* v984 */if(!g||!g.txr)return null;const T=stAll()[STK(g)];if(g.txr===DTO)return dtTx(T);/* v984 */return T&&Array.isArray(T.txr)&&T.txr.find(p=>p.id===g.txr)||null}
 function txSet(g,id){rowsOf(g).forEach(x=>{if(id)x.txr=id;else delete x.txr})}
 function tapTx(g){const o=stAll(),T=o[STK(g)];if(txNeed(T)){txMig(T);stSave(o)}const L=T.txr;if(!L.length&&!dtTx(T)){showFn('テクスチャが登録されていません（長タップで追加）');return}
@@ -12211,7 +12217,7 @@ function inputGap(r,list,g){eatTouchEnd();sheet((b,close)=>{const ta=document.cr
   w.append(n,y);b.append(ta,w);setTimeout(()=>{ta.focus();holdFocus(ta,900)},50)})}
 
 /* ===== 話者ごとの文字の設定 ===== */
-let TPL={m:{c:''},f:{c:'#d6337f'},b:{c:'#d98e00'}};const SPK=g=>{const T=stAll()[STK(g)];if(g&&g.grp)return 'b';/* v875: グループは今まで通り太の描き方(行ごとの文字・アクティブな行) */return T.lp&&T.lp.on?'b':T.kd==='f'||T.kd==='b'?T.kd:'m'};/* v565: 字幕テンプレートの描き方。v567: 箇条書きパネルは太の描き方(太字の種類 bs は廃止) */const TDEF={m:'',f:'#d6337f',b:'#d98e00'};
+let TPL={m:{c:''},f:{c:'#d6337f'},b:{c:'#d98e00'}};const SPK=g=>{const T=stAll()[STK(g)];if(g&&g.grp)return 'b';/* v875: グループは今まで通り太の描き方(行ごとの文字・アクティブな行) */return T.lp&&T.lp.on?'b':T.kd==='f'?'f':'m'};/* v1006: 「太」は削除(昔の太のテンプレートは普通の字幕で描く) *//* v565: 字幕テンプレートの描き方。v567: 箇条書きパネルは太の描き方(太字の種類 bs は廃止) */const TDEF={m:'',f:'#d6337f',b:'#d98e00'};
 function tplEdit(k){sheet((b,close)=>{const h=document.createElement('h2');h.textContent={f:'奥さんの字幕',b:'太字の字幕',m:'きんきんの字幕'}[k];
   const pv2=document.createElement('div');pv2.className='tp';pv2.textContent='サンプル字幕';
   const row=document.createElement('label');row.className='tpr';row.textContent='文字の色';const ci=document.createElement('input');ci.type='color';ci.value=TPL[k].c||'#ffffff';row.appendChild(ci);
@@ -12357,16 +12363,16 @@ function editRow(r,list,g,late){eatTouchEnd();sheet((b,close)=>{$('sheet').class
    2本指=大きさ、左右になぞる=角度、タップ=フォント切替。確定で保存、キャンセルで元に戻す */
 let CE=null;
 function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice():null,cs0=g.cs?JSON.parse(JSON.stringify(g.cs)):null;
-  const mk=(c,ch)=>({s:c&&c.s||(window.dsK?window.dsK(ch):1),w:c&&c.w||0,r:c&&c.r||0,f:c&&c.f||null,v:!!(c&&c.v),x:c&&c.x||0,y:c&&c.y||0,sy:c&&c.sy||null,tx:c&&c.tx||null,ef:c&&c.ef||null});
+  const mk=(c,ch)=>({s:c&&c.s||(window.dsK?window.dsK(ch):1),w:c&&c.w||0,r:c&&c.r||0,f:c&&c.f||null,v:!!(c&&c.v),x:c&&c.x||0,y:c&&c.y||0,sy:c&&c.sy||null,tx:c&&c.tx||null,ef:c&&c.ef||null,tp:c&&c.tp||null});
   let C=[...g.t],cs=C.map((ch,i)=>mk(cs0&&cs0.length===C.length&&cs0[i],ch));const on=new Set();
   sheet((b,close)=>{const s=$('sheet');s.style.background='transparent';s.onclick=null;s.style.pointerEvents='none';b.style.pointerEvents='auto';
     {const zw0=zw;setTimeout(()=>{try{zw=Math.max(.5,(Math.min(VD,g.b+1)-Math.max(0,g.a-1)));const R=ceRng();if(R&&(pos<R.a||pos>R.b))showAt(g.a);drawWf()}catch(_){}},0);b._zw0=zw0}document.body.classList.add('ceOn');/* v996: 文字別編集の間は、選んだ文字に効かないボタンを消す */const fin=()=>{CE=null;document.body.classList.remove('ceOn');try{stopPlay();if(b._zw0)zw=b._zw0;drawWf()}catch(_){}s.style.pointerEvents='';b.style.pointerEvents='';close()};
     const p=document.createElement('p');p.textContent='文字をタップで選ぶ → 再生画面で 2本指=大きさ、なぞる=移動。下のバーをなぞる=回転(🔄=1文字ずつ・🔁=選んだ文字をまとめて)。フォントはボタン(長押し=一覧)。文字を長押し=改行の入力';
     p.style.cssText='font-size:11px;line-height:1.4';/* v988: 説明は小さく */
     const w=document.createElement('div');w.className='chs';let bts=[],ta=null;
-    const dd=i=>window.dsK?window.dsK(C[i]):1;const some=c0=>c0.s||c0.r||c0.f||c0.v||c0.x||c0.y||c0.sy||c0.tx||c0.ef;
+    const dd=i=>window.dsK?window.dsK(C[i]):1;const some=c0=>c0.s||c0.r||c0.f||c0.v||c0.x||c0.y||c0.sy||c0.tx||c0.ef||c0.tp;
     /* v947: 編集中は必ず1文字ずつの描き方にする(k=印。確定の時に外す)。文字の元の場所(natP)がいつでも取れるように */
-    const apply=fin=>{const A=cs.map((c,i)=>{const ds=Math.abs(c.s-dd(i))>.001,o={};if(ds)o.s=+c.s.toFixed(2);if(c.w&&Math.abs(c.w-dd(i))>.001)o.w=+c.w.toFixed(2);if(Math.round(c.r))o.r=Math.round(c.r);if(c.f)o.f=c.f;if(c.v)o.v=1;if(c.x||c.y){o.x=+c.x.toFixed(4);o.y=+c.y.toFixed(4)}if(c.sy)o.sy=c.sy;if(c.tx)o.tx=c.tx;if(c.ef)o.ef=c.ef;return some(o)||o.w?o:0});
+    const apply=fin=>{const A=cs.map((c,i)=>{const ds=Math.abs(c.s-dd(i))>.001,o={};if(ds)o.s=+c.s.toFixed(2);if(c.w&&Math.abs(c.w-dd(i))>.001)o.w=+c.w.toFixed(2);if(Math.round(c.r))o.r=Math.round(c.r);if(c.f)o.f=c.f;if(c.v)o.v=1;if(c.x||c.y){o.x=+c.x.toFixed(4);o.y=+c.y.toFixed(4)}if(c.sy)o.sy=c.sy;if(c.tx)o.tx=c.tx;if(c.ef)o.ef=c.ef;if(c.tp)o.tp=c.tp;return some(o)||o.w?o:0});
       if(A.some(Boolean))g.cs=A;else if(fin)delete g.cs;else g.cs=A;if(!fin&&g.cs&&g.cs.length)g.cs[0]=Object.assign({k:1},g.cs[0]||{});showOv()};
     /* 全体ボタン: 0=全体(何も選んでいない時は字幕全体の大きさ) 1=ひらがなだけ 2=漢字だけ。文字を選んでいる時はそちらが優先 */
     let md=0;const MD=['全体','ひらがな','漢字のみ'],RX=[null,/[\u3041-\u309f]/,/[\u4e00-\u9fff々〆]/];
