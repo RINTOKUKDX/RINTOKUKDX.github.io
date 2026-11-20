@@ -150,15 +150,24 @@ $('an').onclick=async()=>{
 function fracDiff(a,b){let k=0;for(let i=0;i<a.length;i++)if(Math.abs(a[i]-b[i])>25)k++;return k/a.length*100}
 function calcBlocks(){
  if(!thumbs.length){blocks=[{s:0,e:dur}];return;}
- const th=+$('sc').value,n=thumbs.length,cut=[0];
- for(let i=1;i<n;i++){
-  if(fracDiff(thumbs[i-1],thumbs[i])<th)continue;
-  const j=Math.min(n-1,i+3);
-  if(j>i&&fracDiff(thumbs[i-1],thumbs[j])<th)continue; // すぐ戻る＝人が横切っただけ
-  if((i-cut[cut.length-1])*step<3)continue;
-  cut.push(i);
- }
- blocks=cut.map((ci,k)=>({s:ci*step,e:k+1<cut.length?cut[k+1]*step:dur}));
+ const th=+$('sc').value,n=thumbs.length,mv=new Uint8Array(n);
+ const fd=new Float32Array(n);for(let i=1;i<n;i++){fd[i]=fracDiff(thumbs[i-1],thumbs[i]);mv[i]=fd[i]>=th*0.6?1:0;} // 動き続けの判定は少し甘めに
+ // 大きく変わったコマの連なり（1コマの途切れは同じ連なり扱い）
+ const ev=[];
+ for(let i=1;i<n;i++){if(!mv[i])continue;let b=i;while(b+1<n&&(mv[b+1]||(b+2<n&&mv[b+2])))b+=mv[b+1]?1:2;
+  const after=Math.min(n-1,b+3),changed=fracDiff(thumbs[i-1],thumbs[after])>=th,len=b-i+1;
+  let big=0;for(let k=i;k<=b;k++)if(fd[k]>=th)big=1;
+  if(len>=3)ev.push({s:(i-1)*step,e:Math.min(dur,b*step),moving:true}); // しばらく動き続けた＝カメラが動いている
+  else if(changed&&big)ev.push({s:i*step,e:i*step,moving:false});            // 一瞬で切り替わった＝置き直し
+  i=b;}
+ blocks=[];let p=0;
+ ev.forEach(E=>{
+  if(E.s-p>=1)blocks.push({s:p,e:E.s});
+  else if(blocks.length&&E.s>p)blocks[blocks.length-1].e=E.s;
+  if(E.moving){const L=blocks[blocks.length-1];if(L&&L.moving&&E.s-L.e<1)L.e=E.e;else blocks.push({s:Math.max(p,E.s),e:E.e,moving:true});}
+  p=Math.max(p,E.e);});
+ if(dur-p>=0.5||!blocks.length)blocks.push({s:p,e:dur});
+ else blocks[blocks.length-1].e=dur;
 }
 let bgTimer=0,bgBusy=false;
 function scheduleBgs(){
@@ -175,7 +184,8 @@ function scheduleBgs(){
 async function makeBgs(){
  bgs=[];
  for(let b=0;b<blocks.length;b++){
-  const B=blocks[b],K=Math.max(3,Math.min(15,Math.floor((B.e-B.s)/step)));
+  const B=blocks[b];if(B.moving){bgs.push(null);continue;}
+  const K=Math.max(3,Math.min(15,Math.floor((B.e-B.s)/step)));
   const fr=[];
   for(let k=0;k<K;k++){await seekTo(B.s+(B.e-B.s)*(k+0.5)/K);bgx.drawImage(v,0,0,BW,bh);fr.push(bgx.getImageData(0,0,BW,bh).data);
    $('st').textContent=`背景を作成中 ブロック${b+1}/${blocks.length}`;}
@@ -204,7 +214,7 @@ function calcSegs(){
  const keep=segs.reduce((q,s)=>q+s.e-s.s,0),out=planLen();
  const sp=+$('sp').value;
  $('rs').textContent=`${fmt(dur)} → カット後 ${fmt(keep)}`+(np>1?` → 分身${np}人で ${fmt(out)}`:'')+(sp>1?` → ${sp}倍速で ${fmt(out/sp)}`:'');
- $('bk').textContent=scores.length?`カメラ位置：${blocks.length}ブロック（${blocks.map(b=>fmt(b.s)).join('／')} から）`:$('bk').textContent;
+ if(scores.length){const st=blocks.filter(b=>!b.moving),mvn=blocks.length-st.length;$('bk').textContent=`カメラ位置：${st.length}ブロック`+(mvn?`、カメラが動いている所${mvn}か所（分身しません）`:'');}
  drawBar();
 }
 // ブロック×分身の再生計画
@@ -218,7 +228,7 @@ function makePlan(){
  const P=[];
  blocks.forEach((B,bi)=>{
   const r=rangesIn(B),L=r.reduce((q,s)=>q+s.e-s.s,0);if(L<0.1)return;
-  const n=Math.min(np,Math.max(1,Math.floor(L/1)));
+  const n=B.moving?1:Math.min(np,Math.max(1,Math.floor(L/1)));
   const part=L/n,layers=[];
   for(let k=0;k<n;k++)layers.push(slice(r,k*part,(k+1)*part));
   P.push({bi,layers,len:part});
@@ -247,9 +257,9 @@ function drawBar(upto,cur){
   const ty=bhh-Math.min(1,+$('mt').value/mxs)*bhh;bx.fillStyle='#e53935';bx.fillRect(0,ty,bw,2*devicePixelRatio);}
  if(upto===undefined&&scores.length){const dp=devicePixelRatio,cols=['#f5b800','#00b0ff'];
   bx.font=`bold ${11*dp}px sans-serif`;bx.textBaseline='top';
-  blocks.forEach((B,i)=>{const a=X(B.s),w=X(B.e)-a,col=cols[i%2];
-   bx.strokeStyle=col;bx.lineWidth=3*dp;bx.strokeRect(a+1.5*dp,1.5*dp,w-3*dp,bhh-3*dp);
-   bx.fillStyle=col;const lb='ブロック'+(i+1);const tw=bx.measureText(lb).width+6*dp;
+  let bn=0;blocks.forEach((B,i)=>{const a=X(B.s),w=X(B.e)-a,col=B.moving?'#9e9e9e':cols[bn%2];
+   bx.strokeStyle=col;bx.lineWidth=3*dp;bx.setLineDash(B.moving?[6*dp,4*dp]:[]);bx.strokeRect(a+1.5*dp,1.5*dp,w-3*dp,bhh-3*dp);bx.setLineDash([]);
+   bx.fillStyle=col;const lb=B.moving?'カメラ移動':'ブロック'+(++bn);const tw=bx.measureText(lb).width+6*dp;
    if(w>tw+4*dp){bx.fillRect(a+3*dp,3*dp,tw,14*dp);bx.fillStyle='#000';bx.fillText(lb,a+6*dp,4*dp);}
   });}
  bx.fillStyle='#2563eb';
@@ -365,7 +375,7 @@ function tick(){
    if(V[k].currentTime>=r.e-0.02||V[k].ended)advance(k);}
   if(lay_done[0]){pi++;if(pi>=plan.length){stop();posT=0;return;}startBlock();}
   else{compose(curN,p.bi);frame(cmp);drawBar();
-   $('st').textContent=`再生 ブロック${p.bi+1} 分身${curN}人`+(rec?'（録画中・画面を閉じないで）':'');}
+   $('st').textContent=(blocks[p.bi].moving?'再生 カメラ移動中':`再生 ブロック${blocks.slice(0,p.bi+1).filter(b=>!b.moving).length} 分身${curN}人`)+(rec?'（録画中・画面を閉じないで）':'');}
  }
  requestAnimationFrame(tick);
 }
