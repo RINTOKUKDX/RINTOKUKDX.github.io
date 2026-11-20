@@ -50,7 +50,9 @@ details.row[open]>summary::before{content:"▼ "}
 
 <div class="st" id="bk">解析すると、カメラ位置が同じ範囲（ブロック）を自動で見つけます。上の帯のブロックをタップすると、そのブロックだけ分身します（紫＝分身）</div>
 <label>カメラが動いたと判定する基準 <b id="v9">60</b>%（画面のこれ以上が一度に変わったら） <input type="range" id="sc" min="30" max="95" step="5" value="60"></label>
-<label>分身の切り抜き感度（小さいほど広く切り抜く） <b id="v10">40</b> <input type="range" id="ct" min="10" max="120" step="5" value="40"></label>
+<label><input type="checkbox" id="ai" checked> AIで人の形を切り抜く（初回はAIの読み込みに少し時間がかかります）</label>
+<div class="st" id="ais"></div>
+<label>動きで切り抜く時の感度（AIが使えない時だけ。小さいほど広く切り抜く） <b id="v10">40</b> <input type="range" id="ct" min="10" max="120" step="5" value="40"></label>
 <label><input type="checkbox" id="ov2"> 分身の切り抜き範囲を色で表示（水色＝後半の人）</label>
 </details>
 
@@ -256,7 +258,7 @@ blk.onclick=e=>{if(!dur||!scores.length||running)return;
  const r=blk.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*dur,B=blocks.find(b=>t>=b.s&&t<b.e);
  if(!B||B.moving)return;const mid=(B.s+B.e)/2;
  if(B.clone)cloneMarks=cloneMarks.filter(m=>!(m>=B.s&&m<B.e));else cloneMarks.push(mid);
- markClones();calcSegs();};
+ markClones();calcSegs();if(B.clone&&$('ai').checked)loadSeg();};
 function drawBar(upto,cur){
  drawBlk();
  const bw=bar.width=bar.clientWidth*devicePixelRatio||640,bhh=bar.height=70*devicePixelRatio;
@@ -323,12 +325,44 @@ function paste(src,M,col){
  if(col){lx.globalCompositeOperation='source-atop';lx.fillStyle=col;lx.fillRect(0,0,W,H);}
  cx.drawImage(lay,0,0);}
 // 分身の合成：前半の画をそのまま出し、後半の「動いている人」だけを手前に重ねる
+// 人物切り抜きAI（Google MediaPipe・端末内で動作）
+const MPV='0.10.14',MP=`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MPV}`;
+const MODEL='https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite';
+let seg=null,segLoading=null,segTs=0;
+function loadSeg(){
+ if(seg||segLoading)return segLoading;
+ $('ais').textContent='AIを読み込み中…';
+ segLoading=(async()=>{
+  try{
+   const mp=await import(MP+'/vision_bundle.mjs');
+   const fs=await mp.FilesetResolver.forVisionTasks(MP+'/wasm');
+   const mk=d=>mp.ImageSegmenter.createFromOptions(fs,{baseOptions:{modelAssetPath:MODEL,delegate:d},runningMode:'VIDEO',outputCategoryMask:true,outputConfidenceMasks:false});
+   try{seg=await mk('GPU');}catch(e){seg=await mk('CPU');}
+   $('ais').textContent='AI準備OK';
+  }catch(e){$('ais').textContent='AIを読み込めませんでした（動きで切り抜きます）';console.log(e);}
+ })();
+ return segLoading;
+}
+$('ai').onchange=()=>{if($('ai').checked)loadSeg();};
+function aiMask(src){
+ fmx.drawImage(src,0,0,BW,bh);
+ segTs=Math.max(segTs+1,performance.now());
+ const r=seg.segmentForVideo(fm,segTs);const cm=r.categoryMask;if(!cm){r.close&&r.close();return null;}
+ const a=cm.getAsUint8Array(),w=cm.width,h=cm.height,M=new Uint8Array(BW*bh);
+ for(let y=0;y<bh;y++){const yy=Math.min(h-1,Math.floor(y*h/bh));for(let x=0;x<BW;x++){const xx=Math.min(w-1,Math.floor(x*w/BW));M[y*BW+x]=a[yy*w+xx]!==0?1:0;}}
+ r.close&&r.close();
+ return grow(M,1,1);
+}
+// 分身の合成：前半の画をそのまま出し、後半の人だけを手前に重ねる
 function compose(n,bi){
  cx.globalCompositeOperation='source-over';cx.drawImage(V[0],0,0,W,H);
  if(n<2||lay_done[1])return;
+ const col=$('ov2').checked?'rgba(0,200,255,.45)':'';
+ if($('ai').checked&&seg){let M=null;try{M=aiMask(V[1]);}catch(e){console.log(e);}
+  if(M){paste(V[1],M,col);return;}}
  const th=+$('ct').value*3;
  fmx.drawImage(V[1],0,0,BW,bh);const a1=fmx.getImageData(0,0,BW,bh).data;
- paste(V[1],motion(1,a1,th),$('ov2').checked?'rgba(0,200,255,.45)':'');
+ paste(V[1],motion(1,a1,th),col);
 }
 // ④ ブラー（合成後の画に対して）
 function frame(src){
@@ -388,6 +422,7 @@ function tick(){
 }
 async function start(fromT=0){
  plan=makePlan();
+ if($('ai').checked&&plan.some(p=>p.layers.length>1)){$('st').textContent='AIを準備中…';await loadSeg();}
  if(!plan.length){$('st').textContent='残る部分がありません。基準を下げてください';return false;}
  const L=locate(fromT);
  running=true;pi=L.pi;['an','rc'].forEach(id=>$(id).disabled=true);
