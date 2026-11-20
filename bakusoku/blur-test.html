@@ -82,7 +82,7 @@ const mk=C(),mkx=mk.getContext('2d'),t2=C(),t2x=t2.getContext('2d');
 const tmp=C(),tx=tmp.getContext('2d'),tr=C(),trx=tr.getContext('2d');
 const ovc=C(),ovx=ovc.getContext('2d'),cmp=C(),cx=cmp.getContext('2d');
 const bgc=C(),bgx=bgc.getContext('2d',{willReadFrequently:true});
-const fm=C(),fmx=fm.getContext('2d'),fm2=C(),fm2x=fm2.getContext('2d'),lay=C(),lx=lay.getContext('2d');
+const fm=C(),fmx=fm.getContext('2d',{willReadFrequently:true}),fm2=C(),fm2x=fm2.getContext('2d'),lay=C(),lx=lay.getContext('2d');
 let prev=null,running=false,rec=null,dur=0,url=null,posT=0;
 let scores=[],thumbs=[],step=0.5,segs=[],blocks=[],bgs=[],np=1;
 [['sp',1,1],['th',2,0],['bl',3,0],['tr',4,0],['dl',5,0],['mt',6,1],['ml',7,1],['mg',8,1],['sc',9,2],['ct',10,0]].forEach(([id,n,re])=>{
@@ -259,6 +259,31 @@ function drawBar(upto,cur){
 let barT=0;bar.onpointerdown=bar.onpointermove=e=>{if(!dur||rec||(e.type==='pointermove'&&!e.buttons))return;if(running&&e.type==='pointermove'&&performance.now()-barT<250)return;barT=performance.now();
  const r=bar.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*dur;peek(Math.max(0,Math.min(dur,t)));};
 
+// 切り抜きを「中身の詰まった形」にする（半透明・穴あき対策）
+let mA=null,mB=null,mQ=null;
+function solidMask(a,b,th){
+ const w=BW,h=bh,n=w*h;
+ if(!mA||mA.length!==n){mA=new Float32Array(n);mB=new Uint8Array(n);mQ=new Int32Array(n);}
+ for(let i=0,j=0;i<n;i++,j+=4)mA[i]=Math.abs(a[j]-b[j])+Math.abs(a[j+1]-b[j+1])+Math.abs(a[j+2]-b[j+2]);
+ // 3x3 平均でざらつきを減らしてから判定
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){let s=0,c=0;
+  for(let dy=-1;dy<=1;dy++){const yy=y+dy;if(yy<0||yy>=h)continue;for(let dx=-1;dx<=1;dx++){const xx=x+dx;if(xx<0||xx>=w)continue;s+=mA[yy*w+xx];c++;}}
+  mB[y*w+x]=s/c>th?1:0;}
+ const grow=(src,r,val)=>{ // val=1:広げる 0:縮める
+  const t=new Uint8Array(n);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let hit=!val;for(let dx=-r;dx<=r;dx++){const xx=x+dx;const q=xx<0||xx>=w?!val:src[y*w+xx];if(val?q:!q){hit=val;break;}}t[y*w+x]=hit?1:0;}
+  const o=new Uint8Array(n);
+  for(let y=0;y<h;y++)for(let x=0;x<w;x++){let hit=!val;for(let dy=-r;dy<=r;dy++){const yy=y+dy;const q=yy<0||yy>=h?!val:t[yy*w+x];if(val?q:!q){hit=val;break;}}o[y*w+x]=hit?1:0;}
+  return o;};
+ let M=grow(mB,4,1);M=grow(M,3,0); // すき間を閉じる
+ // 外側から届かない「穴」を埋める
+ const vis=new Uint8Array(n);let qh=0,qt=0;
+ const push=i=>{if(!vis[i]&&!M[i]){vis[i]=1;mQ[qt++]=i;}};
+ for(let x=0;x<w;x++){push(x);push((h-1)*w+x);}for(let y=0;y<h;y++){push(y*w);push(y*w+w-1);}
+ while(qh<qt){const i=mQ[qh++],x=i%w;if(x>0)push(i-1);if(x<w-1)push(i+1);if(i>=w)push(i-w);if(i<n-w)push(i+w);}
+ for(let i=0;i<n;i++)if(!vis[i])M[i]=1;
+ return M;
+}
 // 分身の合成：1人目はそのまま、2人目以降は「背景と違う所」だけ重ねる
 function compose(n,bi){
  cx.globalCompositeOperation='source-over';cx.drawImage(V[0],0,0,W,H);
@@ -267,9 +292,8 @@ function compose(n,bi){
  for(let k=1;k<n;k++){
   if(lay_done[k])continue;
   fmx.drawImage(V[k],0,0,BW,bh);const d=fmx.getImageData(0,0,BW,bh),a=d.data,b=bg.data;
-  for(let i=0;i<a.length;i+=4){
-   const df=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
-   a[i+3]=df>th?255:0;}
+  const M=solidMask(a,b,th);
+  for(let i=0,j=3;i<M.length;i++,j+=4)a[j]=M[i]?255:0;
   fmx.putImageData(d,0,0);
   fm2x.clearRect(0,0,BW,bh);fm2x.filter='blur(2px)';fm2x.drawImage(fm,0,0);fm2x.filter='none';
   lx.globalCompositeOperation='source-over';lx.clearRect(0,0,W,H);lx.drawImage(V[k],0,0,W,H);
