@@ -7075,8 +7075,9 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1009';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
+{const v=document.createElement('div');v.textContent='v1010';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
+  ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
 ['v995','ムーブ: 字幕レーン2のクリップを選んで付けると、レーン1のクリップに入っていたのを直した'],['v994','スタイルの枠のテンプレート「和紙と朱」: 左の朱色の所に文字が入らないように'],
 ['v993','スタイルの枠のテンプレート: 選ぶ所の絵の文字を「タップで切り替え」に。一覧は1回タップで光って画面に見本・光った物をもう一度で決定(決定せずに閉じると元に戻る)。開いている間は画面がサンプルでなく実際の字幕'],
@@ -7368,8 +7369,9 @@ async function restore(){
 }
 $('newp').onclick=async()=>{
   const b=$('newp');
-  if(!newArm){newArm=true;b.textContent='全消去?';setTimeout(()=>{newArm=false;b.textContent='新規'},4000);return}
-  newArm=false;b.textContent='新規';
+  /* v1010: 1回目は確認の窓(はい/いいえ)。はい→全消去してカットページへ */
+  if(!newArm){cdlg('いましてる作業は削除されます',[['はい',()=>{newArm=true;$('newp').click()},'warn'],['いいえ']]);return}
+  newArm=false;b.textContent='新規';window.__newGo=1;setTimeout(()=>{window.__newGo=0},800);
   pausePreview();closeEd();pv.pause();
   const ck0=clips.map(c=>c.key);
   clips.forEach(c=>URL.revokeObjectURL(c.url));clips.length=0;draft.clear();delStack.length=0;
@@ -7379,6 +7381,7 @@ $('newp').onclick=async()=>{
   /* v389: 前の字幕・ナレーションも消す(作品に保存した分は残る) */
   try{window.projWipe&&await window.projWipe(ck0)}catch(e){}try{window.subForget&&window.subForget()}catch(e){}
   lastSig='';
+  try{window.goPage&&window.goPage('カット')}catch(e){}
 };
 /* ===== テンプレート編集ページ(画面3) — 保存先: Artifactのデータベース templates/point ===== */
 let tdb=null,ED=null,edDirty=false,ptBackArm=false,ptAnimTok=0,ptSample='';
@@ -7931,7 +7934,7 @@ function askType(after){
 /* v586: 「何の動画を作りますか?」は出さない(作り直す予定)。種類が決まっていない時は、前に使った種類(無ければ「旅」)を黙って入れる。askType は残す */
 function autoType(){if(tpl)return;let k=null;try{k=localStorage.getItem('lastTy')}catch(e){}if(!k||!TPL[k])k=TPL.tv?'tv':Object.keys(TPL)[0];if(k)setType(k)}
 {const go=$('toS2').onclick;$('toS2').onclick=()=>{autoType();go()}}
-$('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent==='新規'&&!tpl){autoType();syncTypeRow()}},60));
+$('newp').addEventListener('click',()=>setTimeout(()=>{if(window.__newGo&&$('newp').textContent==='新規'&&!tpl){autoType();syncTypeRow()}},60));
 /* ===== v377: タイムラインテンプレート(動画の種類ごと)。保存先 localStorage 'tlt'。OP/ED動画は files 'tlt|op|…' 'tlt|ed|…' ===== */
 const TCOL=['#2c5fd8','#d9731a','#12867a','#7a3fd0','#c2395f'];
 const TLT_B={diy:{n:'DIY',d:'冒頭 / 説明 / 作業 / ED'},tv:{n:'旅',d:'企画説明 / OP / 本編 / まとめ / ED',ch:'garakuta'},doc:{n:'ドキュメンタリー',d:'冒頭 / 出発 / 走行中 / 宿・まとめ / ED'}};
@@ -8251,7 +8254,7 @@ function mvMenu(){cdlg('引っ越し\n・保存：動画・字幕・ナレーシ
 /* v449: 「作品」→「保存」「プロジェクトから開く」の2つに分ける(引っ越しは⚙設定の中のまま) */{const pb=document.createElement('button');pb.id='projBtn';pb.textContent='保存';pb.className=$('newp').className;pb.onclick=()=>pMenu('save');
  const ob=document.createElement('button');ob.id='projOpen';ob.textContent='プロジェクトから開く';ob.className=$('newp').className;ob.onclick=()=>pMenu(true);
  const place=()=>{$('newp').after(pb);pb.after(ob)};place();setTimeout(place,0);setTimeout(place,800)}
-$('newp').addEventListener('click',()=>setTimeout(()=>{if($('newp').textContent==='新規')pSetCur(null)},30));
+$('newp').addEventListener('click',()=>setTimeout(()=>{if(window.__newGo&&$('newp').textContent==='新規')pSetCur(null)},30));
 {
   const bot=document.createElement('div');bot.id='s2bot';
   const eb=document.querySelector('#s2>.topbar .primary');s2ExBtn=eb;bot.append($('back'));if(eb)bot.append(eb);
