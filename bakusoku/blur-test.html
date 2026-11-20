@@ -25,15 +25,12 @@ body.tlmode .tl{display:block}
 
 <div class="row"><h2>① 読み込む</h2>
 <input type="file" id="f" accept="video/*">
-<div class="mode" style="margin-top:8px">
-<label><input type="radio" name="md" value="tl" checked> タイムラプス</label>
-<label><input type="radio" name="md" value="fx"> 普通の定点（音あり）</label>
-</div></div>
+</div>
 
 <canvas id="c" width="640" height="360"></canvas>
 <canvas id="bar" width="640" height="70"></canvas>
 <div class="st" id="st">動画を選んでください</div>
-<label>位置 <b id="vp">0.0</b>秒 <input type="range" id="sk" min="0" max="100" step="0.1" value="0" disabled></label>
+<div class="st">画面タップ＝再生／停止。下のバーをタップ・なぞると、その位置の画面を確認できます</div>
 
 <div class="row"><h2>② 動きがない部分をカット</h2>
 <button id="an" disabled>解析する</button>
@@ -44,9 +41,9 @@ body.tlmode .tl{display:block}
 <div class="st">バー：灰色の山＝動きの量、赤＝カットされる所、横線＝基準</div>
 </div>
 
-<div class="row tl"><h2>④ 早送り・ブラー</h2>
-<label>早送り <b id="v1">4</b>倍 <input type="range" id="sp" min="1" max="16" step="1" value="4"></label>
-<label><input type="checkbox" id="be" checked> 動いた部分にブラーをかける</label>
+<div class="row"><h2>④ 早送り・ブラー</h2>
+<label>早送り <b id="v1">1</b>倍（音は4倍まで残ります） <input type="range" id="sp" min="1" max="16" step="1" value="1"></label>
+<label><input type="checkbox" id="be"> 動いた部分にブラーをかける</label>
 <label>動き検出の感度（小さいほど敏感） <b id="v2">25</b> <input type="range" id="th" min="5" max="80" value="25"></label>
 <label>ブラーの強さ <b id="v3">8</b> <input type="range" id="bl" min="0" max="30" value="8"></label>
 <label>残像の長さ <b id="v4">60</b>% <input type="range" id="tr" min="0" max="90" value="60"></label>
@@ -55,10 +52,9 @@ body.tlmode .tl{display:block}
 </div>
 
 <div class="row"><h2>⑤ 確認・書き出し</h2>
-<button id="pv" disabled>プレビュー</button>
 <button id="rc" disabled>書き出し（録画）</button>
 <a id="dlk" style="display:none"></a>
-<div class="st">カット後に残った部分だけを再生・録画します</div>
+<div class="st">カット後に残った部分だけを録画します（確認は画面タップで再生）</div>
 </div>
 
 <script>
@@ -74,10 +70,9 @@ const tr=document.createElement('canvas'),trx=tr.getContext('2d');
 const ovc=document.createElement('canvas'),ovx=ovc.getContext('2d');
 let prev=null,running=false,rec=null,dur=0;
 let scores=[],step=0.5,segs=[],segI=0;
-const isTL=()=>document.querySelector('input[name=md]:checked').value==='tl';
-function setMode(){document.body.classList.toggle('tlmode',isTL())}
-document.querySelectorAll('input[name=md]').forEach(r=>r.onchange=setMode);setMode();
-[['sp',1,0],['th',2,0],['bl',3,0],['tr',4,0],['dl',5,0],['mt',6,1],['ml',7,1],['mg',8,1]].forEach(([id,n,re])=>{
+const isTL=()=>+$('sp').value>1;
+const pvB={disabled:true,set textContent(t){}};
+[['sp',1,1],['th',2,0],['bl',3,0],['tr',4,0],['dl',5,0],['mt',6,1],['ml',7,1],['mg',8,1]].forEach(([id,n,re])=>{
  const e=$(id);e.oninput=()=>{$('v'+n).textContent=e.value;if(re)calcSegs();};
 });
 function seekTo(t){return new Promise(r=>{const h=()=>{v.removeEventListener('seeked',h);r()};v.addEventListener('seeked',h);v.currentTime=Math.min(t,Math.max(0,dur-0.05));})}
@@ -92,20 +87,20 @@ $('f').onchange=e=>{
   [c,tmp,tr,ovc].forEach(k=>{k.width=W;k.height=H});
   sw=S;sh=Math.round(S*H/W);[m,mk,t2].forEach(k=>{k.width=sw;k.height=sh});
   scores=[];segs=[{s:0,e:dur}];
-  $('sk').max=dur;$('sk').disabled=false;
-  ['an','pv','rc'].forEach(id=>$(id).disabled=false);
+  ['an','rc'].forEach(id=>$(id).disabled=false);
   $('st').textContent=`読み込みOK ${W}x${H} / ${fmt(dur)}`;
   $('rs').textContent='まだ解析していません（このままだと全部使います）';
   seekTo(0).then(()=>{x.drawImage(v,0,0,W,H);drawBar();});
  };
 };
 function fmt(t){t=Math.max(0,t);const mm=Math.floor(t/60),ss=(t%60).toFixed(1);return mm?`${mm}分${ss}秒`:`${ss}秒`}
-$('sk').oninput=()=>{const t=+$('sk').value;$('vp').textContent=t.toFixed(1);if(!running)seekTo(t).then(()=>{x.drawImage(v,0,0,W,H);drawBar();})};
+function peek(t){if(!running&&dur)seekTo(t).then(()=>{x.drawImage(v,0,0,W,H);drawBar();$('st').textContent=fmt(t)})}
+c.onclick=()=>{if(!dur||rec)return;if(running)stop();else start();};
 
 // ② 解析：一定間隔でコマを取り、前と比べて「変わった画素の割合(%)」を記録
 $('an').onclick=async()=>{
  if(running)return;
- ['an','pv','rc'].forEach(id=>$(id).disabled=true);
+ ['an','rc'].forEach(id=>$(id).disabled=true);
  step=Math.max(0.5,dur/1500);
  const n=Math.floor(dur/step)+1;scores=new Float32Array(n);
  let last=null;const t0=performance.now();
@@ -122,7 +117,7 @@ $('an').onclick=async()=>{
  }
  if(n>1)scores[0]=scores[1];
  calcSegs();
- ['an','pv','rc'].forEach(id=>$(id).disabled=false);
+ ['an','rc'].forEach(id=>$(id).disabled=false);
  $('st').textContent='解析完了。基準をスライダーで調整できます';
 };
 function calcSegs(){
@@ -159,12 +154,12 @@ function drawBar(upto){
  bx.fillStyle='#2563eb';bx.fillRect(X(v.currentTime)-1,0,3*devicePixelRatio,bh);
 }
 bar.onpointerdown=bar.onpointermove=e=>{if(running||!dur||(e.type==='pointermove'&&!e.buttons))return;
- const r=bar.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*dur;$('sk').value=t;$('sk').oninput();};
+ const r=bar.getBoundingClientRect(),t=(e.clientX-r.left)/r.width*dur;peek(Math.max(0,Math.min(dur,t)));};
 
 // ④ フレーム描画（タイムラプスでブラーONの時だけ効果）
 function frame(){
  x.globalAlpha=1;x.globalCompositeOperation='source-over';
- if(!(isTL()&&$('be').checked)){x.drawImage(v,0,0,W,H);return;}
+ if(!$('be').checked){x.drawImage(v,0,0,W,H);return;}
  const th=+$('th').value,bl=+$('bl').value,tl=+$('tr').value/100,dl=+$('dl').value;
  mx.drawImage(v,0,0,sw,sh);
  const cur=mx.getImageData(0,0,sw,sh);
@@ -209,7 +204,7 @@ async function start(){
  prev=null;trx.clearRect(0,0,W,H);segI=0;
  await seekTo(segs[0].s);
  v.playbackRate=isTL()?+$('sp').value:1;
- running=true;$('pv').textContent='停止';
+ running=true;pvB.textContent='停止';
  ['an','rc'].forEach(id=>$(id).disabled=true);
  if(rec)rec.start();
  await v.play();loop();return true;
@@ -217,10 +212,9 @@ async function start(){
 function stop(){
  running=false;v.pause();
  if(rec&&rec.state!=='inactive')rec.stop();
- $('pv').textContent='プレビュー';['an','rc','pv'].forEach(id=>$(id).disabled=false);
- if(!rec)$('st').textContent='停止しました';
+ pvB.textContent='プレビュー';['an','rc'].forEach(id=>$(id).disabled=false);
+ if(!rec)$('st').textContent='停止しました（画面タップで最初から再生）';
 }
-$('pv').onclick=()=>{if(running){stop();return;}start();};
 
 let actx=null,adst=null;
 function audioTrack(){
@@ -232,8 +226,7 @@ function audioTrack(){
 $('rc').onclick=()=>{
  if(running)return;
  const stream=c.captureStream(30);
- if(!isTL()){const at=audioTrack();if(at){stream.addTrack(at);v.muted=false;}}
- else v.muted=true;
+ const at=audioTrack();if(at){stream.addTrack(at);v.muted=false;}
  const mt=['video/mp4','video/webm;codecs=vp9,opus','video/webm'].find(t=>MediaRecorder.isTypeSupported(t))||'';
  const chunks=[];rec=new MediaRecorder(stream,{mimeType:mt,videoBitsPerSecond:8e6});
  rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};
