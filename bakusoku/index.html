@@ -3031,8 +3031,8 @@ function insDlg(title,make,keep){
   M.tab=()=>ti;
   function show(){tbs.forEach((b,k)=>b.className=k===ti?'on':'');body.innerHTML='';let open=keep&&keep.open!=null&&keep.tab===ti?keep.open:-1;const H=[];M.open=()=>open;
     tabs[ti].secs.forEach((sc,k)=>{const h=document.createElement('button');h.className='sh';h.innerHTML='<i class="dot"></i><span></span><i class="ar"></i>';h.children[1].textContent=sc.t;
-      const box=document.createElement('div');box.className='sb';h.onclick=()=>{open=open===k?-1:k;upd()};body.append(h,box);H.push([h,box,sc]);sc.build(box)});
-    function upd(){H.forEach(([h,b,sc],k)=>{b.hidden=k!==open;h.classList.toggle('op',k===open);h.lastChild.textContent=k===open?'▾':'▸';h.classList.toggle('ch',!!(sc.on&&sc.on()))})}
+      const box=document.createElement('div');box.className='sb';h.onclick=sc.tap?sc.tap:()=>{open=open===k?-1:k;upd()};if(sc.tap)h.classList.add('tap');body.append(h,box);H.push([h,box,sc]);sc.build(box)});
+    function upd(){H.forEach(([h,b,sc],k)=>{if(sc.tap){b.hidden=true;h.lastChild.textContent='›';return}b.hidden=k!==open;h.classList.toggle('op',k===open);h.lastChild.textContent=k===open?'▾':'▸';h.classList.toggle('ch',!!(sc.on&&sc.on()))})}
     M.upd=upd;upd();(D.K?[].concat(D.K):[]).forEach(K=>K.draw())}
   show();document.body.appendChild(w);/* v897: 再生画面と再生・↺↻の列だけ触れる。外をタップ=閉じる */window.gdHole&&gdHole(w,{holes:()=>window.gdVid().concat([...document.querySelectorAll('#s2:not([hidden]) .tlhead')]),close});return M}
 /* 設定の部品。tg()=設定を入れる物の一覧, get(o,k)(無ければ初期値), set(o,k,v)(v=null で初期値に戻す), ch(k)=変更の後, first()=最初の変更の前(元に戻す用) */
@@ -3325,10 +3325,8 @@ function itemIns(it,ALL){
     if(bgm){it.text=bgmText(it);const sc=$('scr'),x=sc.scrollLeft;renderLanes();sc.scrollLeft=x}};
   insDlg(bgm?'BGM':'ナレーション',M=>{const K=insKit(M,tg,get,set,ch,()=>pushHist());
     const secs=[{t:'音声',on:K.any(['vol','m','fi','fo','nm','vo','nz','cut']),build:b=>insAudio(K,b,bgm)}];
-    if(bgm&&!ALL)secs.unshift({t:'曲',build:b=>{const nm=document.createElement('div');nm.style.cssText='text-align:center;font-size:13px;padding:4px';b.appendChild(nm);
-      const sw=async d=>{const s=bgmSongs(it.g);if(!s.length)return;const k=(s.findIndex(x=>'bgm|'+x.id===it.akey)+d+s.length)%s.length;pushHist();it.akey='bgm|'+s[k].id;it.off=0;bgmEdIt(it,s[k]);delete it.nmG;it.nm=false;await ensureNar(it.akey);ch();K.draw()};
-      const r=document.createElement('div');r.className='seg';r.append(M.btn('◁ 前の曲',()=>sw(-1)),M.btn('次の曲 ▷',()=>sw(1)));b.appendChild(r);
-      const d0=K.draw;K.draw=()=>{d0();nm.textContent=bgmText(it)};nm.textContent=bgmText(it)}});
+    /* v1015: 曲をタップ=曲を選ぶ窓(BGMを入れるのと同じ窓)で入れ替え。前の曲・次の曲は無し */
+    if(bgm&&!ALL)secs.unshift({t:'曲　'+bgmText(it),tap:()=>{M.close();bgmAddDlg(null,it)},build:()=>{}});
     const foot=[['▶ ここから再生',()=>{seekGlobal(it.start+0.01).then(()=>togglePlay())}]];
     if(bgm)foot.push(['全部のBGMに同じ設定',()=>cdlg('今の音の設定を、全部のBGMに同じように入れますか?\n(他のBGMの設定は上書きされます)',[['入れる',()=>{pushHist();items.forEach(o=>{if(o.lane===6&&o!==it)['vol','fi','fo','cut','m','vo','nz'].forEach(k=>{if(it[k]!=null)o[k]=it[k];else delete o[k]})});flashSel('全部のBGMに適用しました')}],['やめる']])]);
     return{secs,foot,K}});
@@ -6923,29 +6921,32 @@ async function bgmEdit(s,after){
   sync();requestAnimationFrame(draw);
 }
 /* v639: BGMレーン長押し=ジャンルのアコーディオン。開くと曲。曲タップ=ここに置く(t が null の時=試し聞き)。▶=試し聞き 🗑=削除。ジャンル・曲は長押しで並べ替え */
-async function bgmAddDlg(t){
-  const put=t!=null;if(put)pausePreview();await bgmList();
-  const M=bgmModal(put?fmt(t)+' にBGMを追加':'BGMの登録・削除');
+function seGlowCss(){if(document.getElementById('t_glowCss'))return;const st=document.createElement('style');st.id='t_glowCss';st.textContent='@keyframes seGl{0%,100%{box-shadow:0 0 6px 1px var(--accent)}50%{box-shadow:0 0 18px 5px var(--accent)}}.stRow.seGlow{animation:seGl 1.2s ease-in-out infinite}.stRow.seRow{min-height:50px;margin:7px 0!important;padding:4px 12px!important;border:1px solid var(--btnl)!important;border-radius:10px!important;background:var(--btn)!important;color:var(--fg)}.stRow.seRow.on{border:2px solid var(--accent)!important;background:color-mix(in srgb,var(--accent) 16%,var(--btn))!important;color:var(--accent)}';document.head.appendChild(st)}
+/* v1015: rep=入れ替えるBGMクリップ(設定窓の「曲」から)。見た目はSE一覧と同じ(使用中が光る・試し聞き中は枠が色付き) */
+async function bgmAddDlg(t,rep){
+  const put=t!=null||!!rep;if(put)pausePreview();await bgmList();seGlowCss();
+  if(rep){const c0=bgmL.find(x=>'bgm|'+x.id===rep.akey);if(c0){bgmOpen.clear();bgmOpen.add(c0.g)}}
+  const M=bgmModal(rep?'BGMの曲を入れ替え':put?fmt(t)+' にBGMを追加':'BGMの登録・削除');
   M.c.addEventListener('touchmove',e=>{if(bgmDragOn)e.preventDefault()},{passive:false});
-  M.row(M.btn('📁 フォルダを読み込む',()=>bgmPickDir(draw),'flex:1;font-size:14px'),M.btn('＋ ジャンル',()=>bgmAskName('新しいジャンルの名前',nm=>{if(bgmGen.includes(nm)){flashSel('同じ名前のジャンルがあります');return}bgmGen.push(nm);bgmOpen.clear();bgmOpen.add(nm);bgmSave();draw()}),'flex:1;font-size:14px'));
+  M.row(M.btn('フォルダを読み込む',()=>bgmPickDir(draw),'flex:1;font-size:14px'),M.btn('＋ ジャンル',()=>bgmAskName('新しいジャンルの名前',nm=>{if(bgmGen.includes(nm)){flashSel('同じ名前のジャンルがあります');return}bgmGen.push(nm);bgmOpen.clear();bgmOpen.add(nm);bgmSave();draw()}),'flex:1;font-size:14px'));
   const tip=document.createElement('div');tip.textContent='ジャンルをタップ=開く・長押し=名前の変更・削除・曲をタップ=試し聞き'+(put?'(もう一度タップで決定)':'')+'・曲を長押し=編集(トリム・フェード・音量)・長押しして動かす=並べ替え(別のジャンルの上で離す=移す)';tip.style.cssText='font-size:12px;color:var(--muted);text-align:center';M.c.appendChild(tip);
   const box=document.createElement('div');box.id='bgmTree';box.style.cssText='display:flex;flex-direction:column;gap:6px';M.c.appendChild(box);
   function draw(){box.innerHTML='';const G=bgmG();
     if(!G.length){const p=document.createElement('div');p.textContent='まだ曲がありません。「フォルダを読み込む」でBGMフォルダを選ぶと、中のフォルダがジャンルになります。';p.style.cssText='font-size:13px;color:var(--muted);padding:8px 0';box.appendChild(p)}
     G.forEach(g=>{const S=bgmSongs(g),op=bgmOpen.has(g);
       const u=document.createElement('div');u.className='bgR';u.dataset.g=g;u.style.cssText='border:1px solid rgba(128,128,128,.4);border-radius:10px;background:var(--panel);display:flex;flex-direction:column';
-      const h=M.btn((op?'▾ ':'▸ ')+'📁 '+g+'（'+S.length+'曲）',()=>{const o=!op;bgmOpen.clear();if(o)bgmOpen.add(g);draw()},'width:100%;text-align:left;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');
+      const h=M.btn((op?'▾ ':'▸ ')+g+'（'+S.length+'曲）',()=>{const o=!op;bgmOpen.clear();if(o)bgmOpen.add(g);draw()},'width:100%;text-align:left;font-weight:bold;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');
       u.appendChild(h);
       const gDel=()=>cdlg('「'+g+'」と中の'+S.length+'曲を消しますか?',[['削除',()=>{for(const s of S)idbDel('files','bgm|'+s.id).catch(()=>{});bgmL=bgmL.filter(y=>y.g!==g);bgmGen=bgmGen.filter(y=>y!==g);bgmOpen.delete(g);bgmSave();draw()}],['やめる']]);
       /* v836: フォルダを長押し(動かさずに離す)=名前の変更・削除 */
-      const gMenu=()=>cdlg('📁 '+g,[['名前を変える',()=>bgmAskName('「'+g+'」の新しい名前',nm=>{if(nm===g)return;if(bgmGen.includes(nm)){flashSel('同じ名前のジャンルがあります');return}bgmRenameG(g,nm);draw();flashSel('「'+nm+'」に変えました')},g)],['削除',gDel],['やめる']]);
+      const gMenu=()=>cdlg(g,[['名前を変える',()=>bgmAskName('「'+g+'」の新しい名前',nm=>{if(nm===g)return;if(bgmGen.includes(nm)){flashSel('同じ名前のジャンルがあります');return}bgmRenameG(g,nm);draw();flashSel('「'+nm+'」に変えました')},g)],['削除',gDel],['やめる']]);
       bgmDrag(h,u,box,(a,b)=>{const x=bgmGen.splice(a,1)[0];bgmGen.splice(b,0,x);bgmSave();draw()},null,null,gMenu);
       if(op){const sb=document.createElement('div');sb.style.cssText='display:flex;flex-direction:column;gap:4px;padding:4px 6px 8px 14px';
         S.forEach(s=>{const r=document.createElement('div');r.className='bgR';r.style.cssText='display:flex;gap:6px;align-items:center;background:var(--panel)';
           /* v839: タイトルをタップ=ボタンの色が変わって曲が流れる・下にシークバーと「もう一度タップで決定」。もう一度タップ=決定(置く)。▶は無し */
           const on=!!(bgmAu&&bgmAu._id===s.id);
-          const nm=M.btn('♪ '+bgmName(s.n)+(s.ed?' ✂':''),()=>{if(on){if(put){M.close();bgmAdd(g,t,s.id)}else{bgmPlay(s,draw)}}else bgmPlay(s,draw)},'width:100%;min-width:0;min-height:44px;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap');
-          if(on)nm.classList.add('primary');
+          const nm=M.btn(bgmName(s.n)+(s.ed?' ✂':''),()=>{if(on){if(rep){M.close();bgmRep(rep,s)}else if(put){M.close();bgmAdd(g,t,s.id)}else{bgmPlay(s,draw)}}else bgmPlay(s,draw)},'width:100%;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin:0!important');
+          nm.classList.add('stRow','seRow');if(on)nm.classList.add('on');if(rep&&'bgm|'+s.id===rep.akey)nm.classList.add('seGlow');
           const col=document.createElement('div');col.style.cssText='flex:1;min-width:0;display:flex;flex-direction:column;gap:3px';col.appendChild(nm);
           if(on){if(put){const nt=document.createElement('div');nt.textContent='※もう一度タップで決定';nt.style.cssText='font-size:11px;color:var(--muted);padding-left:4px';col.appendChild(nt)}
             const rg=document.createElement('input');rg.type='range';rg.min=0;rg.max=1000;rg.value=0;rg.style.cssText='width:100%;min-height:28px;margin:0';rg.setAttribute('aria-label','再生位置');
@@ -6961,9 +6962,14 @@ async function bgmAddDlg(t){
           M.btn('ジャンルを消す',gDel,'flex:1;font-size:13px;min-height:44px;color:var(--warn);background:transparent'));
         sb.appendChild(ft);u.appendChild(sb)}
       box.appendChild(u)})}
-  draw();
+  draw();setTimeout(()=>{try{const e=box.querySelector('.seGlow');e&&e.scrollIntoView({block:'center'})}catch(_){}},60);
   M.c.appendChild(M.btn('閉じる',M.close,'background:transparent'));
 }
+/* v1015: BGMクリップの曲を入れ替える(位置・長さ・音の設定はそのまま) */
+async function bgmRep(it,s){
+  if('bgm|'+s.id===it.akey){itemIns(it);return}
+  pushHist();it.g=s.g;it.akey='bgm|'+s.id;it.off=0;bgmEdIt(it,s);delete it.nmG;it.nm=false;it.text=bgmText(it);selItem=it;actLane=6;
+  await ensureNar(it.akey);renderLanes();flashSel('♪ '+bgmName(s.n));itemIns(it)}
 function bgmAdd(g,t,sid){
   const songs=bgmSongs(g);if(!songs.length)return;const s0=songs.find(x=>x.id===sid)||songs[0];
   const all=(cview&&cR&&cIdx(cview)>=0)?cR[cIdx(cview)].b:total();let start=Math.max(0,Math.min(t,all-0.5));
@@ -7077,8 +7083,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1014';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
+{const v=document.createElement('div');v.textContent='v1015';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
   ['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
   ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
@@ -10868,7 +10874,7 @@ function seBody(w,g){const k0=w.k0,SN=+w.dataset.slot||1,F=seF(SN);
     for(const f of fs){const id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);await kv('se|'+id,f);SE.push({id,n:f.name.replace(/\.[^.]+$/,''),g:'字幕テンプレート'});o[k0][F].ids.push(id)}
     await kv('se|list',SE);seSave(o,k0,F);try{seDraw()}catch(_){}draw();drawAdd();showFn(fs.length+'個のSEを追加しました')};
   const ab=stBtn('SEの追加と削除',()=>{add.hidden=!add.hidden;ab.textContent=add.hidden?'SEの追加と削除':'閉じる';ab.style.gridColumn=add.hidden?'':'1 / -1';const sv=w.querySelector('#t_seSv');if(sv)sv.style.display=add.hidden?'':'none';draw();drawAdd()},'');ab.id='t_stSA1';
-  if(!document.getElementById('t_glowCss')){const st=document.createElement('style');st.id='t_glowCss';st.textContent='@keyframes seGl{0%,100%{box-shadow:0 0 6px 1px var(--accent)}50%{box-shadow:0 0 18px 5px var(--accent)}}.stRow.seGlow{animation:seGl 1.2s ease-in-out infinite}.stRow.seRow{min-height:50px;margin:7px 0!important;padding:4px 12px!important;border:1px solid var(--btnl)!important;border-radius:10px!important;background:var(--btn)!important;color:var(--fg)}.stRow.seRow.on{border:2px solid var(--accent)!important;background:color-mix(in srgb,var(--accent) 16%,var(--btn))!important;color:var(--accent)}';document.head.appendChild(st)}
+  seGlowCss();
   draw();setTimeout(()=>{try{const e=box.querySelector('.seGlow');e&&e.scrollIntoView({block:'center'})}catch(_){}},60);w.foot(ab);{const sv=w.querySelector('#t_seSv');if(sv){const o0=sv.onclick;sv.onclick=()=>{apply();o0&&o0.call(sv)}}}}
 /* ---- v563: ③スタイルの後半「枠・テキストボックス」。字幕の後ろの枠は別のキャンバス(#t_sb。合成モード=mix-blend-mode)に描く。すりガラスは #t_fg(backdrop-filter)。
    書き出しは tlRender が e.bx(枠のキャンバス)・e.bm(合成モード)・e.fg(後ろをぼかす所)を作り、tlDrawE が 後ろをぼかす→枠→文字 の順に描く */
