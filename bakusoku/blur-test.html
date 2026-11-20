@@ -32,7 +32,7 @@ details.row[open]>summary::before{content:"▼ "}
 <input type="file" id="f" accept="video/*"></div>
 
 <div id="pvw"><canvas id="c" width="640" height="360"></canvas>
-<canvas id="blk" width="640" height="34"></canvas>
+<canvas id="blk" width="640" height="34" style="display:none"></canvas>
 <canvas id="bar" width="640" height="70"></canvas>
 <div class="st" id="st">動画を選んでください</div>
 <div class="st">画面タップ＝再生／停止。バーをタップ・なぞると再生位置が移動します</div></div>
@@ -43,10 +43,10 @@ details.row[open]>summary::before{content:"▼ "}
 <b id="v7"></b><input type="range" id="ml" min="0.5" max="10" step="0.5" value="0.5">
 <b id="v8"></b><input type="range" id="mg" min="0" max="2" step="0.1" value="0"></div>
 <div class="st" id="rs">まだ解析していません</div>
-<div class="st">バー：灰色の山＝動きの量、赤＝カットされる所、横線＝基準、黄色・水色の枠＝カメラ位置が同じ範囲（ブロック）</div>
+<div class="st">バー：灰色の山＝動きの量、赤＝カットされる所、横線＝基準</div>
 </details>
 
-<details class="row"><summary>③ 分身</summary>
+<details class="row" style="display:none"><summary>③ 分身（廃止）</summary>
 
 <div class="st" id="bk">解析すると、カメラ位置が同じ範囲（ブロック）を自動で見つけます。上の帯のブロックをタップすると、そのブロックだけ分身します（紫＝分身）</div>
 <label>カメラが動いたと判定する基準 <b id="v9">60</b>%（画面のこれ以上が一度に変わったら） <input type="range" id="sc" min="30" max="95" step="5" value="60"></label>
@@ -56,7 +56,7 @@ details.row[open]>summary::before{content:"▼ "}
 <label><input type="checkbox" id="ov2"> 分身の切り抜き範囲を色で表示（水色＝後半の人）</label>
 </details>
 
-<details class="row"><summary>④ 早送り・ブラー</summary>
+<details class="row"><summary>③ 早送り・ブラー</summary>
 <label>早送り <b id="v1">1</b>倍（音は4倍まで残ります） <input type="range" id="sp" min="1" max="16" step="1" value="1"></label>
 <label><input type="checkbox" id="be"> 動いた部分にブラーをかける</label>
 <label>動き検出の感度（小さいほど敏感） <b id="v2">25</b> <input type="range" id="th" min="5" max="80" value="25"></label>
@@ -66,7 +66,7 @@ details.row[open]>summary::before{content:"▼ "}
 <label><input type="checkbox" id="ov"> 動き検出の範囲を赤で表示（確認用）</label>
 </details>
 
-<details class="row" open><summary>⑤ 書き出し</summary>
+<details class="row" open><summary>④ 書き出し</summary>
 <button id="rc" disabled>書き出し（録画）</button>
 <a id="dlk" style="display:none"></a>
 <div class="st">残った部分を録画します（確認は画面タップで再生）。録画中は画面を閉じないでください</div>
@@ -270,7 +270,7 @@ function drawBar(upto,cur){
   const n=upto===undefined?scores.length:upto;
   for(let i=0;i<n;i++){const h=Math.min(1,scores[i]/mxs)*bhh;bx.fillRect(X(i*step),bhh-h,Math.max(1,X(step)),h);}
   const ty=bhh-Math.min(1,+$('mt').value/mxs)*bhh;bx.fillStyle='#e53935';bx.fillRect(0,ty,bw,2*devicePixelRatio);}
- if(upto===undefined&&scores.length){const dp=devicePixelRatio,cols=['#f5b800','#00b0ff'];
+ if(false&&upto===undefined&&scores.length){const dp=devicePixelRatio,cols=['#f5b800','#00b0ff'];
   bx.font=`bold ${11*dp}px sans-serif`;bx.textBaseline='top';
   let bn=0;blocks.forEach((B,i)=>{const a=X(B.s),w=X(B.e)-a,col=B.moving?'#9e9e9e':cols[bn%2];if(B.clone){bx.fillStyle='rgba(142,36,170,.18)';bx.fillRect(a,0,w,bhh);}
    bx.strokeStyle=col;bx.lineWidth=3*dp;bx.setLineDash(B.moving?[6*dp,4*dp]:[]);bx.strokeRect(a+1.5*dp,1.5*dp,w-3*dp,bhh-3*dp);bx.setLineDash([]);
@@ -416,7 +416,7 @@ function tick(){
    if(V[k].currentTime>=r.e-0.02||V[k].ended)advance(k);}
   if(lay_done[0]){pi++;if(pi>=plan.length){stop();posT=0;return;}startBlock();}
   else{compose(curN,p.bi);frame(cmp);drawBar();
-   $('st').textContent=(blocks[p.bi].moving?'再生 カメラ移動中':`再生 ブロック${blocks.slice(0,p.bi+1).filter(b=>!b.moving).length} 分身${curN}人`)+(rec?'（録画中・画面を閉じないで）':'');}
+   $('st').textContent=`再生 ${fmt(V[0].currentTime)}`+(rec?'（録画中・画面を閉じないで）':'');}
  }
  requestAnimationFrame(tick);
 }
