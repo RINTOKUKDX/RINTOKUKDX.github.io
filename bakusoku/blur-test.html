@@ -51,7 +51,7 @@ details.row[open]>summary::before{content:"▼ "}
 <div class="st" id="bk">解析すると、カメラ位置が同じ範囲（ブロック）を自動で見つけます。上の帯のブロックをタップすると、そのブロックだけ分身します（紫＝分身）</div>
 <label>カメラが動いたと判定する基準 <b id="v9">60</b>%（画面のこれ以上が一度に変わったら） <input type="range" id="sc" min="30" max="95" step="5" value="60"></label>
 <label>分身の切り抜き感度（小さいほど広く切り抜く） <b id="v10">40</b> <input type="range" id="ct" min="10" max="120" step="5" value="40"></label>
-<label><input type="checkbox" id="ov2"> 分身の切り抜き範囲を色で表示（水色＝2人目、桃色＝手前に出した1人目）</label>
+<label><input type="checkbox" id="ov2"> 分身の切り抜き範囲を色で表示（水色＝後半の人）</label>
 </details>
 
 <details class="row"><summary>④ 早送り・ブラー</summary>
@@ -173,19 +173,10 @@ function calcBlocks(){
 }
 function markClones(){blocks.forEach(B=>B.clone=!B.moving&&cloneMarks.some(m=>m>=B.s&&m<B.e));}
 let bgTimer=0,bgBusy=false;
-function scheduleBgs(){
- if(!thumbs.length)return;bgs=[];clearTimeout(bgTimer);
- $('bk').textContent='ブロックが変わったので背景を作り直します…';
- bgTimer=setTimeout(async function go(){
-  if(running||bgBusy){bgTimer=setTimeout(go,500);return;}
-  bgBusy=true;['an','rc'].forEach(id=>$(id).disabled=true);
-  await makeBgs();bgBusy=false;['an','rc'].forEach(id=>$(id).disabled=false);
-  calcSegs();$('st').textContent='背景を作り直しました';
- },700);
-}
+function scheduleBgs(){} // 背景は使わなくなった
 // ブロックごとの背景：何枚かのコマの中央値（動く人が消える）
 async function makeBgs(){
- bgs=[];
+ bgs=[];return; // 背景は使わなくなった
  for(let b=0;b<blocks.length;b++){
   const B=blocks[b];if(B.moving){bgs.push(null);continue;}
   const K=Math.max(3,Math.min(15,Math.floor((B.e-B.s)/step)));
@@ -319,7 +310,7 @@ function resetMotion(){mvPrev=[null,null];mvHist=[null,null];}
 function motion(k,a,th){const n=BW*bh;
  if(!mvHist[k]||mvHist[k].length!==n){mvHist[k]=new Uint8Array(n);mvPrev[k]=null;}
  const Hh=mvHist[k];
- if(mvPrev[k]){const B=diffMask(a,mvPrev[k],th*0.6);for(let i=0;i<n;i++)Hh[i]=B[i]?12:(Hh[i]?Hh[i]-1:0);}
+ if(mvPrev[k]){const B=diffMask(a,mvPrev[k],th*0.6);for(let i=0;i<n;i++)Hh[i]=B[i]?20:(Hh[i]?Hh[i]-1:0);}
  mvPrev[k]=new Uint8ClampedArray(a);
  const M=new Uint8Array(n);for(let i=0;i<n;i++)M[i]=Hh[i]?1:0;
  return solidify(M);}
@@ -331,19 +322,13 @@ function paste(src,M,col){
  lx.globalCompositeOperation='destination-in';lx.drawImage(fm2,0,0,W,H);
  if(col){lx.globalCompositeOperation='source-atop';lx.fillStyle=col;lx.fillRect(0,0,W,H);}
  cx.drawImage(lay,0,0);}
-// 分身の合成：1人目の画に、2人目の「背景と違う所」を重ね、さらに動いている人を手前に出す
+// 分身の合成：前半の画をそのまま出し、後半の「動いている人」だけを手前に重ねる
 function compose(n,bi){
  cx.globalCompositeOperation='source-over';cx.drawImage(V[0],0,0,W,H);
- const bg=bgs[bi];if(n<2||!bg||lay_done[1])return;
- const th=+$('ct').value*3,show=$('ov2').checked;
- fmx.drawImage(V[0],0,0,BW,bh);const a0=fmx.getImageData(0,0,BW,bh).data;
+ if(n<2||lay_done[1])return;
+ const th=+$('ct').value*3;
  fmx.drawImage(V[1],0,0,BW,bh);const a1=fmx.getImageData(0,0,BW,bh).data;
- const D1=solidify(diffMask(a1,bg.data,th));
- const mv0=motion(0,a0,th),mv1=motion(1,a1,th);
- const top0=new Uint8Array(D1.length);let any=0;
- for(let i=0;i<top0.length;i++)if(mv0[i]&&D1[i]&&!mv1[i]){top0[i]=1;any=1;}
- paste(V[1],D1,show?'rgba(0,200,255,.45)':'');
- if(any)paste(V[0],top0,show?'rgba(255,0,200,.45)':'');
+ paste(V[1],motion(1,a1,th),$('ov2').checked?'rgba(0,200,255,.45)':'');
 }
 // ④ ブラー（合成後の画に対して）
 function frame(src){
