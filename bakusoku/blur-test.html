@@ -90,8 +90,20 @@ let prev=null,running=false,rec=null,dur=0,url=null,posT=0;
 let scores=[],thumbs=[],step=0.5,segs=[],blocks=[],bgs=[],cloneMarks=[];
 const blk=$('blk'),kx=blk.getContext('2d');
 [['sp',1,1],['th',2,0],['bl',3,0],['tr',4,0],['dl',5,0],['mt',6,1],['ml',7,1],['mg',8,1],['sc',9,2],['ct',10,0]].forEach(([id,n,re])=>{
- const e=$(id);e.oninput=()=>{$('v'+n).textContent=e.value;if(re===2){calcBlocks();scheduleBgs();}if(re)calcSegs();};
+ const e=$(id);e.oninput=()=>{$('v'+n).textContent=e.value;if(re===2){calcBlocks();scheduleBgs();}if(re)calcSegs();if(['th','bl','tr','dl'].includes(id))rerender();};
 });
+['be','ov'].forEach(id=>$(id).addEventListener('change',()=>rerender()));
+// 止まっている時も設定を変えたらすぐ画面に反映（少し前のコマと比べて動きを出す）
+let rrBusy=false,rrAgain=false;
+async function rerender(){
+ if(running||!dur||rec||bgBusy)return;
+ if(rrBusy){rrAgain=true;return;}rrBusy=true;
+ const t=posT||v.currentTime;
+ prev=null;trx.clearRect(0,0,W,H);
+ await seekTo(Math.max(0,t-0.3));frame(v,true);
+ await seekTo(t);frame(v,true);
+ rrBusy=false;if(rrAgain){rrAgain=false;rerender();}
+}
 
 function seekV(el,t){return new Promise(r=>{const h=()=>{el.removeEventListener('seeked',h);r()};el.addEventListener('seeked',h);el.currentTime=Math.min(t,Math.max(0,dur-0.05));})}
 const seekTo=t=>seekV(v,t);
@@ -365,10 +377,15 @@ function compose(n,bi){
  paste(V[1],motion(1,a1,th),col);
 }
 // ④ ブラー（合成後の画に対して）
-function frame(src){
+let lastFT=-1,vfCount=0;const vfc=!!v.requestVideoFrameCallback;
+if(vfc){const cb=()=>{vfCount++;v.requestVideoFrameCallback(cb)};v.requestVideoFrameCallback(cb);}
+function frame(src,force){
  x.globalAlpha=1;x.globalCompositeOperation='source-over';
  if(!$('be').checked){x.drawImage(src,0,0,W,H);return;}
  const th=+$('th').value,bl=+$('bl').value,tl=+$('tr').value/100,dl=+$('dl').value;
+ // 動画のコマが変わった時だけ動きを計算（同じコマを比べると動き0になりブラーが消えるため）
+ const ft=vfc?vfCount:V[0].currentTime,fresh=force||ft!==lastFT;lastFT=ft;
+ if(fresh){
  mx.drawImage(src,0,0,sw,sh);
  const cur=mx.getImageData(0,0,sw,sh),out=t2x.createImageData(sw,sh);
  if(prev){const a=cur.data,b=prev.data,o=out.data;
@@ -376,14 +393,15 @@ function frame(src){
    const d=Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]);
    o[i+3]=d>th*3?255:0;o[i]=255;}}
  prev=cur;t2x.putImageData(out,0,0);
+ }
  mkx.clearRect(0,0,sw,sh);mkx.filter=`blur(${dl*sw/W*2}px)`;mkx.drawImage(t2,0,0);mkx.filter='none';
  x.drawImage(src,0,0,W,H);
- trx.globalCompositeOperation='destination-out';trx.fillStyle=`rgba(0,0,0,${1-tl})`;trx.fillRect(0,0,W,H);
- trx.globalCompositeOperation='source-over';
+ if(fresh){trx.globalCompositeOperation='destination-out';trx.fillStyle=`rgba(0,0,0,${1-tl})`;trx.fillRect(0,0,W,H);
+ trx.globalCompositeOperation='source-over';}
  tx.globalCompositeOperation='source-over';tx.clearRect(0,0,W,H);
  tx.filter=bl>0?`blur(${bl}px)`:'none';tx.drawImage(src,0,0,W,H);tx.filter='none';
  tx.globalCompositeOperation='destination-in';tx.drawImage(mk,0,0,W,H);tx.globalCompositeOperation='source-over';
- x.drawImage(tr,0,0);x.drawImage(tmp,0,0);trx.drawImage(tmp,0,0);
+ x.drawImage(tr,0,0);x.drawImage(tmp,0,0);if(fresh)trx.drawImage(tmp,0,0);
  if($('ov').checked){ovx.globalCompositeOperation='source-over';ovx.clearRect(0,0,W,H);ovx.drawImage(mk,0,0,W,H);
   ovx.globalCompositeOperation='source-in';ovx.fillStyle='rgba(255,0,0,.5)';ovx.fillRect(0,0,W,H);x.drawImage(ovc,0,0);}
 }
