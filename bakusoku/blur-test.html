@@ -41,7 +41,7 @@ details.row[open]>summary::before{content:"▼ "}
 <label>この秒数以上 動きがなければカット <b id="v7">2</b>秒 <input type="range" id="ml" min="0.5" max="10" step="0.5" value="2"></label>
 <label>カットの前後に残す余白 <b id="v8">0.3</b>秒 <input type="range" id="mg" min="0" max="2" step="0.1" value="0.3"></label>
 <div class="st" id="rs">まだ解析していません</div>
-<div class="st">バー：灰色の山＝動きの量、赤＝カットされる所、横線＝基準、黄色の縦線＝カメラ位置の変わり目</div>
+<div class="st">バー：灰色の山＝動きの量、赤＝カットされる所、横線＝基準、黄色・水色の枠＝カメラ位置が同じ範囲（ブロック）</div>
 </details>
 
 <details class="row"><summary>③ 分身</summary>
@@ -86,7 +86,7 @@ const fm=C(),fmx=fm.getContext('2d'),fm2=C(),fm2x=fm2.getContext('2d'),lay=C(),l
 let prev=null,running=false,rec=null,dur=0,url=null,posT=0;
 let scores=[],thumbs=[],step=0.5,segs=[],blocks=[],bgs=[],np=1;
 [['sp',1,1],['th',2,0],['bl',3,0],['tr',4,0],['dl',5,0],['mt',6,1],['ml',7,1],['mg',8,1],['sc',9,2],['ct',10,0]].forEach(([id,n,re])=>{
- const e=$(id);e.oninput=()=>{$('v'+n).textContent=e.value;if(re===2)calcBlocks();if(re)calcSegs();};
+ const e=$(id);e.oninput=()=>{$('v'+n).textContent=e.value;if(re===2){calcBlocks();scheduleBgs();}if(re)calcSegs();};
 });
 document.querySelectorAll('#np button').forEach(b=>b.onclick=()=>{
  if(running)return;np=+b.dataset.n;document.querySelectorAll('#np button').forEach(q=>q.classList.toggle('on',q===b));calcSegs();});
@@ -115,7 +115,7 @@ $('f').onchange=e=>{
 function peek(t){if(!dur)return;posT=t;
  if(running){if(rec)return;jumpTo(t);return;}
  seekTo(t).then(()=>{x.drawImage(v,0,0,W,H);drawBar(undefined,t);$('st').textContent=fmt(t)+'（画面タップでここから再生）'})}
-c.onclick=()=>{if(!dur||rec)return;if(running)stop();else start(posT);};
+c.onclick=()=>{if(!dur||rec||bgBusy)return;if(running)stop();else start(posT);};
 
 // ② 解析
 const TW=32,TH=18;
@@ -159,7 +159,17 @@ function calcBlocks(){
   cut.push(i);
  }
  blocks=cut.map((ci,k)=>({s:ci*step,e:k+1<cut.length?cut[k+1]*step:dur}));
- if(bgs.length!==blocks.length)bgs=[];
+}
+let bgTimer=0,bgBusy=false;
+function scheduleBgs(){
+ if(!thumbs.length)return;bgs=[];clearTimeout(bgTimer);
+ $('bk').textContent='ブロックが変わったので背景を作り直します…';
+ bgTimer=setTimeout(async function go(){
+  if(running||bgBusy){bgTimer=setTimeout(go,500);return;}
+  bgBusy=true;['an','rc'].forEach(id=>$(id).disabled=true);
+  await makeBgs();bgBusy=false;['an','rc'].forEach(id=>$(id).disabled=false);
+  calcSegs();$('st').textContent='背景を作り直しました';
+ },700);
 }
 // ブロックごとの背景：何枚かのコマの中央値（動く人が消える）
 async function makeBgs(){
@@ -235,7 +245,13 @@ function drawBar(upto,cur){
   const n=upto===undefined?scores.length:upto;
   for(let i=0;i<n;i++){const h=Math.min(1,scores[i]/mxs)*bhh;bx.fillRect(X(i*step),bhh-h,Math.max(1,X(step)),h);}
   const ty=bhh-Math.min(1,+$('mt').value/mxs)*bhh;bx.fillStyle='#e53935';bx.fillRect(0,ty,bw,2*devicePixelRatio);}
- if(upto===undefined){bx.fillStyle='#f5b800';blocks.slice(1).forEach(B=>bx.fillRect(X(B.s)-1,0,3*devicePixelRatio,bhh));}
+ if(upto===undefined&&scores.length){const dp=devicePixelRatio,cols=['#f5b800','#00b0ff'];
+  bx.font=`bold ${11*dp}px sans-serif`;bx.textBaseline='top';
+  blocks.forEach((B,i)=>{const a=X(B.s),w=X(B.e)-a,col=cols[i%2];
+   bx.strokeStyle=col;bx.lineWidth=3*dp;bx.strokeRect(a+1.5*dp,1.5*dp,w-3*dp,bhh-3*dp);
+   bx.fillStyle=col;const lb='ブロック'+(i+1);const tw=bx.measureText(lb).width+6*dp;
+   if(w>tw+4*dp){bx.fillRect(a+3*dp,3*dp,tw,14*dp);bx.fillStyle='#000';bx.fillText(lb,a+6*dp,4*dp);}
+  });}
  bx.fillStyle='#2563eb';
  const ts=running?V.slice(0,curN).map(e=>e.currentTime):[cur===undefined?v.currentTime:cur];
  ts.forEach(t=>bx.fillRect(X(t)-1,0,3*devicePixelRatio,bhh));
