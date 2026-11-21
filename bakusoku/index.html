@@ -4308,14 +4308,14 @@ function sbItemIns(it){selItem=it;actLane=10;renderLanes();let pushed=false;
     sl('位置 X(右へ)','px',-100,100,1,pc);sl('位置 Y(下へ)','py',-100,100,1,pc)}}],foot:[['テンプレート登録',()=>{try{localStorage.setItem('sbTpl',JSON.stringify(Object.assign({},it.sb||{})));flashSel('登録しました。次から新しい速度表記はこの設定で入ります')}catch(e){flashSel('登録できませんでした')}}]]}),{tab:0,open:0})}
 /* v637: FXレーン(レーン11・CHの上) {lane:11,start,end,cn,text,fxl:{tn,k,fi,fo,adj:{on,br,ct,hl,sd,sa,vb,hu,wb,sh,bl,nr,vg},mos,shk,bw}}。全部 on(チェック)で適用するか選ぶ。動画とCH・見出しにかかり、字幕にはかけない */
 const FXL_D={tn:'',k:100,fi:0,fo:0,adj:{on:false,br:{on:false,v:0},ct:{on:false,v:0},hl:{on:false,v:0},sd:{on:false,v:0},sa:{on:false,v:0},vb:{on:false,v:0},hu:{on:false,v:0},wb:{on:false,t:0,g:0},sh:{on:false,v:50,r:50},bl:{on:false,v:20,m:0},nr:{on:false,v:50,d:50,c:false},vg:{on:false,v:50,r:50,f:50,c:0,s:0}},
-  mos:{on:false,sz:30,sh:0},shk:{on:false,m:0,v:30,sp:50,rot:false,dec:false},bw:{on:false,v:100,m:0,red:false}};
+  mos:{on:false,sz:30,sh:0},shk:{on:false,m:0,v:30,sp:50,rot:false,dec:false},bw:{on:false,v:100,m:0,red:false},/* v1021: 字幕のシネマ・動きのフィルムノイズ/ノイズと同じ仕組み */cine:{on:false,v:100},film:{on:false,v:60},nz:{on:false,v:50}};
 const fxClone=o=>JSON.parse(JSON.stringify(o));
 const fxDefOf=(f,d,o)=>{if(f===o)return d;for(const k in d)if(d[k]&&typeof d[k]==='object'&&f&&f[k]){const r=fxDefOf(f[k],d[k],o);if(r)return r}return null};
 /* 初期値に足りない所を足す(古い保存・テンプレートも読める) */
 function fxFill(o,d){o=o&&typeof o==='object'?o:{};for(const k in d){if(d[k]&&typeof d[k]==='object')o[k]=fxFill(o[k],d[k]);else if(o[k]==null)o[k]=d[k]}return o}
 const fxTpls=()=>{try{return JSON.parse(localStorage.getItem('fxTpl')||'null')||{}}catch(e){return{}}};
 window.fxTpls=fxTpls;/* v745: 字幕ページのショートカットから読む */const fxTplPut=T=>{try{localStorage.setItem('fxTpl',JSON.stringify(T));return true}catch(e){return false}};
-const FXN={adj:'画像調整',mos:'モザイク',shk:'画面揺れ',bw:'白黒'};
+const FXN={adj:'画像調整',mos:'モザイク',shk:'画面揺れ',bw:'白黒',cine:'シネマ',film:'フィルムノイズ',nz:'ノイズ'};
 const fxName=it=>{const F=it.fxl||{},L=Object.keys(FXN).filter(k=>F[k]&&F[k].on).map(k=>FXN[k]);return (F.tn?F.tn+' ':'')+(L.length?L.join('・'):'FX')};
 /* 再生ヘッドの位置にFXを入れる(tn=テンプレート名、''=何もなし) */
 function fxAdd(t,tn){if(roLane(11)){flashSel('先に上のBlockを選んでください');return null}pausePreview();
@@ -4394,8 +4394,10 @@ function fxOne(g,W,H,t,it){const F=fxFill(it.fxl,FXL_D),a=F.adj,A=fxOn(a)?a:{};
   const fl=[];if(fxOn(A.br)&&A.br.v)fl.push('brightness('+(1+A.br.v/100)+')');if(fxOn(A.ct)&&A.ct.v)fl.push('contrast('+(1+A.ct.v/100)+')');if(fxOn(A.sa)&&A.sa.v)fl.push('saturate('+Math.max(0,1+A.sa.v/100)+')');if(fxOn(A.hu)&&A.hu.v)fl.push('hue-rotate('+A.hu.v+'deg)');
   if(fxOn(A.bl)&&!A.bl.m&&A.bl.v)fl.push('blur('+(A.bl.v/100*W*0.02).toFixed(2)+'px)');
   if(fxOn(F.bw)){if(!F.bw.red&&F.bw.v)fl.push('grayscale('+F.bw.v/100+')');if(F.bw.m===1)fl.push('contrast(1.4)');else if(F.bw.m===2)fl.push('contrast(0.8) brightness(1.05)')}
+  /* v1021: シネマ=字幕のエフェクトと同じ色(efCss('cine'))＋上下の黒帯(高さ12%×強さ) */const cin=fxOn(F.cine)&&F.cine.v>0?F.cine.v/100:0;if(cin){const c=window.efCine?efCine(cin):'';if(c)fl.push(c)}
+  /* v1021: フィルムノイズ・ノイズ=動きのテンプレートと同じ mvNoise */const fm=fxOn(F.film)&&F.film.v>0?F.film.v/100:0,nzv=fxOn(F.nz)&&F.nz.v>0?F.nz.v/100:0;
   const blM=fxOn(A.bl)&&A.bl.m&&A.bl.v,vg=fxOn(A.vg)&&A.vg.v,mos=fxOn(F.mos),shk=fxOn(F.shk)&&F.shk.v;
-  if(!fl.length&&!pix&&!blM&&!vg&&!mos&&!shk)return;
+  if(!fl.length&&!pix&&!blM&&!vg&&!mos&&!shk&&!cin&&!fm&&!nzv)return;
   let k=(F.k==null?100:F.k)/100;const el=t-it.start,rm=it.end-t;if(F.fi>0&&el<F.fi)k*=fcv(it.fic)(clamp01(el/F.fi));if(F.fo>0&&rm<F.fo)k*=fcv(it.foc)(clamp01(rm/F.fo));/* v759: 曲線 */if(k<=0.001)return;
   fxC1=fxCv(fxC1,W,H);fxCp(fxC1,g.canvas);/* 元の絵(強さ・フェードで混ぜる用) */fxC2=fxCv(fxC2,W,H);
   g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';
@@ -4420,6 +4422,8 @@ function fxOne(g,W,H,t,it){const F=fxFill(it.fxl,FXL_D),a=F.adj,A=fxOn(a)?a:{};
     else{const D=x3.getImageData(0,0,sw,sh).data;g.fillStyle='#000';g.fillRect(0,0,W,H);for(let y=0;y<sh;y++)for(let x=0;x<sw;x++){const j=(y*sw+x)*4;g.fillStyle='rgb('+D[j]+','+D[j+1]+','+D[j+2]+')';g.beginPath();g.arc(x*bs+bs/2,y*bs+bs/2,bs*0.47,0,6.2832);g.fill()}}}
   /* ビネット */if(vg){const V=A.vg,R=V.s?Math.hypot(W,H)/2:H/2*Math.SQRT2,inn=R*(0.15+0.75*V.r/100),out=Math.min(R*1.25,inn+R*(0.05+0.95*V.f/100)),c=V.c?'255,255,255':'0,0,0';
     g.translate(W/2,H/2);if(!V.s)g.scale(W/H,1);const gr=g.createRadialGradient(0,0,inn,0,0,out);gr.addColorStop(0,'rgba('+c+',0)');gr.addColorStop(1,'rgba('+c+','+(V.v/100)+')');g.fillStyle=gr;g.fillRect(-W*2,-H*2,W*4,H*4);g.setTransform(1,0,0,1,0,0)}
+  if((fm||nzv)&&window.mvNoise)window.mvNoise(g,0,0,W,H,{film:fm,nz:nzv},t,H);
+  if(cin){const hb=Math.round(H*0.12*cin);if(hb>0){g.fillStyle='#000';g.fillRect(0,0,W,hb);g.fillRect(0,H-hb,W,hb)}}
   /* 全体の強さ・フェード: 元の絵を上に重ねて薄める */if(k<0.999){g.globalAlpha=1-k;g.drawImage(fxC1,0,0);g.globalAlpha=1}
   }finally{g.restore()}}
 /* ---- インスペクタ ---- */
@@ -4457,10 +4461,13 @@ function fxIns(it){selItem=it;actLane=11;renderLanes();it.fxl=fxFill(it.fxl,FXL_
       {const r=item(bx,'ノイズ除去',a.nr,a,'次の版で使えます');r.style.opacity='.45';r.querySelector('.fxck').disabled=true}}},
     {t:'モザイク',on:()=>F.mos.on,build:bx=>{const o=F.mos;item(bx,'モザイクを使う',o);sl(bx,'マスの大きさ',o,'sz',1,100,1,pc,o);seg(bx,'形',o,'sh',['四角','丸ドット'],o)}},
     {t:'画面揺れ',on:()=>F.shk.on,build:bx=>{const o=F.shk;item(bx,'画面揺れを使う',o);seg(bx,'揺れ方',o,'m',['ランダム','縦','横','ドン'],o);sl(bx,'強さ',o,'v',0,100,1,pc,o);sl(bx,'速さ',o,'sp',0,100,1,pc,o);tgl(bx,'回転も揺らす',o,'rot',o);tgl(bx,'だんだん収まる',o,'dec',o)}},
-    {t:'白黒',on:()=>F.bw.on,build:bx=>{const o=F.bw;item(bx,'白黒を使う',o);sl(bx,'強さ',o,'v',0,100,1,pc,o);seg(bx,'仕上がり',o,'m',['ノーマル','ハイコン','やわらか'],o);tgl(bx,'赤だけ残す',o,'red',o)}}
+    {t:'白黒',on:()=>F.bw.on,build:bx=>{const o=F.bw;item(bx,'白黒を使う',o);sl(bx,'強さ',o,'v',0,100,1,pc,o);seg(bx,'仕上がり',o,'m',['ノーマル','ハイコン','やわらか'],o);tgl(bx,'赤だけ残す',o,'red',o)}},
+    {t:'シネマ',on:()=>F.cine.on,build:bx=>{const o=F.cine;item(bx,'シネマを使う',o,null,'上下の黒帯・映画っぽい色');sl(bx,'強さ',o,'v',0,100,1,pc,o)}},
+    {t:'フィルムノイズ',on:()=>F.film.on,build:bx=>{const o=F.film;item(bx,'フィルムノイズを使う',o,null,'ざらつき・傷・ちらつき');sl(bx,'強さ',o,'v',0,100,1,pc,o)}},
+    {t:'ノイズ',on:()=>F.nz.on,build:bx=>{const o=F.nz;item(bx,'ノイズを使う',o,null,'細かい砂嵐');sl(bx,'強さ',o,'v',0,100,1,pc,o)}}
   ]}),{tab:0,open:-1});
   /* 見出しにチェックボックス(押すと適用する/しない。開閉はそのまま) */
-  const G=[null,F.adj,F.mos,F.shk,F.bw];M.w.querySelectorAll('.sh').forEach((h,k)=>{const o=G[k];if(!o)return;const c=cbx(o,null,';height:24px;margin-left:-2px');h.insertBefore(c,h.firstChild)});
+  const G=[null,F.adj,F.mos,F.shk,F.bw,F.cine,F.film,F.nz];M.w.querySelectorAll('.sh').forEach((h,k)=>{const o=G[k];if(!o)return;const c=cbx(o,null,';height:24px;margin-left:-2px');h.insertBefore(c,h.firstChild)});
   /* 一番上: テンプレート */
   {const top=document.createElement('div');top.style.cssText='padding:6px 8px 0;display:flex;flex-direction:column;gap:6px';
     const r1=document.createElement('div');r1.className='r';const l1=document.createElement('span');l1.textContent='テンプレート';l1.style.width='auto';const se=document.createElement('select');se.id='fxTplSel';se.style.cssText='flex:1;min-width:0;height:30px;font-size:13px;background:var(--btn);color:var(--fg);border:1px solid var(--btnl);border-radius:6px';
@@ -7101,8 +7108,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1020';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
+{const v=document.createElement('div');v.textContent='v1021';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1021','タイムラインのFXに シネマ(上下の黒帯)・フィルムノイズ・ノイズ を追加(字幕のシネマ・動きのノイズと同じ仕組み)'],['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
   ['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
   ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
@@ -11207,7 +11214,7 @@ function mvFrameDraw(c,x,y,w,h,k){if(!k)return;const T=Math.max(3,h*(k==='iron'?
 /* 書き出し: 中身(動画＋字幕)を描いたキャンバス C を小さくして、エフェクト・ノイズ・枠を付ける */
 function mvOutPaint(g,C,W,H,o,t){const w=W*o.s,h=H*o.s,x=(W-w)/2,y=(H-h)/2;g.save();g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.filter='none';g.fillStyle='#000';g.fillRect(0,0,W,H);
   const f=mvOutFl(o);if(f)g.filter=f;g.drawImage(C,0,0,W,H,x,y,w,h);g.filter='none';if(o.film>0||o.nz>0)mvNoise(g,x,y,w,h,o,t,H);mvFrameDraw(g,x,y,w,h,o.fr);g.restore()}
-window.subMvOut=t=>{try{return mvOutAt(TL.list,t)}catch(_){return null}};window.seClipsT=L=>seClips(L);window.mvOutPaint=mvOutPaint;window.mvOutAt=mvOutAt;
+window.subMvOut=t=>{try{return mvOutAt(TL.list,t)}catch(_){return null}};window.seClipsT=L=>seClips(L);window.mvOutPaint=mvOutPaint;window.mvOutAt=mvOutAt;/* v1021: タイムラインのFXでも使う */window.mvNoise=mvNoise;window.efCine=k=>efMix(efCss('cine'),k);
 /* 画面: #t_mvW(動画と字幕の入れ物)を小さくする。ノイズは入れ物の中、枠は外のキャンバス */
 function mvOutApply(o,t){const W0=document.getElementById('t_mvW'),pl=$('pl');if(!W0||!pl)return;const on=!!o;pl.classList.toggle('mvOut',on);
   const tf=on?'scale('+o.s.toFixed(4)+')':'';if(W0.style.transform!==tf)W0.style.transform=tf;const f=on?mvOutFl(o):'';if(W0.style.filter!==f)W0.style.filter=f;
