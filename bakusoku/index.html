@@ -1820,7 +1820,8 @@ $('mvPrev').onclick=()=>mvGo(-1);$('mvNext').onclick=()=>mvGo(1);
 {const st=pv.parentElement,P=new Map();let G=null,D=null,dragged=false;
  const segAt=()=>{if(!cur)return null;const t=pv.currentTime;return segs.find(s=>s.clip===cur&&t>=s.start-1e-3&&t<s.end)||null};
  const tf=v=>v&&(v.zm||v.rt||v.px||v.py)?'translate('+((v.px||0)*100)+'%,'+((v.py||0)*100)+'%) rotate('+(v.rt||0)+'deg) scale('+(v.zm||1)+')':'';
- const show=()=>{try{pv.style.transform=tf(segVt(segAt(),pv.currentTime))}catch(e){}};window.cutTfShow=show;
+ /* v1020: 消した所(グレーの斜線)では動画を出さない(黒)。✎修正の時だけ、一番近い残す範囲と同じ向きで暗く出す(戻す所を探せるように) */
+ const show=()=>{try{const t=pv.currentTime,s=segAt();let v=s&&segVt(s,t),op='';if(!s&&cur){const L=segs.filter(q=>q.clip===cur);if(L.length){const n=L.reduce((x,y)=>Math.min(Math.abs(y.start-t),Math.abs(y.end-t))<Math.min(Math.abs(x.start-t),Math.abs(x.end-t))?y:x);v=segVt(n,Math.max(n.start,Math.min(n.end-1e-3,t)));op=window.cwMode==='fix'?'.4':'0'}}pv.style.transform=tf(v);pv.style.opacity=op}catch(e){}};window.cutTfShow=show;
  window.cutTfAt=t=>{try{const s=cur&&segs.find(q=>q.clip===cur&&t>=q.start-1e-3&&t<q.end);return tf(segVt(s,t))}catch(e){return''}};
  ['timeupdate','seeked','loadedmetadata','emptied'].forEach(ev=>pv.addEventListener(ev,()=>{if(!G)show()}));
  const ang=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
@@ -1966,7 +1967,9 @@ $('cut').onclick=()=>{
 function mergeIn(a,b,tol){const c=cur,N={clip:c,start:a,end:b,cn:cutCnNow()},m=[];
   segs.filter(q=>q.clip===c).concat([N]).sort((x,y)=>x.start-y.start).forEach(q=>{const l=m[m.length-1];
     if(l&&(q.start<l.end-0.001||(q.start<=l.end+tol&&(q===N||l.nw)&&l.cn===q.cn))){l.end=Math.max(l.end,q.end);if(q===N)l.nw=1}
-    else m.push({clip:c,start:q.start,end:q.end,cn:q.cn,nw:q===N?1:0})});
+    else m.push(q===N?{clip:c,start:q.start,end:q.end,cn:q.cn,nw:1}:{...q,fx:fxC(q.fx),nw:0})});
+  /* v1020: 戻した所・つないだ所も、回転・ズーム・色・音量などの設定を残す(新しく足した範囲は一番近い同じ動画の範囲から写す) */
+  const old=segs.filter(q=>q.clip===c&&q.fx);m.forEach(p=>{if(p.fx||!old.length)return;const o=old.reduce((x,y)=>Math.abs((y.start+y.end)/2-(p.start+p.end)/2)<Math.abs((x.start+x.end)/2-(p.start+p.end)/2)?y:x);p.fx=fxC(o.fx)});
   m.forEach(p=>delete p.nw);putClip(c,m);sortSegs()}
 /* 動画cの範囲をmに置き換える。今ある所(重なる所)はその位置に、新しい範囲は同じ動画の時間順の位置に入れる */
 function putClip(c,m){const out=[],done=new Set();
@@ -2058,7 +2061,7 @@ function setCutView(mode){const fast=mode!=='detail',sec=document.querySelector(
 /* v472: 波形の操作は3つから1つ選ぶ。del=削除(赤いかたまりをタップで消す) / rng=範囲を削除(タップ=黄色い印、長押し→左右で消す。最初) / fix=修正(消した所を表示して、長押し→左右で戻す) */
 window.cwMode='rng';window.rngMode=false;
 function setCwMode(m){cwMode=m;rngMode=m==='del';[['rngDel','del'],['rngCut','rng'],['fixB','fix'],['kfB','kf']].forEach(([id,k])=>$(id).setAttribute('aria-pressed',String(m===k)));
-  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'波形の上半分タップ=ズーム・位置の◇(青)、下半分タップ=音量の◇。◇の上で動画を動かす/波形を上下=その◇の値を変える':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw()}
+  cutMsg(m==='del'?'再生ヘッドのある赤い部分を、波形をタップして削除します':m==='kf'?'波形の上半分タップ=ズーム・位置の◇(青)、下半分タップ=音量の◇。◇の上で動画を動かす/波形を上下=その◇の値を変える':m==='fix'?'消した所(グレー)に再生ヘッドを合わせて長押し→右へ=左側を戻す / 左へ=右側を戻す':'');window.cwfDraw&&cwfDraw();window.cutTfShow&&cutTfShow()}
 window.setCwMode=setCwMode;
 $('rot90B').onclick=()=>window.cutRot90&&window.cutRot90();$('rngDel').onclick=()=>setCwMode('del');$('rngCut').onclick=()=>setCwMode('rng');$('fixB').onclick=()=>setCwMode('fix');$('kfB').onclick=()=>setCwMode('kf');
 $('auto').onclick=e=>{auto=!auto;e.currentTarget.setAttribute('aria-pressed',auto);
@@ -7098,8 +7101,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1019';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
+{const v=document.createElement('div');v.textContent='v1020';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
   ['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
   ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
@@ -8603,7 +8606,7 @@ function stopChain(noSeek){if(!chain)return;const A=cvs[chain.act],t=A.currentTi
   /* 範囲を残す範囲から外す */
   function exclude(a,b){if(b-a<1/FPS)return;pushH();const out=[];
     segs.forEach(q=>{if(q.clip!==cur||q.end<=a||q.start>=b){out.push(q);return}
-      if(q.start<a-0.001)out.push({clip:q.clip,start:q.start,end:a,cn:q.cn});if(q.end>b+0.001)out.push({clip:q.clip,start:b,end:q.end,cn:q.cn})});
+      /* v1020: 残った前後に回転・ズーム・色・音量などの設定をそのまま持たせる */if(q.start<a-0.001)out.push({...q,end:a,fx:fxC(q.fx)});if(q.end>b+0.001)out.push({...q,start:b,fx:fxC(q.fx)})});
     segs=out.filter(q=>!q.clip||q.end-q.start>=1/FPS);sortSegs();resetOut();renderSegs();renderTL()}
   /* 微調整用(今は前の操作) */
   function snap(t){return Math.round(t*FPS)/FPS}
