@@ -984,7 +984,10 @@ body.blay{padding-bottom:340px!important}body.blay #t_fold button,body.blay #t_s
 /* v491: 字幕修正だけは表示領域の下端へ。入力・ボタンのフォーカスで位置を切り替えない */
 #t_sheet.sub-edit{align-items:flex-end;bottom:auto}
 #t_sheet.sub-edit>div{max-height:100%;border-radius:14px 14px 0 0;overscroll-behavior:contain;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));gap:5px}
-#t_sheet.sub-edit .seRow{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr) 44px;gap:5px;align-items:stretch}#t_sheet.sub-edit .seRow>button{min-width:0;min-height:44px;font-size:14px;padding:2px 3px;line-height:1.2}#t_sheet.sub-edit .subEditChecks .lck{flex:none;flex-direction:row;gap:4px;font-size:12px}#t_sheet.sub-edit .subEditChecks .lck input{width:20px;height:20px}
+#t_sheet.sub-edit .seRow{display:grid;grid-template-columns:40px max-content minmax(max-content,1fr) max-content;gap:3px;align-items:stretch}
+#t_sheet.sub-edit .seRow>button{min-width:0;min-height:44px;font-size:clamp(12px,3.5vw,14px);padding:2px 3px;line-height:1.2;white-space:nowrap}
+#t_sheet.sub-edit .seMode{width:calc(4em + 8px)}
+#t_sheet.sub-edit .seMode.on:enabled{color:var(--accent);border-color:var(--accent)}
 #t_sheet.sub-edit .two>button{min-height:38px;font-size:14px}
 #t_sheet.sub-edit textarea{box-sizing:border-box;width:100%;min-height:0;max-height:30vh;line-height:1.4;resize:none;flex:none;overflow-y:auto}
 #t_sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -2479,7 +2482,14 @@ function txDraw(g,P,s,k,W,H,draw){if(!P||!P.ty||!(+P.op>0)||!g||!g.canvas||typeo
     g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(O.canvas,0,0);g.restore()}
   catch(e){console.warn('txDraw',e);draw(g,s)}}
 window.TXT=TXT;window.txT=txT;window.txNew=txNew;window.TXBL=TXBL;window.txImg=txImg;/* 字幕ページ側(別の囲み)から使う */
-window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.trim())return;if(o.br&&o.br.length){const a=[...txt];txt=a.map((c,i)=>(o.br.includes(i)&&i?'\n':'')+c).join('')}const u=Math.min(H,W*9/16),k=u/1080,s=o.spk&&PT['sub'+o.spk]?Object.assign({},PT['sub'+o.spk]):Object.assign({},PT.sub,o.color?{color:o.color}:{},o.stColor?{stColor:o.stColor,stW:Math.max(PT.sub.stW||0,6)}:{});
+/* v1028: brは文字間の位置。先頭・末尾・連続する改行もそのまま復元する */
+window.subBreakText=(text,breaks)=>{
+  if(!breaks||!breaks.length)return text;
+  const chars=Array.from(text),lines=[];let start=0;
+  for(const end of breaks){if(!Number.isInteger(end)||end<start||end>chars.length)continue;lines.push(chars.slice(start,end).join(''));start=end}
+  lines.push(chars.slice(start).join(''));return lines.join('\n');
+};
+window.subPaint=(g,W,H,txt,o)=>{o=o||{};txt=(txt||'').replace(/\n/g,'');if(!txt.trim())return;txt=window.subBreakText(txt,o.br);const u=Math.min(H,W*9/16),k=u/1080,s=o.spk&&PT['sub'+o.spk]?Object.assign({},PT['sub'+o.spk]):Object.assign({},PT.sub,o.color?{color:o.color}:{},o.stColor?{stColor:o.stColor,stW:Math.max(PT.sub.stW||0,6)}:{});
   /* v486: ストロークを大きさに合わせるため、元の大きさを覚えておく */s.sz0=s.size||60;
   /* v552: 字幕ごとの中色(cIn)・外色(cOut)・外の線の太さ(wOut)・影の濃さ(shP)と色(shC) */if(o.cIn)s.color=o.cIn;if(o.cOut){s.stColor=o.cOut;if(!(s.stW>0)&&o.wOut==null)s.stW=6}if(o.wOut!=null)s.stW=o.wOut;if(o.shP!=null){s.shOp=o.shP;if(!(s.shBlur>0))s.shBlur=8}if(o.shC)s.shColor=o.shC;
   /* v562: スタイルテンプレート(o.sty)。今までの色・線・影の代わりに使う */if(o.sty){const T=o.sty;s.color=T.c||'#ffffff';s.stW=T.st?(+T.sw||0):0;s.stColor=T.sc||'#000000';s.st2W=0;s.shOp=0;s.ty=T;s.bxc=o.bxc||null;s.bxF=o.bxF||null;if(T.bx)s.frame='none'}
@@ -2723,7 +2733,7 @@ function styledText(g,W,H,u,raw,s,vert,since,until){
     {const l0=Math.max(...LS.map(o=>o.U.reduce((a,b)=>a+b,0)));if(l0>Lm&&!s.nsh){fs*=Lm/l0;unit()}}/* v811: nsh=自動で大きさを変えない(はみ出しても小さくしない) */
     /* はみ出す行だけ、まず大きくしていない文字を小さくする。それでも足りなければその行だけ小さくする */
     /* v932: 選んだ文字を大きくしても、ほかの文字は小さくしない(はみ出す分は下で字幕ごと内側へずらす) */
-    const lh=o=>fs*1.3*LHM*Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),tc=()=>LS.reduce((a,o)=>a+lh(o),0);
+    const lh=o=>fs*1.3*LHM*(o.cc.length?Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01):1),tc=()=>LS.reduce((a,o)=>a+lh(o),0);
     if(tc()>Lc&&!s.nsh){fs*=Lc/tc();unit()}
     g.font=F(fs);const tot=tc();LS.forEach(o=>{o.ws=o.U.map((u,j)=>u*Wd[o.i0+j]);o.w=o.ws.reduce((a,b)=>a+b,0);o.h=lh(o)});
     /* 大きくして画面の端からはみ出す分は、字幕ごと内側へずらす */
@@ -7110,8 +7120,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1027';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1027','字幕の修正窓を短くし、入力欄の下に「保存して閉じる」「文字別編集」「❌」を横並びにしました'],['v1026','字幕ページの⬅️➡️: 同じ動画が何度も使われていても、今いる所から隣のクリップへ移動する'],['v1025','ホームのプロジェクトカード: サムネイル画像の長押しでも削除確認が出るように修正'],['v1024','ホームのプロジェクト長押し削除: 指を離してから確認窓を表示し、余分なタップやスクロールによる誤動作を防止'],['v1023','字幕を直して保存した時、文字数が多くても勝手に次のクリップに分けないように(分けるのは改行した所だけ。生成の文字数は自動生成の時だけ使う)'],['v1022','カットページ: ◇がある動画で回転・ズームすると、同じ動画の別の残す範囲も一緒に回ってしまうのを直す(今の範囲だけ変わる)'],['v1021','タイムラインのFXに シネマ(上下の黒帯)・フィルムノイズ・ノイズ を追加(字幕のシネマ・動きのノイズと同じ仕組み)'],['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
+{const v=document.createElement('div');v.textContent='v1028';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1028','字幕編集：完了ボタンと改行モードを一列に。分割・改行・グループで空行も残せます'],['v1027','字幕の修正窓を短くし、入力欄の下に「保存して閉じる」「文字別編集」「❌」を横並びにしました'],['v1026','字幕ページの⬅️➡️: 同じ動画が何度も使われていても、今いる所から隣のクリップへ移動する'],['v1025','ホームのプロジェクトカード: サムネイル画像の長押しでも削除確認が出るように修正'],['v1024','ホームのプロジェクト長押し削除: 指を離してから確認窓を表示し、余分なタップやスクロールによる誤動作を防止'],['v1023','字幕を直して保存した時、文字数が多くても勝手に次のクリップに分けないように(分けるのは改行した所だけ。生成の文字数は自動生成の時だけ使う)'],['v1022','カットページ: ◇がある動画で回転・ズームすると、同じ動画の別の残す範囲も一緒に回ってしまうのを直す(今の範囲だけ変わる)'],['v1021','タイムラインのFXに シネマ(上下の黒帯)・フィルムノイズ・ノイズ を追加(字幕のシネマ・動きのノイズと同じ仕組み)'],['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
   ['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
   ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
@@ -9932,7 +9942,7 @@ function showOv0(t,X){const okR=x=>X&&X.row1?true:x.ln!==1;/* v880: 下の列(�
         let n0=0;const LS=LN.map(cc=>{const o={cc,i0:n0,U:cc.map(c=>/[ -~]/.test(c)?.55:1)};n0+=cc.length;return o});
         let f2=fz;const A=(b.v?aH:aW)/f2-ph,len=o=>o.U.reduce((a,u,j)=>a+u*Wd[o.i0+j],0);
         /* v932: ほかの文字は小さくしない */
-        const mE=o=>Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01),ext0=()=>LS.reduce((a,o)=>a+mE(o)*lh,0)+pv,cr=(b.v?W*.9:H*.9)/ext0();if(f2>cr)f2=cr;o.style.fontSize=f2.toFixed(1)+'px';
+        const mE=o=>(o.cc.length?Math.max(...o.cc.map((_,j)=>D[o.i0+j]),.01):1),ext0=()=>LS.reduce((a,o)=>a+mE(o)*lh,0)+pv,cr=(b.v?W*.9:H*.9)/ext0();if(f2>cr)f2=cr;o.style.fontSize=f2.toFixed(1)+'px';
         {const ext=f2*ext0(),ml=Math.max(...LS.map(len)),hw=b.v?ext/2:f2*(ml+ph)/2,hh=b.v?f2*(ml+ph)/2:ext/2;o.style.left=(cl(cx-OX*W,hw+W*.02,W*.98-hw)+OX*W).toFixed(1)+'px';/* v732: 手で動かした分は端の制限に入れない */o.style.top=(cl(cy-OY*H,hh+H*.02,H*.98-hh)+OY*H).toFixed(1)+'px'}
         o.textContent='';o.style.whiteSpace='pre';o.style.lineHeight=lh;LS.forEach((L,li)=>{if(li)o.appendChild(document.createTextNode('\n'));L.cc.forEach((ch,j)=>{const i=L.i0+j,c=cs(i),sp=document.createElement('span');sp.textContent=ch;/* 場所の大きさが違う文字は下の線にそろえる(き・奥と同じ) */let st='display:inline-block;vertical-align:baseline;line-height:1;';const big=Math.abs(E[i]-Wd[i])>1e-6;if(Wd[i]!==1)st+='font-size:'+Wd[i].toFixed(3)+'em;';/* v947: 選んで大きさを変えた文字は場所を変えず、その場(真ん中)で大きくなる。ほかの文字は動かさない */
           if(c.x||c.y)st+='position:relative;left:'+((c.x||0)*H).toFixed(1)+'px;top:'+((c.y||0)*H).toFixed(1)+'px;';if(big){const vis=document.createElement('span');vis.textContent=ch;let vs='position:absolute;left:50%;top:50%;font-size:'+(E[i]/Wd[i]).toFixed(3)+'em;line-height:1;white-space:pre;transform:translate(-50%,-50%)'+(c.r?' rotate('+c.r+'deg)':'')+';';if(c.r)vis.dataset.r=c.r;if(c.f&&window.PFAM)vs+='font-family:'+window.PFAM[c.f].replace(/"/g,"'")+';';if(c.v){vs+='filter:'+INVF;vis.dataset.v=1}vis.style.cssText=vs;sp.textContent='';const gh=document.createElement('span');gh.textContent=ch;gh.style.cssText='visibility:hidden;line-height:1';sp.style.cssText=st+'position:relative;';sp.append(gh,vis);o.appendChild(sp);return}
@@ -9993,7 +10003,7 @@ const FONTS=[{k:'lanove',n:'ラノベPOP',file:1,t:'s'},{k:'yusei',n:'マジッ�
 const OLDF=[null,'yusei','dela','mochiy','reggae','kaisei','mplus','klee','utage','lanove'];
 const fkey=g=>{/* v754: フォントは字幕テンプレートで決めたもの(T.dfk)を使う(テンプレートを切り替えても前のフォントが残っていた) */try{const T=g&&stAll()[STK(g)],f=T&&(T.dfk||(Array.isArray(T.font)&&T.font.length===1?T.font[0]:null));if(f&&FONTS.some(x=>x.k===f))return f}catch(_){}const k=g.fk!==undefined?g.fk:(OLDF[g.fnt|0]||null);return FONTS.some(f=>f.k===k)?k:'lanove'};
 /* v240: 1行の字幕の中の改行(g.br=改行を入れる文字の位置) */
-const brT=g=>g.br&&g.br.length?[...g.t].map((c,i)=>(i&&g.br.includes(i)?'\n':'')+c).join(''):g.t;
+const brT=g=>window.subBreakText(g.t,g.br);
 const fk=g=>{const k=fkey(g),f=FONTS.find(x=>x.k===k);return f.file&&!fOK[k]?null:k};
 /* v201: ファイルで追加するフォント(スマホの中に保存して毎回読み込む) */
 const FF={utage:'ShokakiUtage',lanove:'LanobePOP'},fOK={};
@@ -12434,35 +12444,49 @@ function eatTouchEnd(){const k=e=>{if(e.cancelable)e.preventDefault()},o={captur
 /* v887: 入力欄にフォーカスを入れ、少しの間は外れたら戻す(キーボードだけ出て文字が入らない状態を防ぐ) */
 function holdFocus(ta,ms){const t1=Date.now()+ms,again=()=>{if(Date.now()>t1||!ta.isConnected||$('sheet').hidden)return;const a=document.activeElement;if(a===ta)return;if(a&&a!==document.body&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;try{ta.focus({preventScroll:true})}catch(_){}};[300,700].forEach(t=>setTimeout(again,t))}
 function editRow(r,list,g,late){eatTouchEnd();sheet((b,close)=>{$('sheet').classList.add('sub-edit');const ta=document.createElement('textarea');ta.value=brT(g);ta.setAttribute('aria-label','字幕');subEditField(ta);
-  const w=document.createElement('div');w.className='seRow';const n=document.createElement('button');n.className='no';n.textContent='❌';n.setAttribute('aria-label','閉じる');const ta0=ta.value;
-  /* v272: 改行チェック: 入っていると、入力欄の改行はそのまま1つの字幕の中の改行になる(行を分けない) */
-  const bk2=document.createElement('label');bk2.className='lck';bk2.innerHTML='<input type="checkbox"><span>改行</span>';const bc=bk2.querySelector('input');bc.checked=!!(g.br&&g.br.length);const bc0=bc.checked;
-  /* v165: 学習チェック(最初はチェックなし)。チェックして保存した直しだけ「Claude学習」で覚える */
-  const lk=document.createElement('label');lk.className='lck';lk.innerHTML='<input type="checkbox"><span>学習</span>';const lc=lk.querySelector('input');
-  const y=document.createElement('button');y.className='no';y.onclick=async()=>{
-    if(bc.checked){const L=ta.value.replace(/\r/g,'').split('\n').map(x=>x.trim()).filter(Boolean),v=L.join('');
-      if(v){close();const br=[];let n0=0;L.forEach((x,i)=>{if(i)br.push(n0);n0+=[...x].length});
-        if(v===g.t&&JSON.stringify(br)===JSON.stringify(g.br||[]))return;if(lc.checked&&v!==g.t)learn(g.t,v);if([...v].length!==[...g.t].length)delete g.cs;g.t=v;if(br.length)g.br=br;else delete g.br;saveR(view.m,r);drawResults();return}}
-    const v=ta.value.trim();close();if(!v){grpPass(list,g);list.splice(list.indexOf(g),1);sel={a:g.a,b:g.b,gap:true};saveR(view.m,r);drawResults();return}if(v===g.t)return;if(lc.checked)learn(g.t,v);if([...v].length!==[...g.t].length){delete g.cs;delete g.br}g.t=v;
+  const w=document.createElement('div');w.className='seRow';
+  const n=document.createElement('button');n.className='no';n.textContent='×';n.setAttribute('aria-label','閉じる');
+  const modes=['分割','改行','グループ'],actions=['分割して完了','改行して完了','グループ化して完了'];
+  const modeButton=document.createElement('button');modeButton.className='no seMode on';
+  const y=document.createElement('button');y.className='no';
+  const ta0=ta.value,en0=g.en||'',initialMode=g.br&&g.br.length?1:0;
+  let mode=initialMode,te=null;
+  const hasBreak=()=>ta.value.includes('\n');
+  const dirty=()=>ta.value!==ta0||(hasBreak()&&mode!==initialMode)||(te&&te.value!==en0);
+  const refresh=()=>{const multi=hasBreak();modeButton.disabled=!multi;
+    modeButton.textContent=modes[multi?mode:0];modeButton.setAttribute('aria-label','改行の扱い：'+modeButton.textContent);
+    y.textContent=multi?actions[mode]:'完了';y.disabled=!dirty()};
+  modeButton.onclick=()=>{mode=(mode+1)%modes.length;refresh()};
+  ta.addEventListener('input',refresh);
+  const writeEnglish=()=>{if(!te||te.value===en0)return;if(te.value.trim())g.en=te.value.trim();else delete g.en};
+  const writeLines=()=>{const lines=ta.value.split('\n'),br=[];let length=0;
+    for(let i=0;i<lines.length;i++){if(i)br.push(length);length+=Array.from(lines[i]).length}
+    if(length!==Array.from(g.t).length)delete g.cs;
+    g.t=lines.join('');if(br.length)g.br=br;else delete g.br};
+  y.onclick=async()=>{if(!dirty())return;writeEnglish();close();
+    if(ta.value===ta0&&(!hasBreak()||mode===initialMode)){saveR(view.m,r);drawResults();return}
+    if(hasBreak()&&mode===1){writeLines();saveR(view.m,r);drawResults();return}
+    const v=hasBreak()?ta.value:ta.value.trim();
+    if(!v){grpPass(list,g);list.splice(list.indexOf(g),1);sel={a:g.a,b:g.b,gap:true};saveR(view.m,r);drawResults();return}
+    if(Array.from(v).length!==Array.from(g.t).length)delete g.cs;
+    delete g.br;g.t=v;
     /* v163: 18文字を超えたら自動で次の行に分ける(時間は文字数で割り振り)。v186: 改行した所でも分ける。v1023: 直した時は文字数では分けない(改行した所だけ。生成の文字数は自動生成の時だけ) */
     if(/\n/.test(v)){if(!audio){try{await getAudio()}catch(_){}}const source=g.en;let one=[g];
     /* v914: 改行して分割する時、1つ目の改行の所は再生ヘッドの位置で分ける(再生ヘッドが字幕の中にある時。外なら今までどおり文字数で配分) */const nl=v.indexOf('\n'),ph=typeof pos==='number'?pos:NaN;
-    if(nl>0&&ph>g.a+0.1&&ph<g.b-0.1){const t1=v.slice(0,nl).trim(),t2=v.slice(nl+1).trim(),ens=g.en?splitEnglish(g.en,[t1,t2]):null,ws=g.w&&g.w.length?g.w:null;const g2={...g,a:ph,t:t2,o:'',chk:''};['ka','oa','ca','va','vka','voa','se'].forEach(z=>delete g2[z]);GHK.forEach(f=>delete g2[f]);
-      g.t=t1;g.b=ph;['cb','kb','ob'].forEach(z=>delete g[z]);if(ws){g.w=ws.filter(x=>x.a<ph-1e-3);g2.w=ws.filter(x=>x.a>=ph-1e-3)}if(ens){if(ens[0])g.en=ens[0];else delete g.en;if(ens[1])g2.en=ens[1];else delete g2.en}const A=[g],B=[g2];fix18(A,true);fix18(B,true);one=[...A,...B]}else fix18(one,true);
-    await refineEnglish(one,source);one.forEach(x=>{delete x.cs;delete x.br});list.splice(list.indexOf(g),1,...one);sel=one[0];/* v892 */if(gc.checked&&one.length>1){saveR(view.m,r);grpJoin(one[0],one[1],one,list);saveR(view.m,r);drawResults();return}}
+    if(nl>=0&&ph>g.a+0.1&&ph<g.b-0.1){const t1=v.slice(0,nl),t2=v.slice(nl+1),ens=g.en?editEnglish(g.en,[t1,t2]):null,ws=g.w&&g.w.length?g.w:null;const g2={...g,a:ph,t:t2,o:'',chk:''};['ka','oa','ca','va','vka','voa','se'].forEach(z=>delete g2[z]);GHK.forEach(f=>delete g2[f]);
+      g.t=t1;g.b=ph;['cb','kb','ob'].forEach(z=>delete g[z]);if(ws){g.w=ws.filter(x=>x.a<ph-1e-3);g2.w=ws.filter(x=>x.a>=ph-1e-3)}if(ens){if(ens[0])g.en=ens[0];else delete g.en;if(ens[1])g2.en=ens[1];else delete g2.en}const A=[g],B=[g2];fix18(A,true,true);fix18(B,true,true);one=[...A,...B]}else fix18(one,true,true);
+    await refineEnglish(one.filter(x=>x.t.trim()),source);one.forEach(x=>{delete x.cs;delete x.br});list.splice(list.indexOf(g),1,...one);sel=one[0];/* v892 */if(mode===2&&one.length>1){saveR(view.m,r);grpJoin(one[0],one[1],one,list);saveR(view.m,r);drawResults();return}}
     saveR(view.m,r);drawResults()};
-  /* v892: グループ(改行の所で分けた字幕をグループにする)。改行とはどちらか1つ。学習のチェックは外す(lcは残してチェック無し扱い) */const gk2=document.createElement('label');gk2.className='lck';gk2.innerHTML='<input type="checkbox"><span>グループ</span>';const gc=gk2.querySelector('input');bc.addEventListener('change',()=>{if(bc.checked)gc.checked=false});gc.addEventListener('change',()=>{if(gc.checked)bc.checked=false});const ck=document.createElement('div');ck.className='subEditChecks';ck.style.cssText='display:flex;gap:6px';ck.append(bk2,gk2);
-  /* v914: 改行チェックなしで入力欄に改行があれば、保存ボタンは「分割して保存」 */const yl=()=>{y.textContent=!bc.checked&&/\n/.test(ta.value.trim())?'分割して保存':'保存して閉じる'};ta.addEventListener('input',yl);bc.addEventListener('change',yl);gc.addEventListener('change',yl);yl();
-  /* v865: 文字別編集(1文字ずつの大きさ・角度・フォント)をここから開ける */const cj=document.createElement('button');cj.className='no';cj.textContent='文字別編集';cj.onclick=()=>{/* v945: 入力欄で変えた文字を先に入れてから文字別編集を開く(保存で閉じなくてよい) */const L=ta.value.replace(/\r/g,'').split('\n').map(x=>x.trim()).filter(Boolean),v=L.join('');if(v&&(v!==g.t||ta.value!==ta0)){const br=[];let n0=0;L.forEach((x,i)=>{if(i)br.push(n0);n0+=[...x].length});if([...v].length!==[...g.t].length)delete g.cs;if(lc.checked&&v!==g.t)learn(g.t,v);g.t=v;if(br.length)g.br=br;else delete g.br;saveR(view.m,r);drawResults()}close();charEdit(r,list,g)};
+  const cj=document.createElement('button');cj.className='no';cj.textContent='文字別編集';
+  cj.onclick=()=>{writeEnglish();if(ta.value!==ta0&&ta.value.length)writeLines();if(dirty()){saveR(view.m,r);drawResults()}close();charEdit(r,list,g)};
   b.append(ta);
-  /* v482: 英語字幕の修正(入力欄から離れたら保存) */if(g.en!=null||list.some(x=>x.en)){const te=document.createElement('textarea');te.className='enTa';te.placeholder='英語字幕';te.value=g.en||'';te.setAttribute('aria-label','英語字幕');subEditField(te);
-    te.onchange=()=>{const v=te.value.trim();if(v)g.en=v;else delete g.en;saveR(view.m,r)};b.append(te)}
-  /* v1027: 入力欄の下に操作を一列にまとめる */w.append(y,cj,n);b.append(w,ck);
+  if(g.en!=null||list.some(x=>x.en)){te=document.createElement('textarea');te.className='enTa';te.placeholder='英語字幕';te.value=en0;te.setAttribute('aria-label','英語字幕');subEditField(te);te.addEventListener('input',refresh);b.append(te)}
+  refresh();w.append(n,modeButton,y,cj);b.append(w);
   /* v491: SEは字幕の再生画面から設定できるため、修正窓には置かない(既存SEは保持) */
   /* v515: 空白縦・横の新規追加ボタンを廃止。既存クリップの再生互換は保持。 */
   if(g.grp){const u=document.createElement('button');u.className='no';u.textContent='グループ解除(この行から下)';u.onclick=()=>{close();const gm=grpOf(list,g),i=gm.indexOf(g);gm.slice(i).forEach(x=>delete x.grp);sel=g;save();drawResults()};b.appendChild(u)}
   /* v877: 下は「保存」と「❌」だけ。❌(と外側のタップ)で閉じる時、変えたのに保存していなければ聞く。字幕を消す操作はこの画面から外した */
-  {const t1=Date.now(),dirty=()=>ta.value!==ta0||bc.checked!==bc0||gc.checked,cl=()=>{if(!dirty()){close();return}askSave('変更が保存されていません。保存しますか？',[['保存する',()=>y.click()],['保存しない',close],['戻る']])};
+  {const t1=Date.now(),cl=()=>{if(!dirty()){close();return}askSave('変更が保存されていません。保存しますか？',[['保存する',()=>y.click()],['保存しない',close],['戻る']])};
     n.onclick=cl;$('sheet').onclick=e=>{if(e.target===$('sheet')&&Date.now()-t1>500)cl()};}
   /* v283: 前の入力欄からすぐ開いた時(空白を入れた後)は、いったんキーボードを閉じてから入力欄に入る(閉じないと画面がずれずキーボードに隠れる) */
   /* v720: 字幕タイムラインのダブルタップで開いた時、指を離した後に遅れて来るタップ(mousedown)で入力欄のフォーカスが外れ、キーボードは出ているのに文字が入らない事があった。開いて少しの間はフォーカスが外れたら入力欄に戻す */
@@ -12497,7 +12521,7 @@ function charEdit(r,list,g){const t0=g.t,fk0=g.fk,fn0=g.fnt,br0=g.br?g.br.slice(
     const toText=()=>{if(ta)return;ta=document.createElement('textarea');ta.value=brT(g);const ok=document.createElement('button');ok.textContent='文字選択に戻る';
       const box=document.createElement('div');box.style.cssText='display:flex;flex-direction:column;gap:8px';box.append(ta,ok);w.replaceWith(box);setTimeout(()=>ta.focus(),50);
       ok.onclick=()=>{fromText();box.replaceWith(w)}};
-    const fromText=()=>{if(!ta)return;const v=ta.value.replace(/\r/g,'').replace(/^\n+|\n+$/g,'');ta=null;const a=[...v],brs=[],ch=[];a.forEach(c=>{if(c==='\n'){if(ch.length&&!brs.includes(ch.length))brs.push(ch.length)}else ch.push(c)});
+    const fromText=()=>{if(!ta)return;const v=ta.value.replace(/\r/g,'');ta=null;const a=[...v],brs=[],ch=[];a.forEach(c=>{if(c==='\n'){brs.push(ch.length)}else ch.push(c)});
       const t2=ch.join('');if(!t2.trim())return;if(t2!==g.t){if(ch.length!==C.length){cs=ch.map(c=>mk(null,c));on.clear()}g.t=t2;C=ch}
       if(brs.length)g.br=brs;else delete g.br;build();paint()};
     let lpT=null;w.addEventListener('pointerdown',()=>{clearTimeout(lpT);lpT=setTimeout(toText,600)});['pointerup','pointercancel','pointerleave','pointermove'].forEach(n=>w.addEventListener(n,e=>{if(n!=='pointermove'||e.movementX||e.movementY)clearTimeout(lpT)}));
@@ -12637,12 +12661,15 @@ function tighten(cs,lo,hi){if(!audio||!cs.length)return;const P=audio.pcm,f=Math
 /* 区切り: 声のある時間の割合で決めた位置の近く(±0.8秒)に息継ぎがあればそこ、なければ近くの一番静かな所 */
 function splitAt(A,B,frac,lo,hi){const t0=Math.max(lo,Math.min(hi,voicedAt(A,B,frac)));
   const c=pausesIn(A,B).filter(t=>t>=lo&&t<=hi&&Math.abs(t-t0)<=0.8).sort((x,y)=>Math.abs(x-t0)-Math.abs(y-t0));return c.length?c[0]:snapQ(t0,lo,hi)}
-function fix18(list,noLen){const out=[];list.forEach(g=>{const ps=String(g.t).split(/\n+/).map(s=>s.trim()).filter(Boolean).flatMap(t=>noLen?[t]:split18(t));/* v1023: noLen=改行の所だけで分ける(自分で直した・入れた字幕) */if(ps.length<2){if(ps[0])g.t=ps[0];out.push(g);return}
+/* 空行には英訳を割り当てず、英文は文字のある行に残す */
+function editEnglish(text,parts){const words=parts.filter(t=>t.trim());if(!words.length)return parts.map((_,i)=>i?'':text);
+  const tr=splitEnglish(text,words);let i=0;return parts.map(t=>t.trim()?tr[i++]:'')}
+function fix18(list,noLen,keepEmpty=false){const out=[];list.forEach(g=>{const ps=keepEmpty?String(g.t).split('\n'):String(g.t).split(/\n+/).map(s=>s.trim()).filter(Boolean).flatMap(t=>noLen?[t]:split18(t));/* v1023: noLen=改行の所だけで分ける(自分で直した・入れた字幕) */if(ps.length<2){if(ps[0])g.t=ps[0];out.push(g);return}
   /* v186: 言葉の時間があればその切れ目で分ける */
-  const ens=g.en?splitEnglish(g.en,ps):null,ws=g.w&&g.w.length?g.w:null,oc=ws?ws.reduce((n,w)=>n+w.n,0):0;
+  const ens=g.en?(keepEmpty?editEnglish(g.en,ps):splitEnglish(g.en,ps)):null,ws=g.w&&g.w.length?g.w:null,oc=ws?ws.reduce((n,w)=>n+w.n,0):0;
   const cut=(fr,lo,hi)=>{if(!ws||!oc)return null;let c=0;const cs=[];ws.forEach((w,j)=>{if(j&&w.a>=lo&&w.a<=hi)cs.push({c,a:w.a});c+=w.n});if(!cs.length)return null;const goal=fr*oc;return cs.sort((x,y)=>Math.abs(x.c-goal)-Math.abs(y.c-goal))[0].a};
   /* v490: 短い認識区間でも残りの字幕の時間を確保し、境目の逆転を防ぐ */
-  const tot=ps.reduce((n,x)=>n+[...x].length,0),step=Math.min(0.15,(g.b-g.a)/ps.length);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=[...x].length;const lo=p+step,hi=g.b-step*(ps.length-k-1),q=k===ps.length-1?g.b:Math.max(lo,Math.min(hi,cut(cc/tot,lo,hi)??splitAt(g.a,g.b,cc/tot,lo,hi)));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(ens){if(ens[k])pc.en=ens[k];else delete pc.en}if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
+  const weight=x=>Math.max(1,Array.from(x).length),tot=ps.reduce((n,x)=>n+weight(x),0),step=Math.min(0.15,(g.b-g.a)/ps.length);let p=g.a,cc=0;ps.forEach((x,k)=>{cc+=weight(x);const lo=p+step,hi=g.b-step*(ps.length-k-1),q=k===ps.length-1?g.b:Math.max(lo,Math.min(hi,cut(cc/tot,lo,hi)??splitAt(g.a,g.b,cc/tot,lo,hi)));const pc={...g,a:p,b:q,t:x,o:k?'':g.o,chk:k?'':g.chk};if(ens){if(ens[k])pc.en=ens[k];else delete pc.en}if(k){delete pc.se;GHK.forEach(f=>delete pc[f])}/* v229: SEと枠の設定は最初の行だけ */if(ws)pc.w=ws.filter(w=>w.a>=p-1e-3&&w.a<q-1e-3);out.push(pc);p=q})});
   /* v747: 2行まで=1行の文字数を超えた字幕は中で改行(g.br) *//* v926: 行数(LNS)まで、1行の文字数ごとに中で改行 */if(typeof LNS!=='undefined'&&LNS>1)out.forEach(g=>{const c=[...String(g.t||'')];if(c.length>MAXC&&!(g.br&&g.br.length)){const br=[];let o=0;while(br.length<LNS-1&&c.length-o>MAXC){const i=cutAt(c.slice(o,o+MAXC*2),MAXC);if(i<=0)break;o+=i;br.push(o)}if(br.length)g.br=br}});
   list.splice(0,list.length,...out)}
 /* v273: 自動修正はしばらくの間「、」を消して、その区切りにスペースを入れるだけ(Claudeには送らない)。SIMPLEFIX=falseで元に戻る */
@@ -12744,7 +12771,7 @@ async function tlLoad(segs){
     for(const K of keys){const rs={};for(const m of SUBM()){const r=await kv('res_'+m+'|'+K);if(r&&r.raw)rs[m]=r}
       const ms=Object.keys(rs);if(!ms.length)continue;let base=[];
       if(ms.length){const m=rs[pref]?pref:ms.sort((a,b)=>((rs[b].info||{}).at||0)-((rs[a].info||{}).at||0))[0];
-        /* v838: 字幕ページを範囲(クリップ・コーナー)で開いて保存すると、範囲外の字幕は rawOut/fixOut に分けて残る。タイムラインではそれも合わせて出す(前は範囲外の字幕がタイムラインから消えていた) */{const L=pv==='raw'||!rs[m].fix?'raw':'fix';base=(rs[m][L]||[]).concat(rs[m][L+'Out']||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim())}resM[K]={key:'res_'+m+'|'+K,r:rs[m]};if(Array.isArray(rs[m].sem))SM0.push(...rs[m].sem)}
+        /* v838: 字幕ページを範囲(クリップ・コーナー)で開いて保存すると、範囲外の字幕は rawOut/fixOut に分けて残る。タイムラインではそれも合わせて出す(前は範囲外の字幕がタイムラインから消えていた) */{const L=pv==='raw'||!rs[m].fix?'raw':'fix';base=(rs[m][L]||[]).concat(rs[m][L+'Out']||[]).filter(g=>g&&g.ka!=null&&!g.gap&&typeof g.t==='string')}resM[K]={key:'res_'+m+'|'+K,r:rs[m]};if(Array.isArray(rs[m].sem))SM0.push(...rs[m].sem)}
       rows[K]=base}
     {const nr=await kv('res_nar|ALL'),nrows=((nr&&nr.raw)||[]).filter(g=>g&&g.ka!=null&&typeof g.t==='string'&&g.t.trim());if(nrows.length){rows['_nar']=nrows;resM['_nar']={key:'res_nar|ALL',r:nr}}}
     TL.res=resM;TL.rows=rows;TL.sem=SM0;TL.keys=keys.join('|');TL.sig='';
@@ -13023,7 +13050,7 @@ window.subNavClip=dir=>{/* v835: まずタイムラインの前・次のクリ�
 window.scMenu=scMenu;window.subScDraw();
 window.subTLNar=()=>TL.list.filter(g=>g.akey&&g.adur>0).map(g=>({a:g.va!=null?g.va:g.a,akey:g.akey,dur:g.adur,off:g.aoff||0}));
 window.subMode=()=>MODE;
-/* v475: タイムラインの字幕レーン(3)の箱用 */window.subTLSubTx=()=>TL.list.filter(g=>!g.nar&&(g.t||'').trim()).map(g=>({a:g.a,b:g.b}));
+/* v475: タイムラインの字幕レーン(3)の箱用 */window.subTLSubTx=()=>TL.list.filter(g=>!g.nar&&!g.gap&&typeof g.t==='string').map(g=>({a:g.a,b:g.b}));
 /* v437: タイムラインのナレーション文字レーン(9)用 */window.subTLNarTx=()=>TL.list.filter(g=>g.nar).map(g=>({a:g.a,b:g.b,t:g.t}));
 /* v253: 投稿準備ページ用(全体の時間の字幕) */window.subTLText=async segs=>{await tlLoad(segs);return TL.list.map(g=>({a:g.a,b:g.b,t:g.t}))};
 window.subTLDraw=(g,W,H,t,segs)=>{
