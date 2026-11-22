@@ -981,15 +981,15 @@ body.blay{padding-bottom:340px!important}body.blay #t_fold button,body.blay #t_s
 #t_sheet .chs button.tg{background:color-mix(in srgb,var(--accent) 35%,var(--bg))}
 #t_sheet .chs button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
 #t_sheet textarea{font:inherit;font-size:17px;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);min-height:70px}
-/* v491: 字幕修正だけは表示領域の下端へ。入力・ボタンのフォーカスで位置を切り替えない */
-#t_sheet.sub-edit{align-items:flex-end;bottom:auto}
-#t_sheet.sub-edit>div{max-height:100%;border-radius:14px 14px 0 0;overscroll-behavior:contain;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));gap:5px}
-#t_sheet.sub-edit .seRow{display:grid;grid-template-columns:40px max-content minmax(max-content,1fr) max-content;gap:3px;align-items:stretch}
-#t_sheet.sub-edit .seRow>button{min-width:0;min-height:44px;font-size:clamp(12px,3.5vw,14px);padding:2px 3px;line-height:1.2;white-space:nowrap}
-#t_sheet.sub-edit .seMode{width:calc(4em + 8px)}
+/* v1029: 字幕修正はプレビューの下に置き、入力欄だけを伸縮する */
+#t_sheet.sub-edit{align-items:flex-start;bottom:auto}
+#t_sheet.sub-edit>div{margin-top:var(--se-top,0px);border-radius:14px 14px 0 0;overscroll-behavior:contain;padding:8px 10px calc(8px + env(safe-area-inset-bottom,0px));gap:5px}
+#t_sheet.sub-edit .seRow{display:grid;grid-template-columns:36px minmax(0,4.5em) minmax(0,1fr) minmax(0,5.5em);gap:3px;flex:none;align-items:stretch}
+#t_sheet.sub-edit .seRow>button{min-width:0;min-height:44px;font-size:clamp(11px,3.5vw,14px);padding:2px;line-height:1.2;overflow-wrap:anywhere}
+#t_sheet.sub-edit>div>button{flex:none;min-height:38px;font-size:14px}
 #t_sheet.sub-edit .seMode.on:enabled{color:var(--accent);border-color:var(--accent)}
 #t_sheet.sub-edit .two>button{min-height:38px;font-size:14px}
-#t_sheet.sub-edit textarea{box-sizing:border-box;width:100%;min-height:0;max-height:30vh;line-height:1.4;resize:none;flex:none;overflow-y:auto}
+#t_sheet.sub-edit textarea{box-sizing:border-box;width:100%;min-height:36px;line-height:1.4;resize:none;flex:0 1 auto;overflow-y:auto;overscroll-behavior:contain;padding:5px 8px}
 #t_sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #t_sheet .three{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center}
 #t_sheet .lck{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--fg);gap:2px;padding:0 4px}#t_sheet .lck input{width:26px;height:26px;margin:0}
@@ -7120,8 +7120,8 @@ themeApply();
  document.addEventListener('touchend',e=>{const t=document.activeElement;if(!ok(t)||t._imeOK||!(e.target===t||(t.contains&&t.contains(e.target))))return;setTimeout(()=>{if(document.activeElement===t&&!t._imeOK)re(t)},60)},true);
  document.addEventListener('keydown',e=>{const t=e.target;if(e.keyCode!==229||!ok(t))return;const k0=Date.now();setTimeout(()=>{if(document.activeElement===t&&!t._imeRe&&!((t._imeAny||0)>=k0))re(t)},350)},true);
  window.__imeRe=t=>re(t||document.activeElement)}
-{const v=document.createElement('div');v.textContent='v1028';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
-  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1028','字幕編集：完了ボタンと改行モードを一列に。分割・改行・グループで空行も残せます'],['v1027','字幕の修正窓を短くし、入力欄の下に「保存して閉じる」「文字別編集」「❌」を横並びにしました'],['v1026','字幕ページの⬅️➡️: 同じ動画が何度も使われていても、今いる所から隣のクリップへ移動する'],['v1025','ホームのプロジェクトカード: サムネイル画像の長押しでも削除確認が出るように修正'],['v1024','ホームのプロジェクト長押し削除: 指を離してから確認窓を表示し、余分なタップやスクロールによる誤動作を防止'],['v1023','字幕を直して保存した時、文字数が多くても勝手に次のクリップに分けないように(分けるのは改行した所だけ。生成の文字数は自動生成の時だけ使う)'],['v1022','カットページ: ◇がある動画で回転・ズームすると、同じ動画の別の残す範囲も一緒に回ってしまうのを直す(今の範囲だけ変わる)'],['v1021','タイムラインのFXに シネマ(上下の黒帯)・フィルムノイズ・ノイズ を追加(字幕のシネマ・動きのノイズと同じ仕組み)'],['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
+{const v=document.createElement('div');v.textContent='v1029';v.id='ver';v.style.cssText='position:fixed;right:6px;bottom:4px;font:10px/1 monospace;color:var(--muted);opacity:.7;pointer-events:none;z-index:99';document.body.appendChild(v)
+  /* v443: 開く度に今のバージョンを大きく出す(v796: ？の長押しでいつでも再表示) */const showBig=()=>{if(document.getElementById('verBig'))return;const s=document.createElement('div');s.id='verBig';s.textContent=v.textContent;/* v468: アプリ(箱)の中ならアプリのバージョンも */{const A=window.BakuApp;let t='';try{t=A?(A.appVer?'アプリ '+A.appVer():'アプリ ver'+A.ver()):''}catch(e){}if(t){const d=document.createElement('div');d.style.cssText='font-size:24px;text-align:center;opacity:.85';d.textContent=t;s.appendChild(d)}}/* v657: 新しい3つの版の変更を短く(版を上げる時は先頭に1行足す。smoke.py が確認) */const CHANGELOG=[['v1029','字幕修正窓を再生画面の下に固定し、長い入力は欄内でスクロール'],['v1028','字幕編集：完了ボタンと改行モードを一列に。分割・改行・グループで空行も残せます'],['v1027','字幕の修正窓を短くし、入力欄の下に「保存して閉じる」「文字別編集」「❌」を横並びにしました'],['v1026','字幕ページの⬅️➡️: 同じ動画が何度も使われていても、今いる所から隣のクリップへ移動する'],['v1025','ホームのプロジェクトカード: サムネイル画像の長押しでも削除確認が出るように修正'],['v1024','ホームのプロジェクト長押し削除: 指を離してから確認窓を表示し、余分なタップやスクロールによる誤動作を防止'],['v1023','字幕を直して保存した時、文字数が多くても勝手に次のクリップに分けないように(分けるのは改行した所だけ。生成の文字数は自動生成の時だけ使う)'],['v1022','カットページ: ◇がある動画で回転・ズームすると、同じ動画の別の残す範囲も一緒に回ってしまうのを直す(今の範囲だけ変わる)'],['v1021','タイムラインのFXに シネマ(上下の黒帯)・フィルムノイズ・ノイズ を追加(字幕のシネマ・動きのノイズと同じ仕組み)'],['v1020','カット: 範囲を切る・戻すと回転やズームが消える不具合を直した。消した所(グレーの斜線)では動画を出さない(✎修正の時は暗く出す)'],['v1019','カット: 🔄で回すと画面いっぱいに広がる(縦動画を横に向けると16:9に)。縦動画で止めた時と再生中の見え方がずれるのを直した'],['v1018','カット: ◇の右に🔄ボタン。1回タップで今の範囲の画像を90度回転(ピンチ回転と同じ仕組み)'],['v1017','タイムライン: 選んだBGM・選んだ動画の下半分(音声波形)を上下にスライド=そのクリップの音量(上=大きく)'],['v1016','字幕ページのSE: 真ん中のSE名ボタンを無くした(名前は左上の札)。決定=白い枠の中をもう一度タップ・削除=白い枠の中を長押し。波形の読み込み中・読み込みを止めた時もSEの表示が消えないように'],['v1015','BGMの窓をSE一覧と同じ見た目に(使用中が光る・📁を無くす)。BGMの設定の「曲」をタップ=曲を選ぶ窓で入れ替え(前の曲・次の曲は無し)'],['v1014','字幕ページ: ◀ SE名 ▶ が出ている間、波形を上下にスライド=そのSEの音量(上=大きく・下=小さく。カットページの音量と同じ感じ)'],['v1013','タイムラインの再生でBGMが鳴らない時の対策: 曲を再生前に読み込む・エラーが出ても他の音は止めずに、画面に理由を出す'],['v1012','字幕ページのSEを再生ヘッドの位置に入れるように。SEは動画に付くので、動画を切ったり動かしたりしても一緒に動く(切った所のSEは消える)。波形にSEの音の形・鳴り始めの線・名前の札。SEの色の所をタップ=◀ SE名 ▶(◀▶=1コマずつ動かす・SE名=決定・SE名を長押し=削除)。今までのSEも同じ仕組みに移す'],['v1011','新規の確認で「はい」を押すと、ホーム画面を閉じてカットページに移る(前は移らなかった)'],
   ['v1010','新規ボタン: 押すと「いましてる作業は削除されます」の確認窓(はい/いいえ)。はいでカットページへ'],
   ['v1009','タイムラインで字幕が固まって次の字幕が出ないのを直す(描く字幕の選び方が2か所で違っていた)'],['v1008','タイムラインで、離れた所に行があるグループの字幕が出っぱなしになり、その間の字幕が出ないのを直す(グループは行が出ている時と短いすき間だけ)'],['v1007','タイムラインで1つの字幕が出っぱなしになり、後の字幕が出ないのを直す(端が見つからない字幕はクリップの終わりまで伸ばさない・重なった時は後の字幕を出す)'],['v1006','文字別編集で画面の「字幕」ボタン=選んだ文字だけに字幕テンプレートの見た目(スタイル・テクスチャ・フィルター・フォント)。もう使っていない「太」の残りを削除(昔の太の字幕は普通の字幕で表示)'],['v1005','字幕テンプレートの詳細設定でスタイル・枠のテンプレートを選んでいる時も、再生画面に実際の字幕で見本が出るように(別のテンプレートの字幕を表示している時も)'],['v1004','スタイルに「テンプレート」20種(金・銀・炎・ホラー・テレビ番組風・ネオンなど。グラデーション・光沢・フチ3本・光・立体)。絵から選び、1回目で光って実際の字幕で見本・2回目で決定。メイン色・サブ色・不透明度を変えられる。今までの設定は「自分で設定」の中へ'],['v1003','タイムラインの再生で、字幕ページで付けたSEが鳴ったり鳴らなかったりするのを直す(動画の切り替わりで間が空いても鳴らす・再生を始める時にSEを先に読む)'],['v1002','字幕テンプレートを切り替えた時、前のテンプレートの詳細設定で入ったSE(スタイル・テクスチャ・フィルター・エフェクトも)が残って、SEを登録していないテンプレートでも鳴るのを直す'],['v1001','BGMのレーンで🧲の目印を長押しして長さを変えた時に、曲の窓が出てしまうのを直す(長押しの後に指を動かしたら曲の窓は出さない)'],['v1000','タイムラインの🧲: 目印(←↔→)と長押しスライド・再生ヘッドの引っ付きは、アクティブなレーンだけに戻した(CHを選んでいるのに動画クリップが動いていたのを直す)。伸ばす・縮める途中はほかのレーンのクリップの端に引っ付いて縦線'],['v999','タイムラインの🧲: 引っ付く先はタイムラインに見えているクリップの端だけ(カットページの切れ目・字幕ページの字幕には引っ付かない)。引っ付いた所に黄色い縦線。🧲ボタンは「選」を無くしてオン/オフだけ'],['v998','タイムラインの目印(←↔→)を長押しスライドして長さを変える時も🧲で引っ付く。字幕ページの⬅️➡️は、今の再生ヘッドがタイムラインのどのクリップにあるかで前・次を決める'],['v997','文字別編集の間は、波形をその字幕±1秒だけ表示し、再生もその中だけ(次へ行かない)。再生ヘッドを合わせてSEボタン=そこにSE(1つの字幕に1つまで)'],
 ['v996','文字別編集で文字を選んでいる時: スタイル・テクスチャ・フィルターのボタンは選んだ文字だけに効く(一覧の上から順に・最後はなし)。SEボタンは再生ヘッドの所から鳴る。効かないボタンは消える'],
@@ -9807,9 +9807,20 @@ function playAll(){{const R=ceRng();if(R){if(playing()){stopPlay();return}let s0
 $('bP').onclick=playSel;$('bA').onclick=playAll;/* v705: 波形の左の再生ボタン=▶▶と同じ(続けて再生・再生中に押すと止まる)。再生中は⏸ */{const q=$('wPlay'),wf=$('wf'),fit=()=>{const h=wf.offsetHeight;if(h)q.style.setProperty('--wh',h+'px')};try{new ResizeObserver(fit).observe(wf)}catch(e){}fit();const sh=()=>{fit();const t=playing()?'⏸':'▶';if(q.textContent!==t)q.textContent=t};q.onclick=()=>{playAll();sh()};setInterval(()=>{if(!document.getElementById('s4').hidden)sh()},250);sh()}
 /* v481: 文字入力のシートは、キーボードが出ている時はキーボードの上いっぱいまで使う(55%で切れて下の画面が見えていた) */
 {const sh=$('sheet'),vv=window.visualViewport,fit=()=>{const d=sh.firstElementChild;if(!d)return;if(sh.hidden||!vv){d.style.maxHeight='';sh.style.top='';sh.style.height='';return}
-  /* v491: WebViewの画面縮小・Chromeのキーボード重なりの両方で、見える領域の下端へ固定 */
-  const kb=sh.classList.contains('sub-edit')||vv.height<innerHeight*0.85;sh.style.top=kb?vv.offsetTop+'px':'';sh.style.height=kb?vv.height+'px':'';d.style.maxHeight=kb?'100%':''};
-  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}new MutationObserver(fit).observe(sh,{attributes:true,attributeFilter:['hidden','class'],childList:true,subtree:true})}
+  const editing=sh.classList.contains('sub-edit'),kb=editing||vv.height<innerHeight*0.85;
+  sh.style.top=kb?vv.offsetTop+'px':'';sh.style.height=kb?vv.height+'px':'';
+  if(editing){
+    const styles=getComputedStyle(d),fields=d.querySelectorAll('textarea').length;
+    const row=d.querySelector('.seRow'),extra=d.querySelector(':scope > button');
+    const gap=parseFloat(styles.rowGap)*(fields+Number(!!extra));
+    const minimum=parseFloat(styles.paddingTop)+parseFloat(styles.paddingBottom)+gap+fields*36+(row?.offsetHeight||44)+(extra?.offsetHeight||0);
+    const preview=$('pl').getBoundingClientRect().bottom;
+    const top=Math.max(0,Math.min(preview-vv.offsetTop,vv.height-minimum));
+    d.style.setProperty('--se-top',top+'px');
+    d.style.maxHeight=(vv.height-top)+'px';
+  }else d.style.maxHeight=kb?'100%':''};
+  if(vv){vv.addEventListener('resize',fit);vv.addEventListener('scroll',fit)}new MutationObserver(fit).observe(sh,{attributes:true,attributeFilter:['hidden','class'],childList:true,subtree:true});
+  new ResizeObserver(()=>{if(!sh.hidden&&sh.classList.contains('sub-edit'))fit()}).observe($('pl'))}
 {const i=$('ltI'),put=()=>{$('ltV').textContent=LITE?'音と字幕だけ':'通常'};i.value=LITE?0:1;put();
   i.oninput=()=>{const was=playing()&&!!(pl&&pl.lite)!==(+i.value===0);LITE=+i.value===0;put();try{localStorage.setItem('subLite',LITE?'1':'')}catch(e){}if(was){const t=pos,a=$('bA').classList.contains('on');stopPlay();if(a){posSet=true;setPos(t);playAll()}else showAt(t)}}}
 /* v481: 字幕欄の右上の⬇ = 一番下までスーッと(加速して)動かす */
@@ -12456,6 +12467,7 @@ function editRow(r,list,g,late){eatTouchEnd();sheet((b,close)=>{$('sheet').class
   const refresh=()=>{const multi=hasBreak();modeButton.disabled=!multi;
     modeButton.textContent=modes[multi?mode:0];modeButton.setAttribute('aria-label','改行の扱い：'+modeButton.textContent);
     y.textContent=multi?actions[mode]:'完了';y.disabled=!dirty()};
+  modeButton.onpointerdown=e=>{if(b.contains(document.activeElement)&&document.activeElement.tagName==='TEXTAREA')e.preventDefault()};
   modeButton.onclick=()=>{mode=(mode+1)%modes.length;refresh()};
   ta.addEventListener('input',refresh);
   const writeEnglish=()=>{if(!te||te.value===en0)return;if(te.value.trim())g.en=te.value.trim();else delete g.en};
